@@ -1,0 +1,354 @@
+- generic [active] [ref=f9e1]:
+  - generic [ref=f9e2]:
+    - complementary [ref=f9e3]:
+      - generic [ref=f9e4]:
+        - link "Metropolis home" [ref=f9e6] [cursor=pointer]:
+          - /url: /dashboard
+        - navigation "Primary navigation" [ref=f9e7]:
+          - generic [ref=f9e8]:
+            - generic [ref=f9e10]:
+              - paragraph [ref=f9e11]: Build
+              - list [ref=f9e12]:
+                - listitem [ref=f9e13]:
+                  - link "Dashboard" [ref=f9e14] [cursor=pointer]:
+                    - /url: /dashboard
+                - listitem [ref=f9e18]:
+                  - link "Project" [ref=f9e19] [cursor=pointer]:
+                    - /url: /project
+                - listitem [ref=f9e23]:
+                  - link "Tracks & Bounties" [ref=f9e24] [cursor=pointer]:
+                    - /url: /tracks
+                - listitem [ref=f9e28]:
+                  - link "Prizes" [ref=f9e29] [cursor=pointer]:
+                    - /url: /prizes
+            - generic [ref=f9e35]:
+              - paragraph [ref=f9e36]: Connect
+              - list [ref=f9e37]:
+                - listitem [ref=f9e38]:
+                  - link "Matchmaking" [ref=f9e39] [cursor=pointer]:
+                    - /url: /matchmaking
+                - listitem [ref=f9e43]:
+                  - link "Mentors" [ref=f9e44] [cursor=pointer]:
+                    - /url: /mentors
+                - listitem [ref=f9e48]:
+                  - link "Calendar" [ref=f9e49] [cursor=pointer]:
+                    - /url: /calendar
+            - generic [ref=f9e55]:
+              - paragraph [ref=f9e56]: Support
+              - list [ref=f9e57]:
+                - listitem [ref=f9e58]:
+                  - link "Resources" [ref=f9e59] [cursor=pointer]:
+                    - /url: /resources
+                - listitem [ref=f9e63]:
+                  - link "Support" [ref=f9e64] [cursor=pointer]:
+                    - /url: /support
+          - generic [ref=f9e68]:
+            - paragraph [ref=f9e70]: Create a project
+            - link "Create project" [ref=f9e71] [cursor=pointer]:
+              - /url: /project
+    - generic [ref=f9e72]:
+      - banner [ref=f9e73]:
+        - paragraph [ref=f9e74]: Tracks & Bounties
+        - generic [ref=f9e75]:
+          - generic [ref=f9e77]:
+            - generic [ref=f9e78]: Oct 14 · 03:59
+            - generic "Deadline times are shown in UTC" [ref=f9e79]: UTC
+          - button "Notifications" [ref=f9e80] [cursor=pointer]
+          - button "Mute sounds" [ref=f9e81] [cursor=pointer]
+          - button "Account menu" [ref=f9e83]:
+            - generic [ref=f9e84]: A
+      - main [ref=f9e88]:
+        - generic [ref=f9e89]:
+          - generic [ref=f9e92]:
+            - heading "Tracks & Bounties" [level=1] [ref=f9e94]
+            - paragraph [ref=f9e95]: Choose one primary track, then add as many sponsor bounties as you'd like. Each bounty lists what it needs. You complete those fields when you submit.
+          - generic [ref=f9e98]:
+            - region "Your selection" [ref=f9e99]:
+              - generic [ref=f9e100]:
+                - paragraph [ref=f9e101]: Create a project
+                - paragraph [ref=f9e102]:
+                  - generic [ref=f9e103]: A project unlocks tracks and bounties, and the team holds it. A team of one is a team.
+                - status [ref=f9e104]: Create a project
+              - generic [ref=f9e105]:
+                - link "Create project" [ref=f9e106] [cursor=pointer]:
+                  - /url: /project
+                - link "Create your team" [ref=f9e107] [cursor=pointer]:
+                  - /url: /project?tab=team
+            - region "Primary tracks" [ref=f9e108]:
+              - generic [ref=f9e109]:
+                - heading "Primary tracks" [level=2] [ref=f9e110]
+                - paragraph [ref=f9e111]: One defines the project's main judging category.
+              - list [ref=f9e112]:
+                - listitem [ref=f9e113]:
+                  - generic [ref=f9e114]:
+                    - link "View Onchain Finance & Trading" [ref=f9e115] [cursor=pointer]:
+                      - /url: /tracks/onchain-finance
+                    - heading "Onchain Finance & Trading" [level=2] [ref=f9e118]
+                    - generic [ref=f9e119]:
+                      - paragraph [ref=f9e120]: New asset primitives, market structures, and the trading experiences that make them usable — all made possible by fast, cheap settlement.
+                      - paragraph [ref=f9e122]: $30,000 USD
+                - listitem [ref=f9e123]:
+                  - generic [ref=f9e124]:
+                    - link "View Consumer Products & Payments" [ref=f9e125] [cursor=pointer]:
+                      - /url: /tracks/consumer-payments
+                    - heading "Consumer Products & Payments" [level=2] [ref=f9e128]
+                    - generic [ref=f9e129]:
+                      - paragraph [ref=f9e130]: Consumer-facing financial products that use onchain rails as a design advantage, for users who don't identify as crypto users.
+                      - paragraph [ref=f9e132]: $30,000 USD
+                - listitem [ref=f9e133]:
+                  - generic [ref=f9e134]:
+                    - link "View Social, Attention & Culture" [ref=f9e135] [cursor=pointer]:
+                      - /url: /tracks/social-culture
+                    - heading "Social, Attention & Culture" [level=2] [ref=f9e138]
+                    - generic [ref=f9e139]:
+                      - paragraph [ref=f9e140]: Products where open social graphs, competitive feed algorithms, and community governance let cultural participation translate into real ownership.
+                      - paragraph [ref=f9e142]: $30,000 USD
+                - listitem [ref=f9e143]:
+                  - generic [ref=f9e144]:
+                    - link "View Trust, Identity & AI Infrastructure" [ref=f9e145] [cursor=pointer]:
+                      - /url: /tracks/trust-identity-ai
+                    - heading "Trust, Identity & AI Infrastructure" [level=2] [ref=f9e148]
+                    - generic [ref=f9e149]:
+                      - paragraph [ref=f9e150]: Protocol-level primitives for trust, provenance, and user-owned data that make AI genuinely useful without any single platform capturing the value.
+                      - paragraph [ref=f9e152]: $30,000 USD
+            - generic [ref=f9e153]:
+              - generic [ref=f9e154]:
+                - heading "Sponsor bounties" [level=2] [ref=f9e155]
+                - paragraph [ref=f9e156]: Optional awards. Each one names its track, and the ones marked All tracks pair with any.
+              - list [ref=f9e157]:
+                - listitem [ref=f9e158]:
+                  - generic [ref=f9e159]:
+                    - link "View Best Community Team Project" [ref=f9e160] [cursor=pointer]:
+                      - /url: /tracks/best-community-team-project
+                    - generic [ref=f9e164]:
+                      - heading "Best Community Team Project" [level=2] [ref=f9e166]
+                      - paragraph [ref=f9e167]: Monad Foundation
+                    - generic [ref=f9e168]:
+                      - paragraph [ref=f9e169]: Best project across all tracks built by a team from Metropolis community supporters.
+                      - generic [ref=f9e170]: All tracks
+                      - paragraph [ref=f9e174]: $5,000 USD
+                - listitem [ref=f9e175]:
+                  - generic [ref=f9e176]:
+                    - link "View Best Cross-Border Payments App on Monad (Agora Payments Bounty)" [ref=f9e177] [cursor=pointer]:
+                      - /url: /tracks/best-cross-border-payments-app-on-monad-agora-payments-bount
+                    - generic [ref=f9e181]:
+                      - heading "Best Cross-Border Payments App on Monad (Agora Payments Bounty)" [level=2] [ref=f9e183]
+                      - paragraph [ref=f9e184]: Agora
+                    - generic [ref=f9e185]:
+                      - paragraph [ref=f9e186]: Build a mobile app letting users send AUSD across borders using Mera passkey onboarding and instant settlement.
+                      - generic [ref=f9e187]: Consumer Products & Payments
+                      - paragraph [ref=f9e191]: $10,000 USD
+                - listitem [ref=f9e192]:
+                  - generic [ref=f9e193]:
+                    - link "View Best Mobile Trading App on Monad (Agora Onchain Trading Bounty)" [ref=f9e194] [cursor=pointer]:
+                      - /url: /tracks/best-mobile-trading-app-on-monad-agora-onchain-trading-bount
+                    - generic [ref=f9e198]:
+                      - heading "Best Mobile Trading App on Monad (Agora Onchain Trading Bounty)" [level=2] [ref=f9e200]
+                      - paragraph [ref=f9e201]: Agora
+                    - generic [ref=f9e202]:
+                      - paragraph [ref=f9e203]: Build a mobile app authenticating via Mera, holding an AUSD balance, and executing trades through Perpl.
+                      - generic [ref=f9e204]: Onchain Finance & Trading
+                      - paragraph [ref=f9e208]: $10,000 USD
+                - listitem [ref=f9e209]:
+                  - generic [ref=f9e210]:
+                    - link "View Best Use of Envio" [ref=f9e211] [cursor=pointer]:
+                      - /url: /tracks/best-use-of-envio
+                    - generic [ref=f9e215]:
+                      - heading "Best Use of Envio" [level=2] [ref=f9e217]
+                      - paragraph [ref=f9e218]: Envio
+                    - generic [ref=f9e219]:
+                      - paragraph [ref=f9e220]: Meaningfully use Envio's HyperIndex, HyperSync, or HyperRPC to power real on-chain data driving a core feature in your app.
+                      - generic [ref=f9e221]: All tracks
+                      - paragraph [ref=f9e225]: $1,000 USD
+                - listitem [ref=f9e226]:
+                  - generic [ref=f9e227]:
+                    - link "View Bring Any-Chain Liquidity to Monad" [ref=f9e228] [cursor=pointer]:
+                      - /url: /tracks/bring-any-chain-liquidity-to-monad
+                    - generic [ref=f9e230]:
+                      - generic [ref=f9e232]: AI
+                      - generic [ref=f9e233]:
+                        - heading "Bring Any-Chain Liquidity to Monad" [level=2] [ref=f9e235]
+                        - paragraph [ref=f9e236]: Aurora Intents
+                    - generic [ref=f9e237]:
+                      - paragraph [ref=f9e238]: Integrate Aurora Intents (powered by NEAR Intents) into a Monad app for any-chain deposits, swaps, or deposit-and-execute flows.
+                      - generic [ref=f9e239]: All tracks
+                      - paragraph [ref=f9e243]: $5,000 USD
+                - listitem [ref=f9e244]:
+                  - generic [ref=f9e245]:
+                    - link "View Best Integration of Cleanverse Verified Identity & Assets" [ref=f9e246] [cursor=pointer]:
+                      - /url: /tracks/best-integration-of-cleanverse-verified-identity-assets
+                    - generic [ref=f9e250]:
+                      - heading "Best Integration of Cleanverse Verified Identity & Assets" [level=2] [ref=f9e252]
+                      - paragraph [ref=f9e253]: Cleanverse
+                    - generic [ref=f9e254]:
+                      - paragraph [ref=f9e255]: Build an app that gates CVA asset movement behind on-chain CVI identity verification.
+                      - generic [ref=f9e256]: Trust, Identity & AI Infrastructure
+                      - paragraph [ref=f9e260]: $2,000 USD
+                - listitem [ref=f9e261]:
+                  - generic [ref=f9e262]:
+                    - link "View Build the Next Consumer Trading App on Kuru" [ref=f9e263] [cursor=pointer]:
+                      - /url: /tracks/build-the-next-consumer-trading-app-on-kuru
+                    - generic [ref=f9e267]:
+                      - heading "Build the Next Consumer Trading App on Kuru" [level=2] [ref=f9e269]
+                      - paragraph [ref=f9e270]: Kuru
+                    - generic [ref=f9e271]:
+                      - paragraph [ref=f9e272]: Build a focused spot trading product routing trades through Kuru's onchain order book on Monad.
+                      - generic [ref=f9e273]: Onchain Finance & Trading
+                      - paragraph [ref=f9e277]: $5,000 USD
+                - listitem [ref=f9e278]:
+                  - generic [ref=f9e279]:
+                    - link "View Bring New Assets and Markets to Kuru" [ref=f9e280] [cursor=pointer]:
+                      - /url: /tracks/bring-new-assets-and-markets-to-kuru
+                    - generic [ref=f9e284]:
+                      - heading "Bring New Assets and Markets to Kuru" [level=2] [ref=f9e286]
+                      - paragraph [ref=f9e287]: Kuru
+                    - generic [ref=f9e288]:
+                      - paragraph [ref=f9e289]: Build a new class of tradable markets on Kuru's spot order book, including the infrastructure to make them viable.
+                      - generic [ref=f9e290]: Onchain Finance & Trading
+                      - paragraph [ref=f9e294]: $5,000 USD
+                - listitem [ref=f9e295]:
+                  - generic [ref=f9e296]:
+                    - link "View Best Use of Dynamic" [ref=f9e297] [cursor=pointer]:
+                      - /url: /tracks/best-use-of-dynamic
+                    - generic [ref=f9e301]:
+                      - heading "Best Use of Dynamic" [level=2] [ref=f9e303]
+                      - paragraph [ref=f9e304]: Dynamic
+                    - generic [ref=f9e305]:
+                      - paragraph [ref=f9e306]: Integrate the Dynamic SDK for authentication, embedded/agent wallets, and/or signing into a deployed, demoable app.
+                      - generic [ref=f9e307]: All tracks
+                      - paragraph [ref=f9e311]: $5,000 USD
+                - listitem [ref=f9e312]:
+                  - generic [ref=f9e313]:
+                    - link "View Best Projects using Alchemy" [ref=f9e314] [cursor=pointer]:
+                      - /url: /tracks/best-projects-using-alchemy
+                    - generic [ref=f9e318]:
+                      - heading "Best Projects using Alchemy" [level=2] [ref=f9e320]
+                      - paragraph [ref=f9e321]: Alchemy
+                    - generic [ref=f9e322]:
+                      - paragraph [ref=f9e323]: Build a functional project deployed on Monad that meaningfully integrates at least one Alchemy service or tool.
+                      - generic [ref=f9e324]: All tracks
+                      - paragraph [ref=f9e328]: $1,000 USD in Alchemy Credits
+                - listitem [ref=f9e329]:
+                  - generic [ref=f9e330]:
+                    - link "View Best workflow with CRE" [ref=f9e331] [cursor=pointer]:
+                      - /url: /tracks/best-workflow-with-cre
+                    - generic [ref=f9e335]:
+                      - heading "Best workflow with CRE" [level=2] [ref=f9e337]
+                      - paragraph [ref=f9e338]: Chainlink
+                    - generic [ref=f9e339]:
+                      - paragraph [ref=f9e340]: Build, simulate, or deploy a Chainlink Runtime Environment (CRE) Workflow used as an orchestration layer within your project.
+                      - generic [ref=f9e341]: All tracks
+                      - paragraph [ref=f9e345]: $3,000 USD
+                - listitem [ref=f9e346]:
+                  - generic [ref=f9e347]:
+                    - link "View Best use of Perpl's API" [ref=f9e348] [cursor=pointer]:
+                      - /url: /tracks/best-use-of-perpl-s-api
+                    - generic [ref=f9e352]:
+                      - heading "Best use of Perpl's API" [level=2] [ref=f9e354]
+                      - paragraph [ref=f9e355]: Perpl
+                    - generic [ref=f9e356]:
+                      - paragraph [ref=f9e357]: Build a production-ready trading bot or automation system on Perpl.
+                      - generic [ref=f9e358]: All tracks
+                      - paragraph [ref=f9e362]: $5,000 USD
+                - listitem [ref=f9e363]:
+                  - generic [ref=f9e364]:
+                    - link "View Best Analytics / Risk Tool" [ref=f9e365] [cursor=pointer]:
+                      - /url: /tracks/best-analytics-risk-tool
+                    - generic [ref=f9e369]:
+                      - heading "Best Analytics / Risk Tool" [level=2] [ref=f9e371]
+                      - paragraph [ref=f9e372]: Perpl
+                    - generic [ref=f9e373]:
+                      - paragraph [ref=f9e374]: Build a real-time analytics, risk-monitoring, or portfolio intelligence dashboard focused on Perpl.
+                      - generic [ref=f9e375]: Onchain Finance & Trading
+                      - paragraph [ref=f9e379]: $3,000 USD
+                - listitem [ref=f9e380]:
+                  - generic [ref=f9e381]:
+                    - link "View Privy!" [ref=f9e382] [cursor=pointer]:
+                      - /url: /tracks/privy
+                    - generic [ref=f9e386]:
+                      - heading "Privy!" [level=2] [ref=f9e388]
+                      - paragraph [ref=f9e389]: Privy
+                    - generic [ref=f9e390]:
+                      - paragraph [ref=f9e391]: Integrate Privy beyond authentication — login-only integrations will not qualify.
+                      - generic [ref=f9e392]: All tracks
+                      - paragraph [ref=f9e396]: $5,000 USD
+                - listitem [ref=f9e397]:
+                  - generic [ref=f9e398]:
+                    - link "View Best use of Nansen" [ref=f9e399] [cursor=pointer]:
+                      - /url: /tracks/best-use-of-nansen
+                    - generic [ref=f9e403]:
+                      - heading "Best use of Nansen" [level=2] [ref=f9e405]
+                      - paragraph [ref=f9e406]: Nansen AI
+                    - generic [ref=f9e407]:
+                      - paragraph [ref=f9e408]: Build a product experience powered by Nansen data/API/MCP/CLI that goes beyond exposing raw data.
+                      - generic [ref=f9e409]: All tracks
+                      - paragraph [ref=f9e413]: $5,000 USD total prize pool
+                - listitem [ref=f9e414]:
+                  - generic [ref=f9e415]:
+                    - 'link "View Build with Hunyuan: Multimodal & Interactive Experiences" [ref=f9e416] [cursor=pointer]':
+                      - /url: /tracks/build-with-hunyuan-multimodal-interactive-experiences
+                    - generic [ref=f9e420]:
+                      - 'heading "Build with Hunyuan: Multimodal & Interactive Experiences" [level=2] [ref=f9e422]'
+                      - paragraph [ref=f9e423]: Kepler Plan by Tencent
+                    - generic [ref=f9e424]:
+                      - paragraph [ref=f9e425]: Build a multimodal or interactive experience genuinely powered by Tencent's Hunyuan model.
+                      - generic [ref=f9e426]: Social, Attention & Culture
+                      - paragraph [ref=f9e430]: $2,000 in Tencent Cloud vouchers
+                - listitem [ref=f9e431]:
+                  - generic [ref=f9e432]:
+                    - link "View Best Builds Powered by KIMI" [ref=f9e433] [cursor=pointer]:
+                      - /url: /tracks/best-builds-powered-by-kimi
+                    - generic [ref=f9e437]:
+                      - heading "Best Builds Powered by KIMI" [level=2] [ref=f9e439]
+                      - paragraph [ref=f9e440]: Kimi
+                    - generic [ref=f9e441]:
+                      - paragraph [ref=f9e442]: Build a project genuinely powered by KIMI (Moonshot AI) — open scope, no category restrictions.
+                      - generic [ref=f9e443]: All tracks
+                      - paragraph [ref=f9e447]: $3,000 in credits
+                - listitem [ref=f9e448]:
+                  - generic [ref=f9e449]:
+                    - link "View Best Builds with Qwen 3.8 Max" [ref=f9e450] [cursor=pointer]:
+                      - /url: /tracks/best-builds-with-qwen-3-8-max
+                    - generic [ref=f9e454]:
+                      - heading "Best Builds with Qwen 3.8 Max" [level=2] [ref=f9e456]
+                      - paragraph [ref=f9e457]: Alibaba Cloud
+                    - generic [ref=f9e458]:
+                      - paragraph [ref=f9e459]: Push Qwen 3.8 Max into genuinely agentic territory on Monad.
+                      - generic [ref=f9e460]: Trust, Identity & AI Infrastructure
+                      - paragraph [ref=f9e464]: $5,000 in credits
+                - listitem [ref=f9e465]:
+                  - generic [ref=f9e466]:
+                    - link "View Best Mera-Powered UX on Monad" [ref=f9e467] [cursor=pointer]:
+                      - /url: /tracks/best-mera-powered-ux-on-monad
+                    - generic [ref=f9e471]:
+                      - heading "Best Mera-Powered UX on Monad" [level=2] [ref=f9e473]
+                      - paragraph [ref=f9e474]: Monad Foundation
+                    - generic [ref=f9e475]:
+                      - paragraph [ref=f9e476]: Build an app on Monad where Mera is the entire account layer — no seed phrase, no extension, no custody backend.
+                      - generic [ref=f9e477]: All tracks
+                      - paragraph [ref=f9e481]: $2,500 USD
+                - listitem [ref=f9e482]:
+                  - generic [ref=f9e483]:
+                    - 'link "View Mera: One Passkey, Many Keys" [ref=f9e484] [cursor=pointer]':
+                      - /url: /tracks/mera-one-passkey-many-keys
+                    - generic [ref=f9e488]:
+                      - 'heading "Mera: One Passkey, Many Keys" [level=2] [ref=f9e490]'
+                      - paragraph [ref=f9e491]: Monad Foundation
+                    - generic [ref=f9e492]:
+                      - paragraph [ref=f9e493]: Most creative non-wallet use of Mera's PRF-derived key material.
+                      - generic [ref=f9e494]: All tracks
+                      - paragraph [ref=f9e498]: $2,500 USD
+                - listitem [ref=f9e499]:
+                  - generic [ref=f9e500]:
+                    - link "View Best Agent Wallet Plugin" [ref=f9e501] [cursor=pointer]:
+                      - /url: /tracks/best-agent-wallet-plugin
+                    - generic [ref=f9e503]:
+                      - generic [ref=f9e505]: ME
+                      - generic [ref=f9e506]:
+                        - heading "Best Agent Wallet Plugin" [level=2] [ref=f9e508]
+                        - paragraph [ref=f9e509]: Metamask
+                    - generic [ref=f9e510]:
+                      - paragraph [ref=f9e511]: Build a plugin that gives the MetaMask Agent Wallet a new trading superpower via its plugin architecture.
+                      - generic [ref=f9e512]: Onchain Finance & Trading
+                      - paragraph [ref=f9e516]: $2,500 USD
+  - region "Notifications alt+T"

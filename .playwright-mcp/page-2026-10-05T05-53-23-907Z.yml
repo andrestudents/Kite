@@ -1,0 +1,30 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - complementary [aria-hidden] [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - generic [ref=e7]: Network · Monad
+          - generic [ref=e8]: Chain ID · 143
+        - generic [ref=e9]: Intake · Open
+      - generic [ref=e14]:
+        - generic:
+          - paragraph: 1 Sep to 13 Oct
+          - paragraph: $250,000+ USD Prize Pool
+      - generic [ref=e18]:
+        - generic [ref=e19]: Scale · 1:1
+        - generic [ref=e20]: Layer · Intake
+        - generic [ref=e21]: Ref · MDS-IN
+    - generic [ref=e22]:
+      - generic [ref=e23]:
+        - generic [ref=e24]:
+          - heading "Continue to the Metropolis hackathon" [level=1] [ref=e25]
+          - paragraph [ref=e26]: One button signs you in or starts your registration. We work out which.
+        - generic [ref=e27]:
+          - generic [ref=e28]:
+            - button "Continue with Google" [ref=e29] [cursor=pointer]
+            - generic: Last used
+          - button "Continue with GitHub" [ref=e31] [cursor=pointer]
+          - button "Continue with Discord" [ref=e33] [cursor=pointer]
+      - paragraph [ref=e34]: Each provider is a separate account. If you registered with the other one, continue with that one instead.
+  - region "Notifications alt+T"
+  - alert [ref=e35]

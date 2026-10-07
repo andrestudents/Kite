@@ -1,0 +1,187 @@
+- generic [active] [ref=f2e1]:
+  - generic [ref=f2e2]:
+    - complementary [ref=f2e3]:
+      - generic [ref=f2e4]:
+        - link "Metropolis home" [ref=f2e6] [cursor=pointer]:
+          - /url: /dashboard
+        - navigation "Primary navigation" [ref=f2e7]:
+          - generic [ref=f2e8]:
+            - generic [ref=f2e10]:
+              - paragraph [ref=f2e11]: Build
+              - list [ref=f2e12]:
+                - listitem [ref=f2e13]:
+                  - link "Dashboard" [ref=f2e14] [cursor=pointer]:
+                    - /url: /dashboard
+                - listitem [ref=f2e18]:
+                  - link "Project" [ref=f2e19] [cursor=pointer]:
+                    - /url: /project
+                - listitem [ref=f2e23]:
+                  - link "Tracks & Bounties" [ref=f2e24] [cursor=pointer]:
+                    - /url: /tracks
+                - listitem [ref=f2e28]:
+                  - link "Prizes" [ref=f2e29] [cursor=pointer]:
+                    - /url: /prizes
+            - generic [ref=f2e34]:
+              - paragraph [ref=f2e35]: Connect
+              - list [ref=f2e36]:
+                - listitem [ref=f2e37]:
+                  - link "Matchmaking" [ref=f2e38] [cursor=pointer]:
+                    - /url: /matchmaking
+                - listitem [ref=f2e42]:
+                  - link "Mentors" [ref=f2e43] [cursor=pointer]:
+                    - /url: /mentors
+                - listitem [ref=f2e47]:
+                  - link "Calendar" [ref=f2e48] [cursor=pointer]:
+                    - /url: /calendar
+            - generic [ref=f2e53]:
+              - paragraph [ref=f2e54]: Support
+              - list [ref=f2e55]:
+                - listitem [ref=f2e56]:
+                  - link "Resources" [ref=f2e57] [cursor=pointer]:
+                    - /url: /resources
+                - listitem [ref=f2e61]:
+                  - link "Support" [ref=f2e62] [cursor=pointer]:
+                    - /url: /support
+          - generic [ref=f2e66]:
+            - paragraph [ref=f2e68]: Create a project
+            - link "Create project" [ref=f2e69] [cursor=pointer]:
+              - /url: /project
+    - generic [ref=f2e70]:
+      - banner [ref=f2e71]:
+        - paragraph [ref=f2e72]: Tracks & Bounties
+        - generic [ref=f2e73]:
+          - generic [ref=f2e75]:
+            - generic [ref=f2e76]: Oct 14 · 03:59
+            - generic "Deadline times are shown in UTC" [ref=f2e77]: UTC
+          - button "Notifications" [ref=f2e78] [cursor=pointer]
+          - button "Mute sounds" [ref=f2e79] [cursor=pointer]
+          - button "Account menu" [ref=f2e81]:
+            - generic [ref=f2e82]: A
+      - main [ref=f2e86]:
+        - generic [ref=f2e88]:
+          - link "BACK" [ref=f2e89] [cursor=pointer]:
+            - /url: /tracks
+          - generic [ref=f2e94]:
+            - heading "Social, Attention & Culture" [level=1] [ref=f2e96]
+            - paragraph [ref=f2e97]: Products where open social graphs, competitive feed algorithms, and community governance let cultural participation translate into real ownership.
+          - generic [ref=f2e98]:
+            - complementary [ref=f2e99]:
+              - region [ref=f2e100]:
+                - generic [ref=f2e101]:
+                  - generic [ref=f2e102]:
+                    - generic [ref=f2e103]: Prize
+                    - paragraph [ref=f2e104]: $30,000 USD
+                  - paragraph [ref=f2e105]: Split evenly among 3 winners - $10,000 each
+                  - generic [ref=f2e107]:
+                    - generic [ref=f2e108]: Deadline
+                    - paragraph [ref=f2e109]: Oct 14, 2026 at 03:59 UTC
+                - heading "Project selection" [level=2] [ref=f2e111]
+                - paragraph [ref=f2e113]: Create a project before choosing tracks and bounties.
+            - main [ref=f2e114]:
+              - region [ref=f2e115]:
+                - generic [ref=f2e116]:
+                  - generic [ref=f2e117]: About
+                  - heading "What this track is for" [level=2] [ref=f2e118]
+                - paragraph [ref=f2e119]: "Social platforms, cultural markets, and the economies of attention share a common tension: the people generating value and those capturing it are rarely the same. This track is for builders exploring what changes when social graphs are open, feed algorithms are competitive, and cultural communities can govern and build on what they've created. At 800ms finality and 10,000 TPS on Monad, the experience gap that has made onchain social feel clunky closes — what comes next is the product question. Core question: How do you build products where social participation, cultural engagement, and attention translate into real ownership and economic stake for the people generating them? Belongs here if: the core user value is social connection, cultural participation, or community — even if financial mechanics are involved."
+              - region [ref=f2e120]:
+                - generic [ref=f2e121]:
+                  - generic [ref=f2e122]: Judging criteria
+                  - heading "What judges look for" [level=2] [ref=f2e123]
+                - list [ref=f2e124]:
+                  - listitem [ref=f2e125]:
+                    - paragraph [ref=f2e126]: Rubric weighted toward startup potential, applied consistently across all four tracks — track-specific look-fors below.
+                  - listitem [ref=f2e127]:
+                    - paragraph [ref=f2e128]: Technical Execution (20%) — does the social/cultural/governance mechanism run onchain and produce correct, verifiable results?
+                  - listitem [ref=f2e129]:
+                    - paragraph [ref=f2e130]: Design & Craft (20%) — does it feel like a genuine social or cultural product — inviting, fun, native to how people actually socialize — rather than a token-gated feature bolted onto a generic interface?
+                  - listitem [ref=f2e131]:
+                    - paragraph [ref=f2e132]: Originality & Track Insight (15%) — does participation or attention translate into real, verifiable economic stake for the people generating it, or is the onchain layer decorative?
+                  - listitem [ref=f2e133]:
+                    - paragraph [ref=f2e134]: Founder & Market Readiness (25%) — does the team understand the specific community or creator base they're targeting, and why that community would migrate from existing platforms?
+                  - listitem [ref=f2e135]:
+                    - paragraph [ref=f2e136]: Traction & Path Forward (20%) — any real community engagement (even a small Discord or test group), and a specific plan for growth or creator acquisition.
+              - region [ref=f2e137]:
+                - generic [ref=f2e138]:
+                  - generic [ref=f2e139]: Deliverables
+                  - heading "What to have ready" [level=2] [ref=f2e140]
+                - list [ref=f2e141]:
+                  - listitem [ref=f2e142]:
+                    - paragraph [ref=f2e143]: "Project Logo/Graphic: uploaded in JPG, JPEG, PNG, or WEBP format (maximum size 3MB)"
+                  - listitem [ref=f2e144]:
+                    - paragraph [ref=f2e145]: "Public GitHub Repository: fully accessible by metropolis@hackathon.monad.xyz"
+                  - listitem [ref=f2e146]:
+                    - paragraph [ref=f2e147]: "Technical Demo Video: maximum 3 minutes, via YouTube, Loom, or Vimeo — must show the live working product, not slides or a code walkthrough"
+                  - listitem [ref=f2e148]:
+                    - paragraph [ref=f2e149]: "Pitch Video: maximum 2 minutes, introducing the team, the problem being solved, and why you're building it"
+                  - listitem [ref=f2e150]:
+                    - paragraph [ref=f2e151]: "Live Product Link: deployed on Monad Mainnet or Testnet, accompanied by clear access instructions and any necessary test login credentials for judges"
+                  - listitem [ref=f2e152]:
+                    - paragraph [ref=f2e153]: "Product Advertisement (Optional): maximum 30 seconds, via YouTube, Loom, or Vimeo — a short, punchy promotional clip of the product. Not factored into judging; used for post-event social promotion and marketing"
+              - region [ref=f2e154]:
+                - generic [ref=f2e155]:
+                  - generic [ref=f2e156]: Suggested starting points
+                  - heading "Ideas that leave room for your own angle" [level=2] [ref=f2e157]
+                - list [ref=f2e158]:
+                  - listitem [ref=f2e159]:
+                    - generic [ref=f2e160]: "01"
+                    - paragraph [ref=f2e161]: An algorithm marketplace where communities publish, sell, and compete on feed ranking strategies — creators migrate to the feeds that reward them
+                  - listitem [ref=f2e162]:
+                    - generic [ref=f2e163]: "02"
+                    - paragraph [ref=f2e164]: Social clients where the recommendation engine is trained and governed by the community it serves, not the platform hosting it
+                  - listitem [ref=f2e165]:
+                    - generic [ref=f2e166]: "03"
+                    - paragraph [ref=f2e167]: "Attention futures: stake on content or creators you believe will break through before the crowd does, earn if you were right"
+                  - listitem [ref=f2e168]:
+                    - generic [ref=f2e169]: "04"
+                    - paragraph [ref=f2e170]: Early-supporter registries that cryptographically prove — and financially reward — fans who were there before the audience arrived
+                  - listitem [ref=f2e171]:
+                    - generic [ref=f2e172]: "05"
+                    - paragraph [ref=f2e173]: Wallet-seeded social graphs that bootstrap new platforms by surfacing existing onchain relationships as a social layer
+                  - listitem [ref=f2e174]:
+                    - generic [ref=f2e175]: "06"
+                    - paragraph [ref=f2e176]: A TCG marketplace with real-time onchain order books — transparent price discovery, instant settlement, and no platform taking a 10–15% cut on every trade
+                  - listitem [ref=f2e177]:
+                    - generic [ref=f2e178]: "07"
+                    - paragraph [ref=f2e179]: TCGs where card scarcity, rule evolution, tournament structure, and prize pools are governed onchain by the player community — not a publisher
+                  - listitem [ref=f2e180]:
+                    - generic [ref=f2e181]: "08"
+                    - paragraph [ref=f2e182]: Automated market makers designed specifically for the long-tail of collectible assets, where thinly traded cards currently have no reliable price or exit
+                  - listitem [ref=f2e183]:
+                    - generic [ref=f2e184]: "09"
+                    - paragraph [ref=f2e185]: Rental and lending markets for high-value cards — letting competitive players access what they need without the capital outlay, and collectors earn yield on idle assets
+                  - listitem [ref=f2e186]:
+                    - generic [ref=f2e187]: "10"
+                    - paragraph [ref=f2e188]: "Cross-game asset interoperability: a shared cultural asset layer where items from one game or collection carry provable history and value into others"
+                  - listitem [ref=f2e189]:
+                    - generic [ref=f2e190]: "11"
+                    - paragraph [ref=f2e191]: Generative art that evolves — pieces whose visual properties, traits, or behaviour change based on onchain events, holder actions, community votes, or oracle-fed real-world data, moving the NFT from static collectible to living object
+                  - listitem [ref=f2e192]:
+                    - generic [ref=f2e193]: "12"
+                    - paragraph [ref=f2e194]: Style as an ownable asset — capturing a visual aesthetic or artistic identity as an NFT that can be licensed and applied to existing collections, generating derivative works with onchain attribution and automated revenue splits back to the style's creator
+              - region [ref=f2e195]:
+                - generic [ref=f2e196]:
+                  - generic [ref=f2e197]: Relevant resources
+                  - heading "Start with the official path." [level=2] [ref=f2e198]
+                - list [ref=f2e199]:
+                  - listitem [ref=f2e200]:
+                    - link "Build on Monad docs.monad.xyz (opens in a new tab)" [ref=f2e201] [cursor=pointer]:
+                      - /url: https://docs.monad.xyz/developer-essentials/getting-started
+                      - generic [ref=f2e203]:
+                        - generic [ref=f2e204]: Build on Monad
+                        - generic [ref=f2e205]: docs.monad.xyz
+                        - generic [ref=f2e206]: (opens in a new tab)
+                  - listitem [ref=f2e209]:
+                    - link "Monad developer portal developers.monad.xyz (opens in a new tab)" [ref=f2e210] [cursor=pointer]:
+                      - /url: https://developers.monad.xyz/
+                      - generic [ref=f2e212]:
+                        - generic [ref=f2e213]: Monad developer portal
+                        - generic [ref=f2e214]: developers.monad.xyz
+                        - generic [ref=f2e215]: (opens in a new tab)
+                  - listitem [ref=f2e218]:
+                    - link "Metropolis resources Metropolis (opens in a new tab)" [ref=f2e219] [cursor=pointer]:
+                      - /url: /resources
+                      - generic [ref=f2e221]:
+                        - generic [ref=f2e222]: Metropolis resources
+                        - generic [ref=f2e223]: Metropolis
+                        - generic [ref=f2e224]: (opens in a new tab)
+  - region "Notifications alt+T"

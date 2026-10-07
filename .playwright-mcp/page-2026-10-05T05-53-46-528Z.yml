@@ -1,0 +1,170 @@
+- generic [active] [ref=f3e1]:
+  - generic [ref=f3e2]:
+    - complementary [ref=f3e3]:
+      - generic [ref=f3e4]:
+        - link "Metropolis home" [ref=f3e6] [cursor=pointer]:
+          - /url: /dashboard
+        - navigation "Primary navigation" [ref=f3e7]:
+          - generic [ref=f3e8]:
+            - generic [ref=f3e10]:
+              - paragraph [ref=f3e11]: Build
+              - list [ref=f3e12]:
+                - listitem [ref=f3e13]:
+                  - link "Dashboard" [ref=f3e14] [cursor=pointer]:
+                    - /url: /dashboard
+                - listitem [ref=f3e18]:
+                  - link "Project" [ref=f3e19] [cursor=pointer]:
+                    - /url: /project
+                - listitem [ref=f3e23]:
+                  - link "Tracks & Bounties" [ref=f3e24] [cursor=pointer]:
+                    - /url: /tracks
+                - listitem [ref=f3e28]:
+                  - link "Prizes" [ref=f3e29] [cursor=pointer]:
+                    - /url: /prizes
+            - generic [ref=f3e34]:
+              - paragraph [ref=f3e35]: Connect
+              - list [ref=f3e36]:
+                - listitem [ref=f3e37]:
+                  - link "Matchmaking" [ref=f3e38] [cursor=pointer]:
+                    - /url: /matchmaking
+                - listitem [ref=f3e42]:
+                  - link "Mentors" [ref=f3e43] [cursor=pointer]:
+                    - /url: /mentors
+                - listitem [ref=f3e47]:
+                  - link "Calendar" [ref=f3e48] [cursor=pointer]:
+                    - /url: /calendar
+            - generic [ref=f3e53]:
+              - paragraph [ref=f3e54]: Support
+              - list [ref=f3e55]:
+                - listitem [ref=f3e56]:
+                  - link "Resources" [ref=f3e57] [cursor=pointer]:
+                    - /url: /resources
+                - listitem [ref=f3e61]:
+                  - link "Support" [ref=f3e62] [cursor=pointer]:
+                    - /url: /support
+          - generic [ref=f3e66]:
+            - paragraph [ref=f3e68]: Create a project
+            - link "Create project" [ref=f3e69] [cursor=pointer]:
+              - /url: /project
+    - generic [ref=f3e70]:
+      - banner [ref=f3e71]:
+        - paragraph [ref=f3e72]: Tracks & Bounties
+        - generic [ref=f3e73]:
+          - generic [ref=f3e75]:
+            - generic [ref=f3e76]: Oct 14 · 03:59
+            - generic "Deadline times are shown in UTC" [ref=f3e77]: UTC
+          - button "Notifications" [ref=f3e78] [cursor=pointer]
+          - button "Mute sounds" [ref=f3e79] [cursor=pointer]
+          - button "Account menu" [ref=f3e81]:
+            - generic [ref=f3e82]: A
+      - main [ref=f3e86]:
+        - generic [ref=f3e88]:
+          - link "BACK" [ref=f3e89] [cursor=pointer]:
+            - /url: /tracks
+          - generic [ref=f3e94]:
+            - heading "Trust, Identity & AI Infrastructure" [level=1] [ref=f3e96]
+            - paragraph [ref=f3e97]: Protocol-level primitives for trust, provenance, and user-owned data that make AI genuinely useful without any single platform capturing the value.
+          - generic [ref=f3e98]:
+            - complementary [ref=f3e99]:
+              - region [ref=f3e100]:
+                - generic [ref=f3e101]:
+                  - generic [ref=f3e102]:
+                    - generic [ref=f3e103]: Prize
+                    - paragraph [ref=f3e104]: $30,000 USD
+                  - paragraph [ref=f3e105]: Split evenly among 3 winners - $10,000 each
+                  - generic [ref=f3e107]:
+                    - generic [ref=f3e108]: Deadline
+                    - paragraph [ref=f3e109]: Oct 14, 2026 at 03:59 UTC
+                - heading "Project selection" [level=2] [ref=f3e111]
+                - paragraph [ref=f3e113]: Create a project before choosing tracks and bounties.
+            - main [ref=f3e114]:
+              - region [ref=f3e115]:
+                - generic [ref=f3e116]:
+                  - generic [ref=f3e117]: About
+                  - heading "What this track is for" [level=2] [ref=f3e118]
+                - paragraph [ref=f3e119]: "AI has shifted the default assumptions the internet runs on — about identity, provenance, and what's real. At the same time, the personal context that makes AI genuinely useful tends to accumulate in platforms people don't own. This track is for builders working on the trust and data ownership layer: the primitives that need to exist at the protocol level for the rest of it to work. Monad provides specific building blocks — a native P256 precompile for WebAuthn verification, ERC-8004 as a first-class trustless agent registry, and BTX encrypted mempools — that make this space more tractable than it's been elsewhere. Core question: What does the trust and data ownership layer look like for an AI-native internet — built in a way that is privacy-preserving, composable, and impossible for any single platform to capture? Belongs here if: the primary output is a protocol, primitive, or infrastructure layer that other applications build on — not a standalone consumer product."
+              - region [ref=f3e120]:
+                - generic [ref=f3e121]:
+                  - generic [ref=f3e122]: Judging criteria
+                  - heading "What judges look for" [level=2] [ref=f3e123]
+                - list [ref=f3e124]:
+                  - listitem [ref=f3e125]:
+                    - paragraph [ref=f3e126]: Technical Execution (20%) — is the trust/identity/data primitive implemented correctly and securely — correct use of WebAuthn/P256, sound key derivation, no leaked secrets?
+                  - listitem [ref=f3e127]:
+                    - paragraph [ref=f3e128]: Design & Craft (20%) — is the primitive usable by the developers who'd build on it — clear docs, clean interface or API — even without an end-user-facing UI? Design here means developer experience, not just visuals.
+                  - listitem [ref=f3e129]:
+                    - paragraph [ref=f3e130]: Originality & Track Insight (15%) — does this solve trust, provenance, or data ownership in a way that's privacy-preserving and not capturable by a single platform, or does it just centralize the problem differently?
+                  - listitem [ref=f3e131]:
+                    - paragraph [ref=f3e132]: Founder & Market Readiness (25%) — does the team know which specific applications or developers would adopt this primitive, and why they'd choose it over rolling their own?
+                  - listitem [ref=f3e133]:
+                    - paragraph [ref=f3e134]: Traction & Path Forward (20%) — any evidence of developer interest (even one other team integrating it during the hackathon), and a specific plan to get more integrations post-event.
+              - region [ref=f3e135]:
+                - generic [ref=f3e136]:
+                  - generic [ref=f3e137]: Deliverables
+                  - heading "What to have ready" [level=2] [ref=f3e138]
+                - list [ref=f3e139]:
+                  - listitem [ref=f3e140]:
+                    - paragraph [ref=f3e141]: "Project Logo/Graphic: uploaded in JPG, JPEG, PNG, or WEBP format (maximum size 3MB)"
+                  - listitem [ref=f3e142]:
+                    - paragraph [ref=f3e143]: "Public GitHub Repository: fully accessible by metropolis@hackathon.monad.xyz"
+                  - listitem [ref=f3e144]:
+                    - paragraph [ref=f3e145]: "Technical Demo Video: maximum 3 minutes, via YouTube, Loom, or Vimeo — must show the live working product, not slides or a code walkthrough"
+                  - listitem [ref=f3e146]:
+                    - paragraph [ref=f3e147]: "Pitch Video: maximum 2 minutes, introducing the team, the problem being solved, and why you're building it"
+                  - listitem [ref=f3e148]:
+                    - paragraph [ref=f3e149]: "Live Product Link: deployed on Monad Mainnet or Testnet, accompanied by clear access instructions and any necessary test login credentials for judges"
+                  - listitem [ref=f3e150]:
+                    - paragraph [ref=f3e151]: "Product Advertisement (Optional): maximum 30 seconds, via YouTube, Loom, or Vimeo — a short, punchy promotional clip of the product. Not factored into judging; used for post-event social promotion and marketing"
+              - region [ref=f3e152]:
+                - generic [ref=f3e153]:
+                  - generic [ref=f3e154]: Suggested starting points
+                  - heading "Ideas that leave room for your own angle" [level=2] [ref=f3e155]
+                - list [ref=f3e156]:
+                  - listitem [ref=f3e157]:
+                    - generic [ref=f3e158]: "01"
+                    - paragraph [ref=f3e159]: Mobile-native proof of personhood using WebAuthn/P256 — no invasive biometrics, no centralised issuer, verified in a single tap on existing hardware
+                  - listitem [ref=f3e160]:
+                    - generic [ref=f3e161]: "02"
+                    - paragraph [ref=f3e162]: "Content passports: every AI-generated asset carries a cryptographic certificate of origin and a tamper-evident audit trail that survives platform migration"
+                  - listitem [ref=f3e163]:
+                    - generic [ref=f3e164]: "03"
+                    - paragraph [ref=f3e165]: A personal data locker that earns revenue when AI companies query your interaction history — you set the price, they pay per call
+                  - listitem [ref=f3e166]:
+                    - generic [ref=f3e167]: "04"
+                    - paragraph [ref=f3e168]: "Cross-application AI memory: a user-owned context layer that persists across products so your AI assistant isn't amnesiac every time you switch apps"
+                  - listitem [ref=f3e169]:
+                    - generic [ref=f3e170]: "05"
+                    - paragraph [ref=f3e171]: A marketplace where domain experts license their decision-making patterns to train specialised models — compensated per training run, not per data upload
+                  - listitem [ref=f3e172]:
+                    - generic [ref=f3e173]: "06"
+                    - paragraph [ref=f3e174]: Onchain credential attestations for real-world skills that any application can verify without a centralised middleman
+                  - listitem [ref=f3e175]:
+                    - generic [ref=f3e176]: "07"
+                    - paragraph [ref=f3e177]: Decentralised data labelling networks for physical AI — contributors earn stablecoin rewards for annotating robotics and sensor data, with onchain micropayments making global participation practical at scale
+              - region [ref=f3e178]:
+                - generic [ref=f3e179]:
+                  - generic [ref=f3e180]: Relevant resources
+                  - heading "Start with the official path." [level=2] [ref=f3e181]
+                - list [ref=f3e182]:
+                  - listitem [ref=f3e183]:
+                    - link "Build on Monad docs.monad.xyz (opens in a new tab)" [ref=f3e184] [cursor=pointer]:
+                      - /url: https://docs.monad.xyz/developer-essentials/getting-started
+                      - generic [ref=f3e186]:
+                        - generic [ref=f3e187]: Build on Monad
+                        - generic [ref=f3e188]: docs.monad.xyz
+                        - generic [ref=f3e189]: (opens in a new tab)
+                  - listitem [ref=f3e192]:
+                    - link "Monad developer portal developers.monad.xyz (opens in a new tab)" [ref=f3e193] [cursor=pointer]:
+                      - /url: https://developers.monad.xyz/
+                      - generic [ref=f3e195]:
+                        - generic [ref=f3e196]: Monad developer portal
+                        - generic [ref=f3e197]: developers.monad.xyz
+                        - generic [ref=f3e198]: (opens in a new tab)
+                  - listitem [ref=f3e201]:
+                    - link "Metropolis resources Metropolis (opens in a new tab)" [ref=f3e202] [cursor=pointer]:
+                      - /url: /resources
+                      - generic [ref=f3e204]:
+                        - generic [ref=f3e205]: Metropolis resources
+                        - generic [ref=f3e206]: Metropolis
+                        - generic [ref=f3e207]: (opens in a new tab)
+  - region "Notifications alt+T"
