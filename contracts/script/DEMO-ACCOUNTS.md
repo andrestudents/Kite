@@ -43,6 +43,17 @@ Deployed at epoch `1791580848` (2026-10-10). Deployment txs: 4 broadcast
 (MockAUSD, KiteCore impl, ERC-1967 proxy + initialize, registerChannel),
 total ~5.53M gas, ~0.59 MON charged (paid on the limit, Monad).
 
+## Demo ledger state (ISA ids)
+
+Ids 1–3 are the seed story (Budi × Siti/Wati/Pak Haji — `seed-demo.sh`). The
+[`MANUAL-LOOP.md`](MANUAL-LOOP.md) throwaway run — two fresh wallets, cast-only,
+draft → activate → income → `CompletedCapped` — is **ISA id 10**
+(`0x0b37d0ed…04a18e` activate, `0x534ee56c…4801a9` income). Ids **4–9 are
+abandoned drafts**: each failed loop iteration stranded a draft whose throwaway
+keys died with the process; `cancelDraft` needs a party's key, and no admin
+path may clear them (constitution IV). They stay Drafted forever — the honest
+cancel-absent behavior.
+
 ## Source verification (SC-003)
 
 `forge script --verify` aborts without an explorer API key, so verification runs
