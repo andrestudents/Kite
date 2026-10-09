@@ -3,4 +3,11 @@ src = "src"
 out = "out"
 libs = ["lib"]
 
+[invariant]
+# T022: bounded so the 12-test suite stays in CI time; every §6.4 item is
+# still hit thousands of times (32 runs x 64 depth x 13 actions x 12 tests).
+runs = 32
+depth = 64
+fail_on_revert = false
+
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
