@@ -45,8 +45,12 @@ export const MOCK_AUSD_GAS_LIMITS = {
   transferWithAuthorization: { observedMax: 83376, fixedLimit: 105000 },
 } as const satisfies Record<string, KiteGasLimit>;
 
-/** Deployment costs observed for sizing deploy transactions. */
-export const KITE_DEPLOYMENT = {
+/**
+ * Deployment costs observed for sizing deploy transactions.
+ * (Was `KITE_DEPLOYMENT` in the Feature-003 baseline; renamed — that name now
+ * belongs to the live deployment record in src/addresses.ts, Feature 004.)
+ */
+export const KITE_DEPLOY_GAS = {
   kiteCoreImpl: 6185121,
   erc1967Proxy: 345806,
   mockAusd: 1917292,
