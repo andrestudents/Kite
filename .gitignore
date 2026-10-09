@@ -7,6 +7,9 @@ apps/web/.next/
 apps/web/out/
 contracts/out/
 contracts/cache/
+contracts/broadcast/
+# contracts/lib/ is INTENTIONALLY tracked: OZ v5.7.0 is vendored plain
+# (forge install --no-git, analyze I2) so fresh clones need no install step.
 
 # Turborepo
 .turbo/

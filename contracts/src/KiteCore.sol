@@ -93,6 +93,11 @@ contract KiteCore is Initializable, Governed, UUPSUpgradeable, EIP712Upgradeable
         return _identityStorage().walletOfIdentity[identityHash];
     }
 
+    /// @notice The seeker's live deal id, 0 = none (one active deal per seeker).
+    function activeISA(address seeker) external view returns (uint256) {
+        return _isaStorage().activeISA[seeker];
+    }
+
     // ── UUPS (ADMIN-only upgrade — spec FR-001/FR-017) ──────────────────
     function _authorizeUpgrade(address newImplementation) internal override onlyRole(DEFAULT_ADMIN_ROLE) {}
 
