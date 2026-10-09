@@ -162,8 +162,9 @@ contract KiteCoreTest is Test {
     ///         two capped deals, one backer each, two qualifying events each.
     function _prepareBudi() internal {
         // Deal 1 (backer h1): P 600e6, cap 1.2× → 720e6. Two harvests of
-        // 1800e6 slice 360e6 each → cap reached exactly at event 2.
-        Terms memory t1 = _terms(600e6, 2000, 120, uint64(block.timestamp + 30 days));
+        // 1800e6 slice 360e6 each → cap reached exactly at event 2. The term
+        // must COVER both harvests (+61d/+122d) — D7 is a hard stop.
+        Terms memory t1 = _terms(600e6, 2000, 120, uint64(block.timestamp + 180 days));
         uint256 id1 = _draft(budi, t1, h1);
         _activate(id1, h1Pk, h1);
         vm.warp(block.timestamp + 61 days);
@@ -173,7 +174,7 @@ contract KiteCoreTest is Test {
         assertEq(kite.isaOf(id1).status, STATUS_COMPLETED_CAPPED);
 
         // Deal 2 (backer h2): same shape.
-        Terms memory t2 = _terms(600e6, 2000, 120, uint64(block.timestamp + 30 days));
+        Terms memory t2 = _terms(600e6, 2000, 120, uint64(block.timestamp + 180 days));
         uint256 id2 = _draft(budi, t2, h2);
         _activate(id2, h2Pk, h2);
         vm.warp(block.timestamp + 61 days);
@@ -195,25 +196,26 @@ contract KiteCoreTest is Test {
     }
 
     /// @notice Advances the 6.3 journey: stage 1 = activated, 2 = panen 1,
-    ///         3 = panen 2, 4 = panen 3 (completed at cap).
+    ///         3 = panen 2, 4 = panen 3 (completed at cap). Panens land at
+    ///         +61d/+122d/+183d from activation — every one INSIDE the
+    ///         12-month term, each ≥ 60d after the last qualifying event.
     function _runTo(uint8 stage) internal returns (uint256 id) {
         _prepareBudi();
         id = _demoDraft();
         demoIsaId = id;
-        uint256 t0 = block.timestamp;
         if (stage >= 1) {
             _activate(id, hajiPk, haji);
         }
         if (stage >= 2) {
-            vm.warp(t0 + 244 days + 61 days);
+            vm.warp(block.timestamp + 61 days);
             _settle(id, _day(11), 1500e6, keccak256("d1"));
         }
         if (stage >= 3) {
-            vm.warp(t0 + 244 days + 122 days);
+            vm.warp(block.timestamp + 61 days);
             _settle(id, _day(12), 1500e6, keccak256("d2"));
         }
         if (stage >= 4) {
-            vm.warp(t0 + 244 days + 183 days);
+            vm.warp(block.timestamp + 61 days);
             _settle(id, _day(13), 1500e6, keccak256("d3"));
         }
     }
@@ -285,7 +287,7 @@ contract KiteCoreTest is Test {
     }
 
     function testLiteral_Demo_Reputation_58During_91AtFinish() public {
-        uint256 id = _runTo(2);
+        uint256 id = _runTo(3); // activated + panen 1 + panen 2 settled
         assertEq(kite.scoreOf(budi), 58, "prepared score holds DURING the deal (6.4 #7)");
 
         vm.warp(block.timestamp + 61 days);

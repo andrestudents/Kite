@@ -3,10 +3,6 @@ pragma solidity ^0.8.20;
 
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import {EIP712Upgradeable} from "@openzeppelin/contracts-upgradeable/utils/cryptography/EIP712Upgradeable.sol";
-// OZ 5.x: ReentrancyGuard's state is TRANSIENT storage, so the non-upgradeable
-// guard is upgrade-safe (no ReentrancyGuardUpgradeable exists in 5.7; no init).
-import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {KiteScoring} from "./KiteScoring.sol";
 import {Governed} from "./modules/Governed.sol";
 import {Identity} from "./modules/Identity.sol";
@@ -27,7 +23,7 @@ import {Completion} from "./modules/Completion.sol";
 ///      completeAtTerm are NEVER blocked); ADMIN grants roles and upgrades.
 ///      RELAYER_ROLE/ORCHESTRATOR_ROLE can never move user funds beyond the
 ///      PLAN §6.2 functions (§6.4 #12).
-contract KiteCore is Initializable, Governed, UUPSUpgradeable, EIP712Upgradeable, ReentrancyGuard, Completion {
+contract KiteCore is Initializable, Governed, UUPSUpgradeable, Completion {
     // ── Errors ──────────────────────────────────────────────────────────
     error Kite__ZeroAddress();
 
@@ -99,26 +95,7 @@ contract KiteCore is Initializable, Governed, UUPSUpgradeable, EIP712Upgradeable
     // ── UUPS (ADMIN-only upgrade — spec FR-001/FR-017) ──────────────────
     function _authorizeUpgrade(address newImplementation) internal override onlyRole(DEFAULT_ADMIN_ROLE) {}
 
-    // ── T004 skeleton stubs — reverting until T013–T014 implement them ──
-    function receiveIncome(
-        uint256 isaId,
-        bytes32 purchaseRef,
-        uint256 gross,
-        bytes32 salt,
-        uint8 v,
-        bytes32 r,
-        bytes32 s
-    ) external pure {
-        isaId;
-        purchaseRef;
-        gross;
-        salt;
-        v;
-        r;
-        s;
-        revert();
-    }
-
+    // ── T004 skeleton stubs — reverting until T014 implements them ──
     function completeAtTerm(uint256 isaId) external pure {
         isaId;
         revert();

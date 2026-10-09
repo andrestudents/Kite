@@ -215,6 +215,34 @@ abstract contract ISAModule is Identity, ReentrancyGuard {
         emit ISACancelled(isaId, msg.sender);
     }
 
+    /// @dev THE completion bookkeeping site (research.md D8): BOTH completion
+    ///      paths (Stream auto-complete at cap; completeAtTerm) funnel here,
+    ///      so profiles can never diverge between them. Counters update ONLY
+    ///      now — never during the deal (§6.4 #7). `forgiven` is the
+    ///      remainder waived on the term path (0 on the cap path).
+    function _completeInternal(uint256 isaId, ISA storage isa, uint8 finalStatus, uint256 forgiven) internal {
+        ISAStorage storage $ = _isaStorage();
+        KiteScoring.Profile storage p = $.profiles[isa.seeker];
+        uint8 oldScore = KiteScoring.score(p);
+
+        p.totalISAs++;
+        p.completed++;
+        p.qualEvents += isa.eventCount;
+        if (!$.completedWithBacker[isa.seeker][isa.backer]) {
+            $.completedWithBacker[isa.seeker][isa.backer] = true;
+            p.distinctBackers++;
+        }
+
+        isa.status = finalStatus;
+        $.activeISA[isa.seeker] = 0;
+        if (finalStatus == STATUS_COMPLETED_CAPPED) {
+            emit ISACompletedCapped(isaId);
+        } else {
+            emit ISACompletedAtTerm(isaId, forgiven);
+        }
+        emit ScoreChanged(isa.seeker, oldScore, KiteScoring.score(p));
+    }
+
     /// @dev Requires the channel to exist AND be active (Identity stores
     ///      `active`; a never-registered id is Unknown, a registered-but-
     ///      inactive id is Inactive — analyze I3: no deactivation setter in

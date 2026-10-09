@@ -35,6 +35,11 @@ abstract contract Identity is Governed {
         mapping(address wallet => bytes32 identityHash) identityOf;
         mapping(bytes32 identityHash => address wallet) walletOfIdentity;
         mapping(uint64 id => Channel) channels;
+        // Derived index (PLAN §6.2 "ISA must … match the channel"): lets
+        // receiveIncome name the SIGNED channel in Kite__ChannelMismatch when
+        // a fact is signed by a DIFFERENT registered channel's key. First
+        // registration of a pubkey wins; 0 = not a channel key.
+        mapping(address pubkey => uint64 channelId) channelIdByPubkey;
     }
 
     // keccak256(abi.encode(uint256(keccak256("kite.identity")) - 1)) & ~bytes32(uint256(0xff))
@@ -70,6 +75,9 @@ abstract contract Identity is Governed {
         IdentityStorage storage $ = _identityStorage();
         if ($.channels[id].active) revert Kite__ChannelExists(id);
         $.channels[id] = Channel({name: name, pubkey: pubkey, active: true});
+        if ($.channelIdByPubkey[pubkey] == 0) {
+            $.channelIdByPubkey[pubkey] = id; // first id wins the reverse index
+        }
         emit ChannelRegistered(id, name, pubkey);
     }
 }
