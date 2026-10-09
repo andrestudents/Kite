@@ -94,4 +94,86 @@ abstract contract ISAModule is Identity {
             $.slot := _ISA_STORAGE_LOCATION
         }
     }
+
+    // ── §6.2 parameters (testnet; PLAN §6.2) ────────────────────────────
+    uint16 private constant MIN_SHARE_BPS = 1000;
+    uint16 private constant MAX_SHARE_BPS = 2000;
+    uint16 private constant MIN_CAP_MULT = 120;
+    uint16 private constant MAX_CAP_MULT = 150;
+    /// @dev PLAN MAX_TERM "24 months" as an integer onchain encoding: 730
+    ///      days, INCLUSIVE at the bound (data-model.md: ≤ now + 24 mo).
+    uint64 private constant MAX_TERM = 730 days;
+
+    // ── External surface (PLAN §6.1; research.md D4) ────────────────────
+    /// @notice The seeker drafts a DIRECTED deal: caller is the seeker, the
+    ///         backer is named. Fairness is physics — every out-of-bounds
+    ///         term reverts AT CREATION (PLAN D6, §6.4 #6), so a predatory
+    ///         deal is not forbidden, it is unwritable.
+    function createISADraft(Terms calldata terms, address backer)
+        external
+        whenNotPaused
+        returns (uint256 id)
+    {
+        IdentityStorage storage ident = _identityStorage();
+        ISAStorage storage $ = _isaStorage();
+        address seeker = msg.sender;
+
+        if (terms.shareBps < MIN_SHARE_BPS || terms.shareBps > MAX_SHARE_BPS) {
+            revert Kite__ShareOutOfBounds(terms.shareBps);
+        }
+        if (terms.capMult < MIN_CAP_MULT || terms.capMult > MAX_CAP_MULT) {
+            revert Kite__CapMultOutOfBounds(terms.capMult);
+        }
+        if (terms.termEnd > block.timestamp + MAX_TERM) {
+            revert Kite__TermTooLong(terms.termEnd, uint64(block.timestamp + MAX_TERM));
+        }
+        if (terms.termEnd <= block.timestamp) revert Kite__TermAlreadyEnded(terms.termEnd);
+        if (terms.principal == 0) revert Kite__ZeroPrincipal();
+        uint256 maxP = KiteScoring.offerOf(KiteScoring.score($.profiles[seeker]));
+        if (terms.principal > maxP) revert Kite__PrincipalAboveMax(terms.principal, maxP);
+        _channelActive(ident, terms.channelId); // reverts Unknown/Inactive itself
+        if ($.activeISA[seeker] != 0) revert Kite__HasActiveISA(seeker, $.activeISA[seeker]);
+        if (ident.identityOf[seeker] == bytes32(0)) revert Kite__NotVerified(seeker);
+        if (ident.identityOf[backer] == bytes32(0)) revert Kite__NotVerified(backer);
+
+        id = ++$.nextIsaId; // first id is 1; 0 never a valid id
+        $.isas[id] = ISA({
+            terms: terms,
+            seeker: seeker,
+            backer: backer,
+            remaining: (terms.principal * terms.capMult) / 100, // cap fixed AT DRAFT
+            activatedAt: 0,
+            lastEventAt: 0,
+            eventCount: 0,
+            status: STATUS_DRAFTED
+        });
+        emit ISADrafted(id, seeker, backer, terms);
+    }
+
+    /// @notice Pre-activation cancel, by either party, ONLY while Drafted.
+    ///         Deliberately NOT pause-gated: pause blocks new risk (draft/
+    ///         activate) — cancellation only REMOVES risk (constitution VII).
+    function cancelDraft(uint256 isaId) external {
+        ISAStorage storage $ = _isaStorage();
+        ISA storage isa = $.isas[isaId];
+        if (isa.status != STATUS_DRAFTED) revert Kite__NotDrafted(isaId, isa.status);
+        if (msg.sender != isa.seeker && msg.sender != isa.backer) {
+            revert Kite__NotSeekerOrBacker(isaId, msg.sender);
+        }
+        isa.status = STATUS_CANCELLED;
+        emit ISACancelled(isaId, msg.sender);
+    }
+
+    /// @dev Requires the channel to exist AND be active (Identity stores
+    ///      `active`; a never-registered id is Unknown, a registered-but-
+    ///      inactive id is Inactive — analyze I3: no deactivation setter in
+    ///      the MVP, so Inactive is defensive).
+    function _channelActive(IdentityStorage storage ident, uint64 channelId) internal view {
+        if (!ident.channels[channelId].active) {
+            if (ident.channels[channelId].pubkey == address(0)) {
+                revert Kite__UnknownChannel(channelId);
+            }
+            revert Kite__ChannelInactive(channelId);
+        }
+    }
 }

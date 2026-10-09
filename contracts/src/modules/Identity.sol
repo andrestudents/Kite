@@ -13,6 +13,8 @@ abstract contract Identity is Governed {
     error Kite__IdentityAlreadyBound(address wallet, bytes32 identityHash);
     error Kite__HashAlreadyBound(bytes32 identityHash, address wallet);
     error Kite__ChannelExists(uint64 channelId);
+    error Kite__UnknownChannel(uint64 channelId);
+    error Kite__ChannelInactive(uint64 channelId);
 
     event IdentityBound(address indexed wallet, bytes32 indexed identityHash);
     event ChannelRegistered(uint64 indexed id, string name, address indexed pubkey);
