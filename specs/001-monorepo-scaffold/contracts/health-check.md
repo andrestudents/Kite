@@ -17,11 +17,11 @@ Runs from the repository root. No arguments, no flags, no side effects
 ```
 prereq  bun    ok      1.2.x
 prereq  forge  ok      0.9.x
+ws      apps/web             ok  package.json resolves
 ws      apps/api             ok  package.json resolves
+ws      apps/relayer         ok  package.json resolves
 ws      apps/indexer         ok  package.json resolves
 ws      apps/orchestration   ok  package.json resolves
-ws      apps/relayer         ok  package.json resolves
-ws      apps/web             ok  package.json resolves
 ws      contracts            ok  forge build
 ws      packages/contracts   ok  package.json resolves
 ws      packages/core        ok  package.json resolves

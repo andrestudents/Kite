@@ -1,0 +1,7 @@
+{
+  "extends": "@kite/tsconfig/node.json",
+  "compilerOptions": {
+    "noEmit": true
+  },
+  "include": ["src"]
+}

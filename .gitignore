@@ -1,0 +1,26 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+apps/web/.next/
+apps/web/out/
+contracts/out/
+contracts/cache/
+
+# Turborepo
+.turbo/
+
+# Environment & secrets
+.env
+.env.*
+
+.specify/
+
+.claude
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+*.tmp
+*.swp
