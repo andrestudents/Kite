@@ -200,6 +200,11 @@ mapping(uint64 => Channel) channels;
 
 **Parameters (testnet):** `MIN_SHARE 1000` · `MAX_SHARE 2000` · `MIN_CAP_MULT 120` · `MAX_CAP_MULT 150` · `MAX_TERM 24 months` · `BASE_MAX_P 600 AUSD` · `MIN_EVENT_GAP 60 days` · `MIN_EVENT_BPS 1000` (≥10% of principal).
 
+> **Clarifications (2026-10-10, approved at Feature 003 merge — specs/003 research.md D4/D7; not silent deviations):**
+> 1. **Drafts are directed offers.** `createISADraft(Terms terms, address backer)` names its intended backer (must be identity-bound); `cancelDraft` = seeker or named backer while Drafted; `activateWithPermit` requires the permit owner == the named backer. `bindIdentity(address wallet, bytes32 identityHash)` is two-arg — the one-arg form cannot say whose identity the RELAYER attests.
+> 2. **Post-`termEnd` income is a hard stop.** `receiveIncome` requires `block.timestamp <= termEnd` (equality allowed): between `termEnd` and `completeAtTerm` the deal is Active but collects nothing — no last-harvest griefing window. Test `testBoundary_Income_AfterTermEnd_Reverts`.
+> 3. Implementation notes, PLAN-table silent spots resolved as coded: `MAX_TERM` = 730 days inclusive; `channelIdByPubkey` is a derived reverse index (first registration wins); `MismatchFlagged` is emitted by the ORCHESTRATOR-only `flagMismatch` with no state change; `WrongBacker` reverts when the permit signer ≠ named backer; zero-gross income settles to (0, 0) and never qualifies (no revert).
+
 ### 6.3 Score formula (anti-farming) — hand-checkable
 Score 0–100 = **History (40) + Consistency (20) + Volume (40)**. Integer maths, floor per component.
 
