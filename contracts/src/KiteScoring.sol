@@ -69,4 +69,26 @@ library KiteScoring {
     function offerOf(uint8 score_) internal pure returns (uint256 maxP) {
         maxP = (BASE_MAX_P * (100 + 2 * uint256(score_))) / 100; // PLAN §6.3
     }
+
+    /// @notice Atomic split of one income event (PLAN §6.2 `receiveIncome` rule):
+    ///         toBacker = min(gross × shareBps / 10000, remaining); toSeeker = gross − toBacker.
+    /// @param gross Total income received, AUSD base units (6 dp).
+    /// @param shareBps Backer share in basis points (2000 = 20%); deal bounds
+    ///                 [1000, 2000] are enforced upstream at deal creation (PLAN D6).
+    /// @param remaining AUSD left of the cap (cap = principal × capMult / 100, §6.2).
+    /// @return toBacker Never exceeds `remaining` (the cap) — §6.4 invariant.
+    /// @return toSeeker gross − toBacker; conservation is exact:
+    ///                  toBacker + toSeeker == gross (§6.4 #1). Cannot underflow:
+    ///                  for shareBps ≤ 10000 both min-branches are ≤ gross.
+    /// @dev Cap reached exactly when slice == remaining → upstream marks
+    ///      CompletedCapped (§6.2). A failed harvest (gross = 0) diverts zero (PLAN D8).
+    function divert(uint256 gross, uint256 shareBps, uint256 remaining)
+        internal
+        pure
+        returns (uint256 toBacker, uint256 toSeeker)
+    {
+        uint256 slice = (gross * shareBps) / 10000; // PLAN §6.2; integer floor, no floats
+        toBacker = slice < remaining ? slice : remaining;
+        toSeeker = gross - toBacker;
+    }
 }

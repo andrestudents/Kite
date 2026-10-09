@@ -76,4 +76,56 @@ contract KiteScoringTest is Test {
         // Same record, one backer → History capped at 13 (§6.3 anti-self-dealing): 13+11+40 = 64
         assertEq(uint256(KiteScoring.score(_profile(3, 3, 7, 1))), 64);
     }
+
+    // ────────────────────────────────────────────────────────────────────
+    // Split tier — divert: PLAN §6.3 demo ISA table + §6.4 conservation
+    // ────────────────────────────────────────────────────────────────────
+
+    function testLiteral_Divert_Panen1_300_1200() public pure {
+        // §6.3 Panen 1: gross 1,500, share 20%, remaining 780 → 300 to backer, 1,200 to seeker
+        (uint256 toBacker, uint256 toSeeker) = KiteScoring.divert(1500e6, 2000, 780e6);
+        assertEq(toBacker, 300e6);
+        assertEq(toSeeker, 1200e6);
+    }
+
+    function testLiteral_Divert_Panen3_CapReached_180_1320() public pure {
+        // §6.3 Panen 3: remaining 180 → divert 180 (cap reached), seeker 1,320 → CompletedCapped
+        (uint256 toBacker, uint256 toSeeker) = KiteScoring.divert(1500e6, 2000, 180e6);
+        assertEq(toBacker, 180e6);
+        assertEq(toSeeker, 1320e6);
+    }
+
+    function testBoundary_Divert_CapReachedExactly() public pure {
+        // Slice == remaining: the cap is reached exactly, never exceeded
+        (uint256 toBacker, uint256 toSeeker) = KiteScoring.divert(1500e6, 2000, 300e6);
+        assertEq(toBacker, 300e6);
+        assertEq(toSeeker, 1200e6);
+    }
+
+    function testBoundary_Divert_ZeroGross_0_0() public pure {
+        // Failed harvest: nothing is diverted, nothing is taken (PLAN D8)
+        (uint256 toBacker, uint256 toSeeker) = KiteScoring.divert(0, 2000, 780e6);
+        assertEq(toBacker, 0);
+        assertEq(toSeeker, 0);
+    }
+
+    function testBoundary_Divert_ZeroRemaining_AllToSeeker() public pure {
+        // Cap exhausted: backer gets 0, seeker keeps the whole gross
+        (uint256 toBacker, uint256 toSeeker) = KiteScoring.divert(1500e6, 2000, 0);
+        assertEq(toBacker, 0);
+        assertEq(toSeeker, 1500e6);
+    }
+
+    /// @dev shareBps bounded to [0,10000]: the documented no-revert domain
+    ///      (share ≤ 100%; real deals are 1000–2000). gross bounded so
+    ///      gross × shareBps cannot overflow (§6.4 #1 properties for all
+    ///      inputs in this domain).
+    function testFuzz_Divert_Conservation(uint256 gross, uint256 shareBps, uint256 remaining) public pure {
+        gross = bound(gross, 0, 2 ** 200);
+        shareBps = bound(shareBps, 0, 10000);
+        (uint256 toBacker, uint256 toSeeker) = KiteScoring.divert(gross, shareBps, remaining);
+        assertLe(toBacker, remaining); // diverted ≤ remaining, always (§6.4 #1)
+        assertLe(toBacker, gross);
+        assertEq(toBacker + toSeeker, gross); // conservation, exactly
+    }
 }
