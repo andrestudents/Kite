@@ -2,12 +2,15 @@
 pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
+import {Vm} from "forge-std/Vm.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import {KiteCore} from "../src/KiteCore.sol";
 import {MockAUSD} from "../src/MockAUSD.sol";
 import {Terms, ISA, ISAModule, STATUS_ACTIVE, STATUS_DRAFTED, STATUS_COMPLETED_CAPPED, STATUS_COMPLETED_AT_TERM, STATUS_CANCELLED} from "../src/modules/ISA.sol";
 import {Identity} from "../src/modules/Identity.sol";
+import {Stream} from "../src/modules/Stream.sol";
 import {KiteScoring} from "../src/KiteScoring.sol";
+import {IAccessControl} from "@openzeppelin/contracts/access/IAccessControl.sol";
 
 /// @notice Acceptance suite for KiteCore — PLAN §6.2/6.3 through the real
 ///         settlement path (constitution IX). Test names are contractual:
@@ -523,5 +526,283 @@ contract KiteCoreTest is Test {
         assertEq(kite.offerOf(budi), 1296e6);
         // The live deal's cap math is recomputable from isaOf alone.
         assertEq(isa.terms.principal * isa.terms.capMult / 100 - 300e6 - 300e6, isa.remaining);
+    }
+
+    // ────────────────────────────────────────────────────────────────────
+    // Stream adversarial tier (US3) — nothing dishonest is possible.
+    // Rows 25–37 of contracts/kitecore-api.md.
+    // ────────────────────────────────────────────────────────────────────
+
+    /// @dev Mirror of Stream.IncomeSettled for vm.expectEmit (only the data
+    ///      fields are compared; indexed topics unchecked).
+    event IncomeSettled(
+        uint256 indexed isaId,
+        uint64 indexed channelId,
+        bytes32 indexed purchaseRef,
+        uint256 gross,
+        uint256 toBacker,
+        uint256 toSeeker,
+        uint256 remaining,
+        bool qualifying
+    );
+
+    /// @dev The EIP-712 digest KiteCore verifies onchain (Stream._verifyChannelFact).
+    function _incomeDigest(uint64 channelId, uint256 id, bytes32 ref, uint256 gross, bytes32 salt)
+        internal
+        view
+        returns (bytes32)
+    {
+        return keccak256(
+            abi.encodePacked("\x19\x01", kiteDomain, keccak256(abi.encode(INCOME_TYPEHASH, channelId, id, ref, gross, salt)))
+        );
+    }
+
+    function testBoundary_Income_CallerNotOrchestrator_Reverts() public {
+        uint256 id = _runTo(1);
+        // Hoisted: a view call inside expectRevert args would consume the prank.
+        bytes32 orchestratorRole = kite.ORCHESTRATOR_ROLE();
+        (uint8 v, bytes32 r, bytes32 s) = _signIncome(id, _day(11), 1500e6, keccak256("d1"));
+        address intruder = vm.addr(0xE3);
+        vm.prank(intruder);
+        vm.expectRevert(
+            abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, intruder, orchestratorRole)
+        );
+        kite.receiveIncome(id, _day(11), 1500e6, keccak256("d1"), v, r, s);
+    }
+
+    function testBoundary_Income_ForgedSignature_Reverts() public {
+        uint256 id = _runTo(1);
+        bytes32 ref = _day(11);
+        uint256 gross = 1500e6;
+        bytes32 salt = keccak256("d1");
+        bytes32 digest = _incomeDigest(uint64(CHANNEL_ID), id, ref, gross, salt);
+        address forger = vm.addr(0xF1); // never registered as a channel key
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(0xF1, digest);
+        vm.prank(orchestrator);
+        vm.expectRevert(abi.encodeWithSelector(Stream.Kite__BadChannelSignature.selector, digest, forger, mill));
+        kite.receiveIncome(id, ref, gross, salt, v, r, s);
+    }
+
+    function testBoundary_Income_WrongChannel_Reverts() public {
+        uint256 id = _runTo(1);
+        address k2 = vm.addr(0xF2);
+        vm.prank(admin);
+        kite.registerChannel(2, "Koperasi Lain", k2); // a REGISTERED second channel
+        bytes32 ref = _day(11);
+        uint256 gross = 1500e6;
+        bytes32 salt = keccak256("d1");
+        // Fact signed by channel 2's key but naming channel 1 (the deal's).
+        bytes32 digest = _incomeDigest(uint64(CHANNEL_ID), id, ref, gross, salt);
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(0xF2, digest);
+        vm.prank(orchestrator);
+        vm.expectRevert(abi.encodeWithSelector(Stream.Kite__ChannelMismatch.selector, uint64(2), uint64(CHANNEL_ID)));
+        kite.receiveIncome(id, ref, gross, salt, v, r, s);
+    }
+
+    function testBoundary_Income_TamperedGross_Reverts() public {
+        uint256 id = _runTo(1);
+        bytes32 ref = _day(11);
+        bytes32 salt = keccak256("d1");
+        (uint8 v, bytes32 r, bytes32 s) = _signIncome(id, ref, 1500e6, salt); // mill signed 1500e6
+        // Orchestrator submits 1400e6 — recovery over the tampered digest fails.
+        bytes32 tampered = _incomeDigest(uint64(CHANNEL_ID), id, ref, 1400e6, salt);
+        address bogus = ecrecover(tampered, v, r, s);
+        vm.prank(orchestrator);
+        vm.expectRevert(abi.encodeWithSelector(Stream.Kite__BadChannelSignature.selector, tampered, bogus, mill));
+        kite.receiveIncome(id, ref, 1400e6, salt, v, r, s);
+    }
+
+    function testBoundary_Income_ReplaySameTuple_Reverts() public {
+        uint256 id = _runTo(1);
+        vm.warp(block.timestamp + 61 days);
+        _settle(id, _day(11), 1500e6, keccak256("d1"));
+        // PLAN §6.2 eventHash, byte-for-byte: (channelId, purchaseRef, gross, salt).
+        bytes32 eventHash = keccak256(abi.encode(uint64(CHANNEL_ID), _day(11), uint256(1500e6), keccak256("d1")));
+        (uint8 v, bytes32 r, bytes32 s) = _signIncome(id, _day(11), 1500e6, keccak256("d1"));
+        vm.prank(orchestrator);
+        vm.expectRevert(abi.encodeWithSelector(Stream.Kite__EventAlreadySettled.selector, eventHash));
+        kite.receiveIncome(id, _day(11), 1500e6, keccak256("d1"), v, r, s);
+    }
+
+    function testBoundary_Income_ReplaySameRefNewSalt_Reverts() public {
+        uint256 id = _runTo(1);
+        vm.warp(block.timestamp + 61 days);
+        _settle(id, _day(11), 1500e6, keccak256("d1"));
+        // Same purchaseRef, fresh salt: the settledRefs guard still fires —
+        // the NEW eventHash is named in the revert (§6.4 #2, second clause).
+        bytes32 eventHash2 = keccak256(abi.encode(uint64(CHANNEL_ID), _day(11), uint256(1500e6), keccak256("d1b")));
+        (uint8 v, bytes32 r, bytes32 s) = _signIncome(id, _day(11), 1500e6, keccak256("d1b"));
+        vm.prank(orchestrator);
+        vm.expectRevert(abi.encodeWithSelector(Stream.Kite__EventAlreadySettled.selector, eventHash2));
+        kite.receiveIncome(id, _day(11), 1500e6, keccak256("d1b"), v, r, s);
+    }
+
+    function testBoundary_Income_OnDrafted_Reverts() public {
+        uint256 id = _runTo(0); // drafted, NOT activated
+        (uint8 v, bytes32 r, bytes32 s) = _signIncome(id, _day(11), 1500e6, keccak256("d1"));
+        vm.prank(orchestrator);
+        vm.expectRevert(abi.encodeWithSelector(ISAModule.Kite__NotActive.selector, id, uint8(STATUS_DRAFTED)));
+        kite.receiveIncome(id, _day(11), 1500e6, keccak256("d1"), v, r, s);
+    }
+
+    function testBoundary_Income_OnCancelled_Reverts() public {
+        uint256 id = _demoDraft();
+        vm.prank(budi);
+        kite.cancelDraft(id);
+        (uint8 v, bytes32 r, bytes32 s) = _signIncome(id, _day(11), 1500e6, keccak256("d1"));
+        vm.prank(orchestrator);
+        vm.expectRevert(abi.encodeWithSelector(ISAModule.Kite__NotActive.selector, id, uint8(STATUS_CANCELLED)));
+        kite.receiveIncome(id, _day(11), 1500e6, keccak256("d1"), v, r, s);
+    }
+
+    function testBoundary_Income_OnCompletedCapped_Reverts() public {
+        uint256 id = _runTo(4); // panen 3 hits the cap → CompletedCapped
+        assertEq(kite.isaOf(id).status, STATUS_COMPLETED_CAPPED);
+        (uint8 v, bytes32 r, bytes32 s) = _signIncome(id, _day(99), 1500e6, keccak256("late"));
+        vm.prank(orchestrator);
+        vm.expectRevert(abi.encodeWithSelector(ISAModule.Kite__NotActive.selector, id, uint8(STATUS_COMPLETED_CAPPED)));
+        kite.receiveIncome(id, _day(99), 1500e6, keccak256("late"), v, r, s);
+    }
+
+    function testBoundary_Income_ZeroGross_SettlesZero_NeverQualifies() public {
+        uint256 id = _runTo(1);
+        vm.warp(block.timestamp + 61 days);
+        uint256 backerBefore = ausd.balanceOf(haji);
+        uint256 seekerBefore = ausd.balanceOf(budi);
+        bytes32 ref = keccak256("purchase/zero"); // fresh ref — a failed harvest
+
+        vm.expectEmit(false, false, false, true, address(kite));
+        emit IncomeSettled(id, uint64(CHANNEL_ID), ref, 0, 0, 0, 780e6, false);
+        _settle(id, ref, 0, keccak256("z"));
+
+        assertEq(ausd.balanceOf(haji), backerBefore, "0/0 split");
+        assertEq(ausd.balanceOf(budi), seekerBefore, "0/0 split");
+        ISA memory isa = kite.isaOf(id);
+        assertEq(isa.remaining, 780e6, "cap untouched");
+        assertEq(isa.status, STATUS_ACTIVE, "still active");
+        assertEq(isa.eventCount, 0, "zero gross never qualifies (D9)");
+        assertEq(isa.lastEventAt, 0);
+        // D9: the failed fact IS recorded — replaying it reverts.
+        bytes32 eventHash = keccak256(abi.encode(uint64(CHANNEL_ID), ref, uint256(0), keccak256("z")));
+        (uint8 v, bytes32 r, bytes32 s) = _signIncome(id, ref, 0, keccak256("z"));
+        vm.prank(orchestrator);
+        vm.expectRevert(abi.encodeWithSelector(Stream.Kite__EventAlreadySettled.selector, eventHash));
+        kite.receiveIncome(id, ref, 0, keccak256("z"), v, r, s);
+    }
+
+    function testBoundary_Income_SubBarGap_Splits_NoQualCredit() public {
+        uint256 id = _runTo(1);
+        // 61d − 1s after activation, no prior event: the gap clause passes,
+        // so ONLY the 10%-of-principal clause can (and does) disqualify.
+        vm.warp(block.timestamp + 61 days - 1 seconds);
+        uint256 backerBefore = ausd.balanceOf(haji);
+        uint256 seekerBefore = ausd.balanceOf(budi);
+
+        _settle(id, _day(11), 59e6, keccak256("small")); // 59e6 < 10% of 600e6
+
+        assertEq(ausd.balanceOf(haji), backerBefore + 11_800_000, "splits anyway: 59e6 x 20%");
+        assertEq(ausd.balanceOf(budi), seekerBefore + 47_200_000, "seeker keeps 80%");
+        ISA memory isa = kite.isaOf(id);
+        assertEq(isa.remaining, 768_200_000, "780e6 - 11.8e6");
+        assertEq(isa.eventCount, 0, "no qualifying credit (6.4 #8)");
+        assertEq(isa.lastEventAt, 0);
+    }
+
+    function testBoundary_Income_SliceEqualsRemaining_CompletesExactly() public {
+        uint256 id = _runTo(3); // remaining 180e6
+        vm.warp(block.timestamp + 61 days);
+        uint256 backerBefore = ausd.balanceOf(haji);
+        uint256 seekerBefore = ausd.balanceOf(budi);
+
+        _settle(id, _day(13), 900e6, keccak256("d3x")); // slice 900e6 x 20% = 180e6 == remaining
+
+        assertEq(ausd.balanceOf(haji), backerBefore + 180e6, "no clamp needed: slice == remaining");
+        assertEq(ausd.balanceOf(budi), seekerBefore + 720e6);
+        ISA memory isa = kite.isaOf(id);
+        assertEq(isa.remaining, 0);
+        assertEq(isa.status, STATUS_COMPLETED_CAPPED, "completes at exactly the cap");
+        assertEq(kite.activeISA(budi), 0);
+        assertEq(ausd.balanceOf(address(kite)), 0, "contract holds nothing (6.4 #9)");
+    }
+
+    function testBoundary_Income_AfterTermEnd_Reverts() public {
+        uint256 id = _runTo(1);
+        uint64 termEnd = kite.isaOf(id).terms.termEnd;
+        vm.warp(uint256(termEnd) + 1); // D7 hard stop; equality is still allowed
+        (uint8 v, bytes32 r, bytes32 s) = _signIncome(id, _day(99), 1500e6, keccak256("late"));
+        vm.prank(orchestrator);
+        vm.expectRevert(abi.encodeWithSelector(Stream.Kite__TermEnded.selector, id, termEnd));
+        kite.receiveIncome(id, _day(99), 1500e6, keccak256("late"), v, r, s);
+    }
+
+    // ────────────────────────────────────────────────────────────────────
+    // Completion matrix (US3) — rows 38–41: permissionless, idempotent,
+    // remainder FORGIVEN, never pausable.
+    // ────────────────────────────────────────────────────────────────────
+
+    function testBoundary_Complete_BeforeTermEnd_Reverts() public {
+        uint256 id = _runTo(1); // Active, months before termEnd
+        vm.expectRevert(abi.encodeWithSelector(Stream.Kite__TermEnded.selector, id, kite.isaOf(id).terms.termEnd));
+        kite.completeAtTerm(id);
+    }
+
+    function testBoundary_Complete_FromDrafted_Reverts() public {
+        uint256 id = _demoDraft(); // Drafted — status gate fires before the clock
+        vm.expectRevert(abi.encodeWithSelector(ISAModule.Kite__NotActive.selector, id, uint8(STATUS_DRAFTED)));
+        kite.completeAtTerm(id);
+    }
+
+    function testBoundary_Complete_RemainderForgiven_ProfileUpdated() public {
+        uint256 id = _runTo(3); // panen 1 + 2 settled: remaining 180e6, eventCount 2
+        vm.warp(uint256(kite.isaOf(id).terms.termEnd)); // inclusive boundary (D11)
+
+        kite.completeAtTerm(id); // permissionless — no prank needed
+
+        ISA memory isa = kite.isaOf(id);
+        assertEq(isa.status, STATUS_COMPLETED_AT_TERM);
+        assertEq(isa.remaining, 180e6, "remainder stays on the record (forgiven, not erased)");
+        assertEq(kite.activeISA(budi), 0);
+        // {+1,+1,+eventCount,+1} on {2,2,4,2} → {3,3,6,3} → 90 → 1680e6.
+        KiteScoring.Profile memory p = kite.profileOf(budi);
+        assertEq(p.totalISAs, 3);
+        assertEq(p.completed, 3);
+        assertEq(p.qualEvents, 6, "eventCount folded in at completion only");
+        assertEq(p.distinctBackers, 3);
+        assertEq(kite.scoreOf(budi), 90);
+        assertEq(kite.offerOf(budi), 1680e6);
+        // Terminal: post-term income reverts, even with a valid signature.
+        (uint8 v, bytes32 r, bytes32 s) = _signIncome(id, _day(99), 1500e6, keccak256("late"));
+        vm.prank(orchestrator);
+        vm.expectRevert(
+            abi.encodeWithSelector(ISAModule.Kite__NotActive.selector, id, uint8(STATUS_COMPLETED_AT_TERM))
+        );
+        kite.receiveIncome(id, _day(99), 1500e6, keccak256("late"), v, r, s);
+    }
+
+    function testBoundary_Complete_SecondCall_NoOpSuccess() public {
+        uint256 id = _runTo(2);
+        vm.warp(uint256(kite.isaOf(id).terms.termEnd));
+        kite.completeAtTerm(id);
+        KiteScoring.Profile memory p1 = kite.profileOf(budi);
+        uint256 hajiBal = ausd.balanceOf(haji);
+        uint256 budiBal = ausd.balanceOf(budi);
+
+        vm.recordLogs();
+        kite.completeAtTerm(id); // a Sentinel retry must not double-count (6.4 #7)
+        Vm.Log[] memory logs = vm.getRecordedLogs();
+        uint256 kiteLogs;
+        for (uint256 i = 0; i < logs.length; ++i) {
+            if (logs[i].emitter == address(kite)) ++kiteLogs;
+        }
+
+        assertEq(kiteLogs, 0, "idempotent: no duplicate event");
+        KiteScoring.Profile memory p2 = kite.profileOf(budi);
+        assertEq(p2.totalISAs, p1.totalISAs);
+        assertEq(p2.completed, p1.completed);
+        assertEq(p2.qualEvents, p1.qualEvents);
+        assertEq(p2.distinctBackers, p1.distinctBackers);
+        assertEq(kite.isaOf(id).status, STATUS_COMPLETED_AT_TERM);
+        assertEq(ausd.balanceOf(haji), hajiBal, "no money moved");
+        assertEq(ausd.balanceOf(budi), budiBal, "no money moved");
     }
 }
