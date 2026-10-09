@@ -1,0 +1,13 @@
+{
+  "name": "@kite/orchestration",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@kite/tsconfig": "workspace:*",
+    "typescript": "^5.9.0"
+  }
+}

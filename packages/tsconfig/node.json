@@ -1,0 +1,6 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "display": "Kite node/bun — extends base",
+  "extends": "./base.json",
+  "compilerOptions": {}
+}
