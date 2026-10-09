@@ -5,7 +5,9 @@ import {Test} from "forge-std/Test.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import {KiteCore} from "../src/KiteCore.sol";
 import {MockAUSD} from "../src/MockAUSD.sol";
-import {Terms, ISA, STATUS_ACTIVE, STATUS_DRAFTED, STATUS_COMPLETED_CAPPED, STATUS_COMPLETED_AT_TERM, STATUS_CANCELLED} from "../src/modules/ISA.sol";
+import {Terms, ISA, ISAModule, STATUS_ACTIVE, STATUS_DRAFTED, STATUS_COMPLETED_CAPPED, STATUS_COMPLETED_AT_TERM, STATUS_CANCELLED} from "../src/modules/ISA.sol";
+import {Identity} from "../src/modules/Identity.sol";
+import {KiteScoring} from "../src/KiteScoring.sol";
 
 /// @notice Acceptance suite for KiteCore — PLAN §6.2/6.3 through the real
 ///         settlement path (constitution IX). Test names are contractual:
@@ -308,5 +310,218 @@ contract KiteCoreTest is Test {
         uint256 id = _draft(budi, t, haji);
         assertEq(kite.isaOf(id).remaining, 1500e6, "1000e6 x 150 / 100");
         assertEq(kite.isaOf(id).status, STATUS_DRAFTED);
+    }
+
+    // ────────────────────────────────────────────────────────────────────
+    // Boundary tier (US2) — unwritable unfairness + unwipeable identity.
+    // Behavior exists from US1: every test must PASS on arrival; a failure
+    // here is a src bug, not test debt (tasks.md Notes).
+    // ────────────────────────────────────────────────────────────────────
+
+    /// @dev A freshly bound seeker: score 0 → maxP exactly 600e6.
+    function _newVerifiedSeeker(uint256 pk, bytes32 hash) internal returns (address s) {
+        s = vm.addr(pk);
+        vm.prank(relayer);
+        kite.bindIdentity(s, hash);
+    }
+
+    // ── Draft bounds: inclusive edges accept, one past reverts (FR-005) ──
+
+    function testBoundary_Draft_Share999_Reverts() public {
+        address s = _newVerifiedSeeker(0xD1, keccak256("s1@mera"));
+        Terms memory t = _terms(600e6, 999, 120, uint64(block.timestamp + 30 days));
+        vm.prank(s);
+        vm.expectRevert(abi.encodeWithSelector(ISAModule.Kite__ShareOutOfBounds.selector, uint16(999)));
+        kite.createISADraft(t, haji);
+    }
+
+    function testBoundary_Draft_Share1000_Ok() public {
+        address s = _newVerifiedSeeker(0xD1, keccak256("s1@mera"));
+        Terms memory t = _terms(600e6, 1000, 120, uint64(block.timestamp + 30 days));
+        vm.prank(s);
+        uint256 id = kite.createISADraft(t, haji);
+        assertEq(kite.isaOf(id).status, STATUS_DRAFTED);
+    }
+
+    function testBoundary_Draft_Share2000_Ok() public {
+        address s = _newVerifiedSeeker(0xD1, keccak256("s1@mera"));
+        Terms memory t = _terms(600e6, 2000, 120, uint64(block.timestamp + 30 days));
+        vm.prank(s);
+        uint256 id = kite.createISADraft(t, haji);
+        assertEq(kite.isaOf(id).status, STATUS_DRAFTED);
+    }
+
+    function testBoundary_Draft_Share2001_Reverts() public {
+        address s = _newVerifiedSeeker(0xD1, keccak256("s1@mera"));
+        Terms memory t = _terms(600e6, 2001, 120, uint64(block.timestamp + 30 days));
+        vm.prank(s);
+        vm.expectRevert(abi.encodeWithSelector(ISAModule.Kite__ShareOutOfBounds.selector, uint16(2001)));
+        kite.createISADraft(t, haji);
+    }
+
+    function testBoundary_Draft_Cap119_Reverts() public {
+        address s = _newVerifiedSeeker(0xD1, keccak256("s1@mera"));
+        Terms memory t = _terms(600e6, 2000, 119, uint64(block.timestamp + 30 days));
+        vm.prank(s);
+        vm.expectRevert(abi.encodeWithSelector(ISAModule.Kite__CapMultOutOfBounds.selector, uint16(119)));
+        kite.createISADraft(t, haji);
+    }
+
+    function testBoundary_Draft_Cap120_Ok() public {
+        address s = _newVerifiedSeeker(0xD1, keccak256("s1@mera"));
+        Terms memory t = _terms(600e6, 2000, 120, uint64(block.timestamp + 30 days));
+        vm.prank(s);
+        uint256 id = kite.createISADraft(t, haji);
+        assertEq(kite.isaOf(id).remaining, 720e6, "600e6 x 120 / 100");
+    }
+
+    function testBoundary_Draft_Cap150_Ok() public {
+        address s = _newVerifiedSeeker(0xD1, keccak256("s1@mera"));
+        Terms memory t = _terms(600e6, 2000, 150, uint64(block.timestamp + 30 days));
+        vm.prank(s);
+        uint256 id = kite.createISADraft(t, haji);
+        assertEq(kite.isaOf(id).remaining, 900e6, "600e6 x 150 / 100");
+    }
+
+    function testBoundary_Draft_Cap151_Reverts() public {
+        address s = _newVerifiedSeeker(0xD1, keccak256("s1@mera"));
+        Terms memory t = _terms(600e6, 2000, 151, uint64(block.timestamp + 30 days));
+        vm.prank(s);
+        vm.expectRevert(abi.encodeWithSelector(ISAModule.Kite__CapMultOutOfBounds.selector, uint16(151)));
+        kite.createISADraft(t, haji);
+    }
+
+    // ── Term bound: MAX_TERM 730 days, inclusive (data-model.md) ─────────
+
+    function testBoundary_Draft_TermBeyond24Months_Reverts() public {
+        address s = _newVerifiedSeeker(0xD1, keccak256("s1@mera"));
+        Terms memory t = _terms(600e6, 2000, 120, uint64(block.timestamp + 730 days + 1));
+        vm.prank(s);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                ISAModule.Kite__TermTooLong.selector, uint64(block.timestamp + 730 days + 1), uint64(block.timestamp + 730 days)
+            )
+        );
+        kite.createISADraft(t, haji);
+    }
+
+    function testBoundary_Draft_TermExactly24Months_Ok() public {
+        address s = _newVerifiedSeeker(0xD1, keccak256("s1@mera"));
+        Terms memory t = _terms(600e6, 2000, 120, uint64(block.timestamp + 730 days));
+        vm.prank(s);
+        uint256 id = kite.createISADraft(t, haji);
+        assertEq(kite.isaOf(id).status, STATUS_DRAFTED);
+    }
+
+    // ── Principal bound: score decides maxP (FR-005) ─────────────────────
+
+    function testBoundary_Draft_PrincipalAboveMaxP_Reverts() public {
+        _prepareBudi(); // score 58 → maxP 1296e6
+        Terms memory t = _terms(1296e6 + 1, 2000, 120, uint64(block.timestamp + 30 days));
+        vm.prank(budi);
+        vm.expectRevert(abi.encodeWithSelector(ISAModule.Kite__PrincipalAboveMax.selector, 1296e6 + 1, 1296e6));
+        kite.createISADraft(t, haji);
+    }
+
+    function testBoundary_Draft_PrincipalExactlyMaxP_Ok() public {
+        _prepareBudi(); // score 58 → maxP 1296e6
+        Terms memory t = _terms(1296e6, 2000, 120, uint64(block.timestamp + 30 days));
+        vm.prank(budi);
+        uint256 id = kite.createISADraft(t, haji);
+        assertEq(kite.isaOf(id).remaining, 1296e6 * 120 / 100, "1296e6 x 120 / 100 = 1555200000");
+    }
+
+    function testBoundary_Draft_PrincipalAboveScore0Max_Reverts() public {
+        address s = _newVerifiedSeeker(0xD1, keccak256("s1@mera"));
+        Terms memory t = _terms(600e6 + 1, 2000, 120, uint64(block.timestamp + 30 days));
+        vm.prank(s);
+        vm.expectRevert(abi.encodeWithSelector(ISAModule.Kite__PrincipalAboveMax.selector, 600e6 + 1, 600e6));
+        kite.createISADraft(t, haji);
+    }
+
+    // ── Channel / one-deal / verification gates ──────────────────────────
+
+    function testBoundary_Draft_UnknownChannel_Reverts() public {
+        address s = _newVerifiedSeeker(0xD1, keccak256("s1@mera"));
+        Terms memory t = Terms({principal: 600e6, shareBps: 2000, capMult: 120, termEnd: uint64(block.timestamp + 30 days), channelId: 99});
+        vm.prank(s);
+        vm.expectRevert(abi.encodeWithSelector(Identity.Kite__UnknownChannel.selector, uint64(99)));
+        kite.createISADraft(t, haji);
+    }
+
+    function testBoundary_Draft_SeekerWithActiveDeal_Reverts() public {
+        uint256 id = _runTo(1); // demo deal ACTIVE for budi
+        Terms memory t = _terms(600e6, 2000, 120, uint64(block.timestamp + 30 days));
+        vm.prank(budi);
+        vm.expectRevert(abi.encodeWithSelector(ISAModule.Kite__HasActiveISA.selector, budi, id));
+        kite.createISADraft(t, haji);
+    }
+
+    function testBoundary_Draft_SeekerUnverified_Reverts() public {
+        address ghost = vm.addr(0xE1); // never bound
+        Terms memory t = _terms(600e6, 2000, 120, uint64(block.timestamp + 30 days));
+        vm.prank(ghost);
+        vm.expectRevert(abi.encodeWithSelector(ISAModule.Kite__NotVerified.selector, ghost));
+        kite.createISADraft(t, haji);
+    }
+
+    // ── Identity: one-to-one, immutable both ways (§6.4 #5) ──────────────
+
+    function testBoundary_Identity_HashToSecondWallet_Reverts() public {
+        bytes32 budiHash = kite.identityOf(budi);
+        vm.prank(relayer);
+        vm.expectRevert(abi.encodeWithSelector(Identity.Kite__HashAlreadyBound.selector, budiHash, vm.addr(0xE2)));
+        kite.bindIdentity(vm.addr(0xE2), budiHash);
+    }
+
+    function testBoundary_Identity_SecondHashToWallet_Reverts() public {
+        vm.prank(relayer);
+        vm.expectRevert(
+            abi.encodeWithSelector(Identity.Kite__IdentityAlreadyBound.selector, budi, keccak256("other@mera"))
+        );
+        kite.bindIdentity(budi, keccak256("other@mera"));
+    }
+
+    // ── Cancel: either party, Drafted only, terminal (D4) ─────────────────
+
+    function testBoundary_Cancel_BySeeker_WhileDrafted_Ok() public {
+        uint256 id = _demoDraft();
+        vm.prank(budi);
+        kite.cancelDraft(id);
+        assertEq(kite.isaOf(id).status, STATUS_CANCELLED);
+        assertEq(kite.activeISA(budi), 0, "draft never set the slot");
+    }
+
+    function testBoundary_Cancel_ByBacker_WhileDrafted_Ok() public {
+        uint256 id = _demoDraft();
+        vm.prank(haji);
+        kite.cancelDraft(id);
+        assertEq(kite.isaOf(id).status, STATUS_CANCELLED);
+    }
+
+    function testBoundary_Cancel_AfterActivation_Reverts() public {
+        uint256 id = _runTo(1); // Active
+        vm.prank(budi);
+        vm.expectRevert(abi.encodeWithSelector(ISAModule.Kite__NotDrafted.selector, id, uint8(STATUS_ACTIVE)));
+        kite.cancelDraft(id);
+    }
+
+    // ── Views recompute from public state (constitution IV) ──────────────
+
+    function testBoundary_Views_RecomputeFromPublicState() public {
+        uint256 id = _runTo(3); // two panens settled, one to go
+        ISA memory isa = kite.isaOf(id);
+        assertEq(isa.remaining, 180e6, "600e6 x 130 / 100 - 300e6 - 300e6");
+        // Profile recomputes to the §6.3 literal: {2,2,4,2} → 58 → 1296e6.
+        KiteScoring.Profile memory p = kite.profileOf(budi);
+        assertEq(p.totalISAs, 2);
+        assertEq(p.completed, 2);
+        assertEq(p.qualEvents, 4);
+        assertEq(p.distinctBackers, 2);
+        assertEq(kite.scoreOf(budi), KiteScoring.score(p), "scoreOf == score(profileOf)");
+        assertEq(kite.scoreOf(budi), 58);
+        assertEq(kite.offerOf(budi), 1296e6);
+        // The live deal's cap math is recomputable from isaOf alone.
+        assertEq(isa.terms.principal * isa.terms.capMult / 100 - 300e6 - 300e6, isa.remaining);
     }
 }
