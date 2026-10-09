@@ -36,4 +36,37 @@ library KiteScoring {
     /// @notice Minimum event size vs principal, in basis points: 1000 = 10%.
     ///         PLAN §6.2 testnet parameter MIN_EVENT_BPS.
     uint256 internal constant MIN_EVENT_BPS = 1000;
+
+    /// @notice Reputation score 0–100 = History (40) + Consistency (20) + Volume (40),
+    ///         integer floor per component (PLAN §6.3).
+    /// @param p Seeker counters (§6.2); the ledger layer guarantees
+    ///          completed ≤ totalISAs — out-of-contract inputs yield
+    ///          out-of-contract results by design (no defensive clamp).
+    /// @return Score in [0,100] for ledger-valid inputs; changes only on completion.
+    /// @dev History = 40 × completed × min(totalISAs,3) / (totalISAs × 3), defined
+    ///      as 0 when totalISAs = 0, then capped at 13 when distinctBackers < 2
+    ///      — one backer can never fund a full record (§6.3, kills self-dealing).
+    ///      Consistency = 20 × min(qualEvents,12) / 12.
+    ///      Volume = 40 × min(qualEvents,6) / 6.
+    function score(Profile memory p) internal pure returns (uint8) {
+        uint256 history;
+        if (p.totalISAs > 0) {
+            uint256 t = uint256(p.totalISAs);
+            history = (40 * uint256(p.completed) * (t < 3 ? t : 3)) / (t * 3); // PLAN §6.3
+            if (p.distinctBackers < 2 && history > 13) history = 13; // §6.3 anti-self-dealing cap
+        }
+        uint256 q = uint256(p.qualEvents);
+        uint256 consistency = (20 * (q < 12 ? q : 12)) / 12; // PLAN §6.3
+        uint256 volume = (40 * (q < 6 ? q : 6)) / 6; // PLAN §6.3
+        return uint8(history + consistency + volume); // ≤ 100 for valid inputs (≤ 255 always fits)
+    }
+
+    /// @notice Maximum supportable principal for a score (PLAN §6.3):
+    ///         maxP = BASE_MAX_P × (100 + 2 × score) / 100.
+    /// @param score_ Result of score(); intended range 0–100.
+    /// @return maxP in AUSD base units: 600e6 (score 0) … 1800e6 (score 100).
+    ///         Division is always exact (BASE_MAX_P is a multiple of 100).
+    function offerOf(uint8 score_) internal pure returns (uint256 maxP) {
+        maxP = (BASE_MAX_P * (100 + 2 * uint256(score_))) / 100; // PLAN §6.3
+    }
 }
