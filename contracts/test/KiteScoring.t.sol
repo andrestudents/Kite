@@ -168,4 +168,59 @@ contract KiteScoringTest is Test {
         // lastEventAt later than `now` → false, and never a revert (research.md D6)
         assertFalse(KiteScoring.isQualifyingEvent(NOW, NOW - 1, TEN_PCT, P600));
     }
+
+    // ────────────────────────────────────────────────────────────────────
+    // Saturation / maximum — §6.3 component caps and the score-100 offer
+    // ────────────────────────────────────────────────────────────────────
+
+    function testBoundary_Score_Saturation_Consistency12_Volume6() public pure {
+        // Components saturate: Consistency caps at 12 events (20 pts), Volume at 6 (40 pts)
+        assertEq(_consistency(12), 20);
+        assertEq(_volume(6), 40);
+        // {1,1,12,2}: H ⌊40/3⌋=13 · C 20 · V 40 → 73
+        assertEq(uint256(KiteScoring.score(_profile(1, 1, 12, 2))), 73);
+        // Beyond the caps nothing changes: {1,1,20,2} → still 73
+        assertEq(uint256(KiteScoring.score(_profile(1, 1, 20, 2))), 73);
+    }
+
+    function testBoundary_Offer_Score100_1800() public pure {
+        // Score 100 → 600 × 300% = 1800 (§6.3 offer formula ceiling)
+        assertEq(KiteScoring.offerOf(100), 1800e6);
+    }
+
+    // ────────────────────────────────────────────────────────────────────
+    // Fuzz tier — stateless properties (research.md D8)
+    // ────────────────────────────────────────────────────────────────────
+
+    /// @dev Ledger-valid profiles only: completed ≤ totalISAs (spec assumption).
+    ///      Asserts per-component maxima (40/20/40), score ∈ [0,100], and that
+    ///      the library equals the sum of the hand-transcribed components.
+    function testFuzz_Score_WithinBounds_ValidProfile(
+        uint64 totalISAs,
+        uint64 completed,
+        uint64 qualEvents,
+        uint64 distinctBackers
+    ) public pure {
+        totalISAs = uint64(bound(uint256(totalISAs), 0, 1000));
+        completed = uint64(bound(uint256(completed), 0, totalISAs));
+        qualEvents = uint64(bound(uint256(qualEvents), 0, 1000));
+        distinctBackers = uint64(bound(uint256(distinctBackers), 0, 1000));
+
+        uint256 h = _history(totalISAs, completed, distinctBackers);
+        uint256 c = _consistency(qualEvents);
+        uint256 v = _volume(qualEvents);
+        assertLe(h, 40);
+        assertLe(c, 20);
+        assertLe(v, 40);
+
+        uint256 s = uint256(KiteScoring.score(_profile(totalISAs, completed, qualEvents, distinctBackers)));
+        assertEq(s, h + c + v);
+        assertLe(s, 100);
+    }
+
+    /// @dev Monotonic non-decreasing in score (§6.3 offer formula).
+    function testFuzz_Offer_Monotonic(uint8 s1, uint8 s2) public view {
+        vm.assume(s1 <= s2);
+        assertLe(KiteScoring.offerOf(s1), KiteScoring.offerOf(s2));
+    }
 }
