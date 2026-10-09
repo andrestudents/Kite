@@ -43,8 +43,8 @@ AFTER the subcommand).
 
 **⚠️ CRITICAL**: No user-story work can begin until T003 compiles.
 
-- [ ] T002 [P] Delete the forge-init placeholders `contracts/src/Counter.sol` and `contracts/test/Counter.t.sol` (research.md D9 — not in PLAN §6.1); run `forge build --root contracts` and confirm it is still green with zero sources failing
-- [ ] T003 [P] Create `contracts/src/KiteScoring.sol` skeleton — `// SPDX-License-Identifier: MIT`, `pragma solidity ^0.8.20`, `library KiteScoring` with NO imports (research.md D1) containing: `struct Profile { uint64 totalISAs; uint64 completed; uint64 qualEvents; uint64 distinctBackers; }` (field-for-field PLAN §6.2, research.md D3) and the constants `uint256 internal constant BASE_MAX_P = 600e6;` / `MIN_EVENT_GAP = 60 days;` / `MIN_EVENT_BPS = 1000;` (PLAN §6.2 testnet parameters, research.md D4), plus a library-level `/// @notice` natspec block citing PLAN §6.1–§6.3; verify `forge build --root contracts` is green
+- [x] T002 [P] Delete the forge-init placeholders `contracts/src/Counter.sol` and `contracts/test/Counter.t.sol` (research.md D9 — not in PLAN §6.1); run `forge build --root contracts` and confirm it is still green with zero sources failing — *done: also removed `contracts/script/Counter.s.sol`, a fourth forge-init placeholder importing Counter.sol (same D9 rationale, missed in the original enumeration); build green*
+- [x] T003 [P] Create `contracts/src/KiteScoring.sol` skeleton — `// SPDX-License-Identifier: MIT`, `pragma solidity ^0.8.20`, `library KiteScoring` with NO imports (research.md D1) containing: `struct Profile { uint64 totalISAs; uint64 completed; uint64 qualEvents; uint64 distinctBackers; }` (field-for-field PLAN §6.2, research.md D3) and the constants `uint256 internal constant BASE_MAX_P = 600e6;` / `MIN_EVENT_GAP = 60 days;` / `MIN_EVENT_BPS = 1000;` (PLAN §6.2 testnet parameters, research.md D4), plus a library-level `/// @notice` natspec block citing PLAN §6.1–§6.3; verify `forge build --root contracts` is green
 
 **Checkpoint**: contracts unit compiles with exactly the PLAN §6.1 inventory (KiteScoring only).
 
