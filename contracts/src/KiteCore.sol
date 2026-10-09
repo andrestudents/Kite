@@ -101,20 +101,7 @@ contract KiteCore is Initializable, Governed, UUPSUpgradeable, EIP712Upgradeable
     // ── UUPS (ADMIN-only upgrade — spec FR-001/FR-017) ──────────────────
     function _authorizeUpgrade(address newImplementation) internal override onlyRole(DEFAULT_ADMIN_ROLE) {}
 
-    // ── T004 skeleton stubs — reverting until T010–T014 implement them ──
-    function bindIdentity(address wallet, bytes32 identityHash) external pure {
-        wallet;
-        identityHash;
-        revert();
-    }
-
-    function registerChannel(uint64 id, string calldata name, address pubkey) external pure {
-        id;
-        name;
-        pubkey;
-        revert();
-    }
-
+    // ── T004 skeleton stubs — reverting until T011–T014 implement them ──
     function createISADraft(Terms calldata terms, address backer) external pure returns (uint256) {
         terms;
         backer;
