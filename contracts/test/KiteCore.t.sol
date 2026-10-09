@@ -8,6 +8,7 @@ import {KiteCore} from "../src/KiteCore.sol";
 import {MockAUSD} from "../src/MockAUSD.sol";
 import {Terms, ISA, ISAModule, STATUS_ACTIVE, STATUS_DRAFTED, STATUS_COMPLETED_CAPPED, STATUS_COMPLETED_AT_TERM, STATUS_CANCELLED} from "../src/modules/ISA.sol";
 import {Identity} from "../src/modules/Identity.sol";
+import {Governed} from "../src/modules/Governed.sol";
 import {Stream} from "../src/modules/Stream.sol";
 import {KiteScoring} from "../src/KiteScoring.sol";
 import {IAccessControl} from "@openzeppelin/contracts/access/IAccessControl.sol";
@@ -45,6 +46,13 @@ contract KiteCoreTest is Test {
     KiteCore internal kite; // the proxy
 
     uint64 internal constant CHANNEL_ID = 1;
+
+    // Role constants, resolved once in setUp (hoisted out of expectRevert
+    // args — a view call there consumes a pending vm.prank).
+    bytes32 internal relayerRole;
+    bytes32 internal orchestratorRole;
+    bytes32 internal pauserRole;
+    bytes32 internal adminRole;
 
     // EIP-712 pieces of KiteCore ("KiteCore", "1" — KiteCore.sol initialize).
     bytes32 internal kiteDomain;
@@ -103,6 +111,11 @@ contract KiteCoreTest is Test {
         // The mill's channel (admin).
         vm.prank(admin);
         kite.registerChannel(CHANNEL_ID, "Koperasi Mill", mill);
+
+        relayerRole = kite.RELAYER_ROLE();
+        orchestratorRole = kite.ORCHESTRATOR_ROLE();
+        pauserRole = kite.PAUSER_ROLE();
+        adminRole = kite.DEFAULT_ADMIN_ROLE();
     }
 
     // ────────────────────────────────────────────────────────────────────
@@ -546,6 +559,9 @@ contract KiteCoreTest is Test {
         bool qualifying
     );
 
+    /// @dev Mirror of Stream.MismatchFlagged for vm.expectEmit.
+    event MismatchFlagged(uint256 indexed day, uint256 expected, uint256 actual);
+
     /// @dev The EIP-712 digest KiteCore verifies onchain (Stream._verifyChannelFact).
     function _incomeDigest(uint64 channelId, uint256 id, bytes32 ref, uint256 gross, bytes32 salt)
         internal
@@ -559,8 +575,6 @@ contract KiteCoreTest is Test {
 
     function testBoundary_Income_CallerNotOrchestrator_Reverts() public {
         uint256 id = _runTo(1);
-        // Hoisted: a view call inside expectRevert args would consume the prank.
-        bytes32 orchestratorRole = kite.ORCHESTRATOR_ROLE();
         (uint8 v, bytes32 r, bytes32 s) = _signIncome(id, _day(11), 1500e6, keccak256("d1"));
         address intruder = vm.addr(0xE3);
         vm.prank(intruder);
@@ -804,5 +818,283 @@ contract KiteCoreTest is Test {
         assertEq(kite.isaOf(id).status, STATUS_COMPLETED_AT_TERM);
         assertEq(ausd.balanceOf(haji), hajiBal, "no money moved");
         assertEq(ausd.balanceOf(budi), budiBal, "no money moved");
+    }
+
+    // ────────────────────────────────────────────────────────────────────
+    // Role tier (US3) — rows 46–51: least authority, provable fund safety
+    // (§6.4 #12: RELAYER/ORCHESTRATOR can never move user funds beyond
+    // the §6.2 functions).
+    // ────────────────────────────────────────────────────────────────────
+
+    /// @dev Shared AccessControl revert expectation.
+    function _expectAccess(address who, bytes32 role) internal {
+        vm.expectRevert(abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, who, role));
+    }
+
+    function testRole_Relayer_CanOnlyBind() public {
+        uint256 id = _runTo(1); // Active, in-term — backdrop for the reverts
+        uint64 demoTermEnd = kite.isaOf(id).terms.termEnd; // hoisted (see below)
+        address impl2 = address(new KiteCore()); // hoisted: a create after expectRevert
+        // The one thing a relayer DOES: attest a human.
+        address newcomer = _newVerifiedSeeker(0xD9, keccak256("r9@mera"));
+        assertEq(kite.identityOf(newcomer), keccak256("r9@mera"));
+
+        vm.prank(relayer);
+        _expectAccess(relayer, orchestratorRole); // income
+        (uint8 v, bytes32 r, bytes32 s) = _signIncome(id, _day(11), 1500e6, keccak256("d1"));
+        kite.receiveIncome(id, _day(11), 1500e6, keccak256("d1"), v, r, s);
+
+        Terms memory t = _terms(600e6, 2000, 120, uint64(block.timestamp + 30 days));
+        vm.prank(relayer);
+        vm.expectRevert(abi.encodeWithSelector(ISAModule.Kite__NotVerified.selector, relayer)); // draft (unbound)
+        kite.createISADraft(t, haji);
+
+        vm.prank(relayer); // complete: permissionless fn, state-gated (Active, in-term)
+        // (termEnd hoisted — a view call inside expectRevert args consumes it)
+        vm.expectRevert(abi.encodeWithSelector(Stream.Kite__TermEnded.selector, id, demoTermEnd));
+        kite.completeAtTerm(id);
+
+        vm.prank(relayer);
+        _expectAccess(relayer, orchestratorRole); // flag
+        kite.flagMismatch(1, 1, 1);
+
+        vm.prank(relayer);
+        _expectAccess(relayer, adminRole); // register
+        kite.registerChannel(9, "x", relayer);
+
+        vm.prank(relayer); // upgrade — UUPS entry lives on the implementation
+        _expectAccess(relayer, adminRole);
+        kite.upgradeToAndCall(impl2, "");
+    }
+
+    function testRole_Orchestrator_OnlyIncomeCompleteFlag() public {
+        uint256 id = _runTo(1);
+        // Those three, OK:
+        vm.warp(block.timestamp + 61 days);
+        _settle(id, _day(11), 1500e6, keccak256("d1")); // income
+        assertEq(kite.isaOf(id).remaining, 480e6);
+        vm.warp(uint256(kite.isaOf(id).terms.termEnd));
+        vm.prank(orchestrator); // complete
+        kite.completeAtTerm(id);
+        assertEq(kite.isaOf(id).status, STATUS_COMPLETED_AT_TERM);
+        vm.expectEmit(false, false, false, true, address(kite)); // flag
+        emit MismatchFlagged(7, 100e6, 90e6);
+        vm.prank(orchestrator);
+        kite.flagMismatch(7, 100e6, 90e6);
+
+        // Everything else reverts:
+        vm.prank(orchestrator);
+        _expectAccess(orchestrator, relayerRole); // bind
+        kite.bindIdentity(orchestrator, keccak256("orc@mera"));
+
+        Terms memory t = _terms(600e6, 2000, 120, uint64(block.timestamp + 30 days));
+        vm.prank(orchestrator);
+        vm.expectRevert(abi.encodeWithSelector(ISAModule.Kite__NotVerified.selector, orchestrator)); // draft
+        kite.createISADraft(t, haji);
+
+        vm.prank(orchestrator);
+        _expectAccess(orchestrator, adminRole); // register
+        kite.registerChannel(9, "x", orchestrator);
+    }
+
+    function testRole_Pauser_OnlyPauseCycle() public {
+        vm.prank(pauser);
+        kite.pause();
+        assertTrue(kite.paused());
+        vm.prank(pauser);
+        kite.unpause();
+        assertFalse(kite.paused());
+
+        // Every fund-adjacent call reverts for the pauser as actor:
+        Terms memory t = _terms(600e6, 2000, 120, uint64(block.timestamp + 30 days));
+        vm.prank(pauser);
+        vm.expectRevert(abi.encodeWithSelector(ISAModule.Kite__NotVerified.selector, pauser)); // draft
+        kite.createISADraft(t, haji);
+
+        uint256 id = _runTo(1);
+        (uint8 v, bytes32 r, bytes32 s) = _signIncome(id, _day(11), 1500e6, keccak256("d1"));
+        vm.prank(pauser);
+        _expectAccess(pauser, orchestratorRole); // income
+        kite.receiveIncome(id, _day(11), 1500e6, keccak256("d1"), v, r, s);
+
+        vm.prank(pauser);
+        _expectAccess(pauser, orchestratorRole); // flag
+        kite.flagMismatch(1, 1, 1);
+
+        vm.prank(pauser);
+        _expectAccess(pauser, relayerRole); // bind
+        kite.bindIdentity(pauser, keccak256("p@mera"));
+
+        vm.prank(pauser);
+        _expectAccess(pauser, adminRole); // register
+        kite.registerChannel(9, "x", pauser);
+    }
+
+    function testRole_Admin_GrantsRoles_CannotMoveFunds() public {
+        // Grant/revoke OK — and the grant is EFFECTIVE:
+        address delegate = vm.addr(0xE6);
+        vm.prank(admin);
+        kite.grantRole(relayerRole, delegate);
+        address newcomer = vm.addr(0xE7);
+        vm.prank(delegate); // now a relayer
+        kite.bindIdentity(newcomer, keccak256("n7@mera"));
+        assertEq(kite.identityOf(newcomer), keccak256("n7@mera"));
+        vm.prank(admin);
+        kite.revokeRole(relayerRole, delegate);
+        vm.prank(delegate); // power gone
+        _expectAccess(delegate, relayerRole);
+        kite.bindIdentity(vm.addr(0xE8), keccak256("n8@mera"));
+
+        // ...but ADMIN as an actor moves nothing (§6.4 #12):
+        uint256 id = _runTo(1);
+        (uint8 v, bytes32 r, bytes32 s) = _signIncome(id, _day(11), 1500e6, keccak256("d1"));
+        vm.prank(admin);
+        _expectAccess(admin, orchestratorRole); // income
+        kite.receiveIncome(id, _day(11), 1500e6, keccak256("d1"), v, r, s);
+
+        Terms memory t = _terms(600e6, 2000, 120, uint64(block.timestamp + 30 days));
+        vm.prank(admin);
+        vm.expectRevert(abi.encodeWithSelector(ISAModule.Kite__NotVerified.selector, admin)); // draft
+        kite.createISADraft(t, haji);
+        // (Upgrade authority itself is proven in testUpgrade_StateSurvives_V2.)
+    }
+
+    function testRole_Stranger_OnlyCompleteAtTerm() public {
+        uint256 id = _runTo(1);
+        vm.warp(uint256(kite.isaOf(id).terms.termEnd) + 1);
+        address stranger = vm.addr(0xE5);
+
+        // Everything role-gated reverts for a stranger:
+        vm.prank(stranger);
+        _expectAccess(stranger, relayerRole);
+        kite.bindIdentity(stranger, keccak256("s5@mera"));
+
+        Terms memory t = _terms(600e6, 2000, 120, uint64(block.timestamp + 30 days));
+        vm.prank(stranger);
+        vm.expectRevert(abi.encodeWithSelector(ISAModule.Kite__NotVerified.selector, stranger)); // draft
+        kite.createISADraft(t, haji);
+
+        (uint8 v, bytes32 r, bytes32 s) = _signIncome(id, _day(11), 1500e6, keccak256("d1"));
+        vm.prank(stranger);
+        _expectAccess(stranger, orchestratorRole);
+        kite.receiveIncome(id, _day(11), 1500e6, keccak256("d1"), v, r, s);
+
+        vm.prank(stranger);
+        _expectAccess(stranger, orchestratorRole);
+        kite.flagMismatch(1, 1, 1);
+
+        vm.prank(stranger);
+        _expectAccess(stranger, pauserRole);
+        kite.pause();
+
+        // The ONE permissionless act: complete the over-term deal.
+        vm.prank(stranger);
+        kite.completeAtTerm(id);
+        assertEq(kite.isaOf(id).status, STATUS_COMPLETED_AT_TERM);
+    }
+
+    function testRole_FlagMismatch_EmitsOnly_ZeroStateChange() public {
+        uint256 id = _runTo(1);
+        // Snapshot EVERYTHING a stranger might hope to corrupt.
+        uint256 hajiBal = ausd.balanceOf(haji);
+        uint256 budiBal = ausd.balanceOf(budi);
+        uint256 millBal = ausd.balanceOf(mill);
+        uint256 kiteBal = ausd.balanceOf(address(kite));
+        ISA memory before = kite.isaOf(id);
+        KiteScoring.Profile memory prof = kite.profileOf(budi);
+        uint8 score = kite.scoreOf(budi);
+        bool wasPaused = kite.paused();
+
+        vm.expectEmit(false, false, false, true, address(kite));
+        emit MismatchFlagged(9, 123e6, 100e6);
+        vm.prank(orchestrator);
+        kite.flagMismatch(9, 123e6, 100e6);
+
+        // Byte-identical: balances, ISA state, reputation, pause.
+        assertEq(ausd.balanceOf(haji), hajiBal);
+        assertEq(ausd.balanceOf(budi), budiBal);
+        assertEq(ausd.balanceOf(mill), millBal);
+        assertEq(ausd.balanceOf(address(kite)), kiteBal);
+        ISA memory after_ = kite.isaOf(id);
+        assertEq(after_.remaining, before.remaining);
+        assertEq(after_.eventCount, before.eventCount);
+        assertEq(after_.lastEventAt, before.lastEventAt);
+        assertEq(after_.status, before.status);
+        assertEq(after_.activatedAt, before.activatedAt);
+        assertEq(kite.profileOf(budi).totalISAs, prof.totalISAs);
+        assertEq(kite.profileOf(budi).completed, prof.completed);
+        assertEq(kite.profileOf(budi).qualEvents, prof.qualEvents);
+        assertEq(kite.profileOf(budi).distinctBackers, prof.distinctBackers);
+        assertEq(kite.scoreOf(budi), score);
+        assertFalse(kite.paused() != wasPaused);
+    }
+
+    // ────────────────────────────────────────────────────────────────────
+    // Pause tier (US3) — rows 52–56: ASYMMETRIC by construction (§6.2,
+    // constitution VII). Pause blocks ONLY draft/activate.
+    // ────────────────────────────────────────────────────────────────────
+
+    function testPause_Blocks_CreateISADraft() public {
+        vm.prank(pauser);
+        kite.pause();
+        Terms memory t = _terms(600e6, 2000, 120, uint64(block.timestamp + 30 days));
+        vm.prank(budi);
+        vm.expectRevert(abi.encodeWithSelector(Governed.Kite__Paused.selector));
+        kite.createISADraft(t, haji);
+    }
+
+    function testPause_Blocks_ActivateWithPermit() public {
+        uint256 id = _demoDraft();
+        vm.prank(pauser);
+        kite.pause();
+        // All reads/signing BEFORE expectRevert — _activate's internal view
+        // calls into the token would consume the expectation.
+        uint256 principal = kite.isaOf(id).terms.principal;
+        uint256 deadline = block.timestamp + 1 hours;
+        bytes32 digest = keccak256(
+            abi.encodePacked(
+                "\x19\x01",
+                ausd.DOMAIN_SEPARATOR(),
+                keccak256(abi.encode(PERMIT_TYPEHASH, haji, address(kite), principal, ausd.nonces(haji), deadline))
+            )
+        );
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(hajiPk, digest);
+        vm.expectRevert(abi.encodeWithSelector(Governed.Kite__Paused.selector));
+        vm.prank(haji);
+        kite.activateWithPermit(id, deadline, v, r, s);
+    }
+
+    function testPause_Allows_ReceiveIncome() public {
+        uint256 id = _runTo(1);
+        vm.prank(pauser);
+        kite.pause();
+        assertTrue(kite.paused());
+        vm.warp(block.timestamp + 61 days);
+        _settle(id, _day(11), 1500e6, keccak256("d1")); // never blocked (6.4 #10)
+        assertEq(kite.isaOf(id).remaining, 480e6);
+        assertEq(kite.isaOf(id).status, STATUS_ACTIVE);
+    }
+
+    function testPause_Allows_CompleteAtTerm() public {
+        uint256 id = _runTo(1);
+        vm.prank(pauser);
+        kite.pause();
+        vm.warp(uint256(kite.isaOf(id).terms.termEnd));
+        vm.prank(budi); // even a party, while paused — forgiveness never waits
+        kite.completeAtTerm(id);
+        assertEq(kite.isaOf(id).status, STATUS_COMPLETED_AT_TERM);
+    }
+
+    function testPause_Allows_BindAndRegister() public {
+        vm.prank(pauser);
+        kite.pause();
+        // Documented default (research D10): role actions are NOT pause-gated.
+        address newcomer = _newVerifiedSeeker(0xD9, keccak256("p9@mera"));
+        assertEq(kite.identityOf(newcomer), keccak256("p9@mera"));
+        vm.prank(admin);
+        kite.registerChannel(3, "Koperasi Tiga", vm.addr(0xF3));
+        (, address pubkey, bool active) = kite.channelOf(3);
+        assertTrue(active);
+        assertEq(pubkey, vm.addr(0xF3));
     }
 }
