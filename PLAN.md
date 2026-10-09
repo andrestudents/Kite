@@ -79,7 +79,7 @@ Amounts assume **1 USD = 16,000 IDR**, fixed for the demo (§7.4). Demo ISA is h
    → CRE WF-1 → receiveIncome() settles in under a second:
      → Budi +1,200 AUSD (≈ Rp 19,2jt) · Pak Haji +300 AUSD (≈ Rp 4,8jt) — same transaction
    → both phones update while the clerk watches; progress 0% → 38.5%
-6. (prepared state) "3 panen kemudian": panen 3 diverts the last 180 AUSD
+6. (live) "3 panen kemudian": panen 3 diverts the last 180 AUSD
    → 🎉 SELESAI screen: 3 panen · ~1.5 years · reputation 58 → 91
    → "Next season: bigger max support — and a smaller share."
 7. (prepared state) failed harvest: gross 0 → nothing is diverted.
@@ -204,6 +204,8 @@ mapping(uint64 => Channel) channels;
 > 1. **Drafts are directed offers.** `createISADraft(Terms terms, address backer)` names its intended backer (must be identity-bound); `cancelDraft` = seeker or named backer while Drafted; `activateWithPermit` requires the permit owner == the named backer. `bindIdentity(address wallet, bytes32 identityHash)` is two-arg — the one-arg form cannot say whose identity the RELAYER attests.
 > 2. **Post-`termEnd` income is a hard stop.** `receiveIncome` requires `block.timestamp <= termEnd` (equality allowed): between `termEnd` and `completeAtTerm` the deal is Active but collects nothing — no last-harvest griefing window. Test `testBoundary_Income_AfterTermEnd_Reverts`.
 > 3. Implementation notes, PLAN-table silent spots resolved as coded: `MAX_TERM` = 730 days inclusive; `channelIdByPubkey` is a derived reverse index (first registration wins); `MismatchFlagged` is emitted by the ORCHESTRATOR-only `flagMismatch` with no state change; `WrongBacker` reverts when the permit signer ≠ named backer; zero-gross income settles to (0, 0) and never qualifies (no revert).
+
+> **Clarification (2026-10-10, approved at Feature 004 specify — Q1/A; not a silent deviation:)** `MIN_EVENT_GAP` is set at `initialize()` as a governed parameter (no setter — init-once, like the asset). Protocol value **60 days**; the Monad-testnet demo deployment uses **60 seconds** so the §6.3 seeded states are producible inside the hackathon window (they need ≥ ~120 days at 60 days — two sequential ISAs × one gap). Testnet→production note, precedent Matocard `minCycleDuration`: a production deployment passes 60 days and the anti-farming property is unchanged. Unit/literal tests keep 60 days; the demo value is disclosed in TRUST.md, `packages/contracts` addresses, and judge instructions. `KiteScoring` stays pure — the gap is an argument, not state.
 
 ### 6.3 Score formula (anti-farming) — hand-checkable
 Score 0–100 = **History (40) + Consistency (20) + Volume (40)**. Integer maths, floor per component.
@@ -397,7 +399,7 @@ packages/
 |---|---|---|---|
 | 1 | 29 Sep | Register (§11.3), new repo, monorepo, **verify CRE CLI + Mera PRF + ask Agora for AUSD faucet** | Q1–Q5 in §13 answered or have fallbacks |
 | 2–3 | 30 Sep–1 Oct | `KiteScoring` + split math as pure libs, bounds; invariant test scaffold | `forge test` green, §6.3 numbers match |
-| 4 | 2 Oct | Deploy `KiteCore` + `MockAUSD` to Monad testnet; seed channel + prepared accounts | Manual loop via `cast`: draft → activate → receiveIncome → cap → 🎉 |
+| 4 | 2 Oct | Deploy `KiteCore` + `MockAUSD` to Monad testnet; seed channel + prepared accounts | Manual loop via `cast`: draft → activate → receiveIncome → cap → 🎉 (demo deployment sets `MIN_EVENT_GAP` 60 s — compressed-gap seed, disclosed; PLAN §6.2 clarification) |
 | 5–6 | 3–4 Oct | `api` + `relayer` + purchase registry + fx: idempotency, ledger, gasless ERC-3009 send | Gasless send works phone-to-phone; purchase → `SETTLED` state machine green |
 | 7 | 5 Oct | Mera passkey login + signing session + drip + `bindIdentity` | Sign up → verified → account ready, no MON bought |
 | 8–9 | 6–7 Oct | App: home, detail, Dukung flow, split moment on two phones, Kirim | §3 steps 1–5 + 8 work end to end on two phones |
