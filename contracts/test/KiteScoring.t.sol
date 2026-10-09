@@ -128,4 +128,44 @@ contract KiteScoringTest is Test {
         assertLe(toBacker, gross);
         assertEq(toBacker + toSeeker, gross); // conservation, exactly
     }
+
+    // ────────────────────────────────────────────────────────────────────
+    // Qualifying tier — isQualifyingEvent: §6.3 bars, boundaries inclusive.
+    // Fixed reference `now` (1,000,000,000) with day offsets; the demo ISA
+    // (P 600e6) sizes every gross at exactly 10% so each test isolates one bar.
+    // ────────────────────────────────────────────────────────────────────
+
+    uint256 private constant NOW = 1_000_000_000;
+    uint256 private constant P600 = 600e6;
+    uint256 private constant TEN_PCT = 60e6; // exactly 10% of P600
+
+    function testBoundary_Qualifying_Gap59Days_False() public pure {
+        // 59 days after the previous qualifying event → below the 60-day bar
+        assertFalse(KiteScoring.isQualifyingEvent(NOW, NOW + 59 days, TEN_PCT, P600));
+    }
+
+    function testBoundary_Qualifying_Gap60Days_True() public pure {
+        // Exactly 60 days → the bar is "≥", inclusive
+        assertTrue(KiteScoring.isQualifyingEvent(NOW, NOW + 60 days, TEN_PCT, P600));
+    }
+
+    function testBoundary_Qualifying_GrossBelow10Pct_False() public pure {
+        // Long gap but gross 1 base unit under 10% of principal → size bar fails
+        assertFalse(KiteScoring.isQualifyingEvent(NOW, NOW + 61 days, TEN_PCT - 1, P600));
+    }
+
+    function testBoundary_Qualifying_GrossExactly10Pct_True() public pure {
+        // Exactly 10% of principal → qualifies (MIN_EVENT_BPS inclusive)
+        assertTrue(KiteScoring.isQualifyingEvent(NOW, NOW + 61 days, TEN_PCT, P600));
+    }
+
+    function testBoundary_Qualifying_FirstEvent_Qualifies() public pure {
+        // lastEventAt = 0 = no previous qualifying event → gap bar passes by definition
+        assertTrue(KiteScoring.isQualifyingEvent(0, NOW, TEN_PCT, P600));
+    }
+
+    function testBoundary_Qualifying_ClockInversion_False() public pure {
+        // lastEventAt later than `now` → false, and never a revert (research.md D6)
+        assertFalse(KiteScoring.isQualifyingEvent(NOW, NOW - 1, TEN_PCT, P600));
+    }
 }
