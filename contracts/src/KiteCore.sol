@@ -32,11 +32,11 @@ contract KiteCore is Initializable, Governed, UUPSUpgradeable, Completion {
         _disableInitializers();
     }
 
-    function initialize(address admin, address relayer, address orchestrator, address pauser, address ausd)
+    function initialize(address admin, address relayer, address orchestrator, address pauser, address ausdToken)
         external
         initializer
     {
-        if (admin == address(0) || relayer == address(0) || orchestrator == address(0) || pauser == address(0) || ausd == address(0))
+        if (admin == address(0) || relayer == address(0) || orchestrator == address(0) || pauser == address(0) || ausdToken == address(0))
         {
             revert Kite__ZeroAddress();
         }
@@ -46,7 +46,9 @@ contract KiteCore is Initializable, Governed, UUPSUpgradeable, Completion {
         // The money rail lives in the kite.isa ERC-7201 namespace so the ISA
         // and Stream modules both reach it (research.md D13; a plain leaf
         // var would be off-discipline AND invisible to the bases).
-        _isaStorage().ausd = IAUSD(ausd);
+        // Param named `ausdToken`, not `ausd`: Slither shadowing-local vs
+        // the ausd() view (fixed T024).
+        _isaStorage().ausd = IAUSD(ausdToken);
     }
 
     // ── Views (constitution IV: recomputable from public state) ─────────

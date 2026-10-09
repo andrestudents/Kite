@@ -99,21 +99,22 @@ library KiteScoring {
     ///         they just count toward nothing.
     /// @param lastEventAt Previous qualifying event (seconds); 0 = first ever —
     ///                    the gap bar is satisfied by definition.
-    /// @param now Reference timestamp (seconds).
+    /// @param at Reference timestamp (seconds).
     /// @param gross Income received, AUSD base units (6 dp).
     /// @param principal ISA principal, AUSD base units (6 dp).
     /// @return True iff both bars pass; boundaries inclusive (exactly 60 days /
-    ///         exactly 10% qualify). Clock inversion (lastEventAt > now) returns
+    ///         exactly 10% qualify). Clock inversion (lastEventAt > at) returns
     ///         false — never a revert.
-    /// @dev Gap is checked additively (lastEventAt + GAP ≤ now) so an inverted
+    /// @dev Gap is checked additively (lastEventAt + GAP ≤ at) so an inverted
     ///      clock cannot underflow (research.md D6). Size is cross-multiplied
     ///      (gross × 10000 ≥ principal × BPS) — no division, no precision loss.
-    function isQualifyingEvent(uint256 lastEventAt, uint256 now, uint256 gross, uint256 principal)
+    ///      Param named `at`, not `now`: Slither shadowing-builtin (fixed T024).
+    function isQualifyingEvent(uint256 lastEventAt, uint256 at, uint256 gross, uint256 principal)
         internal
         pure
         returns (bool)
     {
-        bool gapOk = lastEventAt == 0 || lastEventAt + MIN_EVENT_GAP <= now; // §6.3
+        bool gapOk = lastEventAt == 0 || lastEventAt + MIN_EVENT_GAP <= at; // §6.3
         bool sizeOk = gross * 10000 >= principal * MIN_EVENT_BPS; // §6.3 / §6.2
         return gapOk && sizeOk;
     }
