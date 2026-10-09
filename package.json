@@ -2,7 +2,10 @@
   "name": "kite",
   "private": true,
   "packageManager": "bun@1.4.2",
-  "workspaces": ["apps/*", "packages/*"],
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
     "build": "turbo run build && forge build --root contracts",
     "lint": "biome check .",

@@ -15,6 +15,10 @@ contracts/cache/
 .env
 .env.*
 
+.specify/
+
+.claude
+
 # Editor / OS
 .DS_Store
 Thumbs.db
