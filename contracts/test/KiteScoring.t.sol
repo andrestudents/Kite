@@ -141,32 +141,40 @@ contract KiteScoringTest is Test {
 
     function testBoundary_Qualifying_Gap59Days_False() public pure {
         // 59 days after the previous qualifying event → below the 60-day bar
-        assertFalse(KiteScoring.isQualifyingEvent(NOW, NOW + 59 days, TEN_PCT, P600));
+        assertFalse(KiteScoring.isQualifyingEvent(NOW, NOW + 59 days, TEN_PCT, P600, 60 days));
     }
 
     function testBoundary_Qualifying_Gap60Days_True() public pure {
         // Exactly 60 days → the bar is "≥", inclusive
-        assertTrue(KiteScoring.isQualifyingEvent(NOW, NOW + 60 days, TEN_PCT, P600));
+        assertTrue(KiteScoring.isQualifyingEvent(NOW, NOW + 60 days, TEN_PCT, P600, 60 days));
     }
 
     function testBoundary_Qualifying_GrossBelow10Pct_False() public pure {
         // Long gap but gross 1 base unit under 10% of principal → size bar fails
-        assertFalse(KiteScoring.isQualifyingEvent(NOW, NOW + 61 days, TEN_PCT - 1, P600));
+        assertFalse(KiteScoring.isQualifyingEvent(NOW, NOW + 61 days, TEN_PCT - 1, P600, 60 days));
     }
 
     function testBoundary_Qualifying_GrossExactly10Pct_True() public pure {
         // Exactly 10% of principal → qualifies (MIN_EVENT_BPS inclusive)
-        assertTrue(KiteScoring.isQualifyingEvent(NOW, NOW + 61 days, TEN_PCT, P600));
+        assertTrue(KiteScoring.isQualifyingEvent(NOW, NOW + 61 days, TEN_PCT, P600, 60 days));
     }
 
     function testBoundary_Qualifying_FirstEvent_Qualifies() public pure {
         // lastEventAt = 0 = no previous qualifying event → gap bar passes by definition
-        assertTrue(KiteScoring.isQualifyingEvent(0, NOW, TEN_PCT, P600));
+        assertTrue(KiteScoring.isQualifyingEvent(0, NOW, TEN_PCT, P600, 60 days));
     }
 
     function testBoundary_Qualifying_ClockInversion_False() public pure {
         // lastEventAt later than `now` → false, and never a revert (research.md D6)
-        assertFalse(KiteScoring.isQualifyingEvent(NOW, NOW - 1, TEN_PCT, P600));
+        assertFalse(KiteScoring.isQualifyingEvent(NOW, NOW - 1, TEN_PCT, P600, 60 days));
+    }
+
+    function testGap_ArgumentControlsQualifyingWindow() public pure {
+        // Q1/A: the window is an ARGUMENT, not a constant — identical facts
+        // flip verdict as the deployment's configuration changes. The library
+        // has no opinion and no state (protocol 60 d; demo deploys 60 s).
+        assertTrue(KiteScoring.isQualifyingEvent(NOW, NOW + 1 days, TEN_PCT, P600, 1 days));
+        assertFalse(KiteScoring.isQualifyingEvent(NOW, NOW + 1 days, TEN_PCT, P600, 60 days));
     }
 
     // ────────────────────────────────────────────────────────────────────

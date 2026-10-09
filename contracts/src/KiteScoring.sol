@@ -29,10 +29,6 @@ library KiteScoring {
     ///         PLAN §6.2 testnet parameter BASE_MAX_P (AUSD base units, 6 dp).
     uint256 internal constant BASE_MAX_P = 600e6;
 
-    /// @notice Minimum gap between qualifying events: 60 days = 5,184,000 s.
-    ///         PLAN §6.2 testnet parameter MIN_EVENT_GAP.
-    uint256 internal constant MIN_EVENT_GAP = 60 days;
-
     /// @notice Minimum event size vs principal, in basis points: 1000 = 10%.
     ///         PLAN §6.2 testnet parameter MIN_EVENT_BPS.
     uint256 internal constant MIN_EVENT_BPS = 1000;
@@ -93,28 +89,33 @@ library KiteScoring {
     }
 
     /// @notice Qualifying-event gate (PLAN §6.3): an income event counts toward
-    ///         the score iff it is ≥ 60 days after the previous qualifying event
+    ///         the score iff it is ≥ `minGap` after the previous qualifying event
     ///         AND gross ≥ 10% of the ISA's principal (§6.2 MIN_EVENT_GAP /
     ///         MIN_EVENT_BPS). Non-qualifying events still split normally —
     ///         they just count toward nothing.
+    ///         The gap is a GOVERNED DEPLOYMENT PARAMETER (PLAN §6.2 clarification,
+    ///         Feature 004 Q1/A): protocol value 60 days, set once at KiteCore
+    ///         `initialize()` — the library itself has no opinion and no state.
     /// @param lastEventAt Previous qualifying event (seconds); 0 = first ever —
     ///                    the gap bar is satisfied by definition.
     /// @param at Reference timestamp (seconds).
     /// @param gross Income received, AUSD base units (6 dp).
     /// @param principal ISA principal, AUSD base units (6 dp).
-    /// @return True iff both bars pass; boundaries inclusive (exactly 60 days /
+    /// @param minGap Qualifying window in seconds, as configured at deployment
+    ///               (60 days in production; the library never hardcodes it).
+    /// @return True iff both bars pass; boundaries inclusive (exactly `minGap` /
     ///         exactly 10% qualify). Clock inversion (lastEventAt > at) returns
     ///         false — never a revert.
-    /// @dev Gap is checked additively (lastEventAt + GAP ≤ at) so an inverted
+    /// @dev Gap is checked additively (lastEventAt + minGap ≤ at) so an inverted
     ///      clock cannot underflow (research.md D6). Size is cross-multiplied
     ///      (gross × 10000 ≥ principal × BPS) — no division, no precision loss.
     ///      Param named `at`, not `now`: Slither shadowing-builtin (fixed T024).
-    function isQualifyingEvent(uint256 lastEventAt, uint256 at, uint256 gross, uint256 principal)
+    function isQualifyingEvent(uint256 lastEventAt, uint256 at, uint256 gross, uint256 principal, uint256 minGap)
         internal
         pure
         returns (bool)
     {
-        bool gapOk = lastEventAt == 0 || lastEventAt + MIN_EVENT_GAP <= at; // §6.3
+        bool gapOk = lastEventAt == 0 || lastEventAt + minGap <= at; // §6.3
         bool sizeOk = gross * 10000 >= principal * MIN_EVENT_BPS; // §6.3 / §6.2
         return gapOk && sizeOk;
     }

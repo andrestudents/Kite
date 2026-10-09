@@ -70,3 +70,37 @@ fixed: 2 · **125 total = 0 untriaged.**
 
 Post-triage verification: `forge test --root contracts` → **104 passed; 0 failed**
 (62 KiteCore + 12 invariant + 10 MockAUSD + 20 KiteScoring).
+
+---
+
+# Feature 004 re-triage — governed-gap refactor (2026-10-10)
+
+The Q1/A refactor touched four src files: `KiteScoring.sol` (MIN_EVENT_GAP constant
+→ `isQualifyingEvent(…, minGap)` argument — library stays pure/stateless),
+`Governed.sol` (`minEventGap` added to the `kite.governed` ERC-7201 struct, set
+once in `__Governed_init`, public `minEventGap()` view, NO setter),
+`KiteCore.sol` (`initialize` gains the 6th `minEventGapSec` parameter), and
+`Stream.sol` (passes the stored gap into the gate). Re-ran the exact 003 toolchain:
+
+```bash
+slither contracts/ --json slither.json   # slither-analyzer 0.11.6, solc 0.8.36
+```
+
+Result: **47 contracts, 102 detectors, 126 findings** — 23 in `src/`, 103 in
+vendored `lib/` (unchanged from 003). Delta vs the 003 census: **+1**, triaged
+below. No previously-justified finding changed location or shape except where the
+refactor's lines moved (`Stream.sol` line numbers shifted by the call-site edit).
+
+## New findings (1 — triaged)
+
+| # | Detector | Location | Severity | Disposition | Rationale |
+|---|----------|----------|----------|-------------|-----------|
+| S15 | reentrancy-benign | `Stream._settleFact` — the qualifying-gate read now listed as a state-access path: `KiteScoring.isQualifyingEvent(…, minEventGap())` (src/modules/Stream.sol:181–182; accessor src/modules/Governed.sol:43–47) | Informational | **justified** | `minEventGap()` is an INTERNAL view over this contract's own ERC-7201 `kite.governed` storage — no external call, no callback surface; slither's reentrancy graph merely gained a read node when the gate started going through the accessor. The money reasoning is unchanged from S3: both entry points remain `nonReentrant`-first, the AUSD rail has no transfer hooks, and the D13 rig + invariant_11 still prove re-entry is blocked. Read-only and init-once — the value cannot be mutated mid-transaction by any role (no setter, FR-016) |
+
+## Sum check (004)
+
+src: 23 (003's 22 + S15) · lib: 103 (vendored, untouched) · **126 total = 0 untriaged.**
+
+Post-refactor verification: `forge test --root contracts` → **108 passed; 0 failed**
+(65 KiteCore incl. the testGap_ tier + 12 invariant + 10 MockAUSD + 21 KiteScoring
+incl. testGap_ArgumentControlsQualifyingWindow).

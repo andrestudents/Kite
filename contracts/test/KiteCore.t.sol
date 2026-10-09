@@ -79,7 +79,10 @@ contract KiteCoreTest is Test {
         KiteCore impl = new KiteCore();
         ERC1967Proxy proxy = new ERC1967Proxy(
             address(impl),
-            abi.encodeCall(KiteCore.initialize, (admin, relayer, orchestrator, pauser, address(ausd)))
+            // Q1/A: the suite runs at the PROTOCOL gap (60 days) — the §6.3
+            // literal journey must prove the real qualifying bar. The 60-second
+            // demo configuration has its own tier below (testGap_).
+            abi.encodeCall(KiteCore.initialize, (admin, relayer, orchestrator, pauser, address(ausd), 60 days))
         );
         kite = KiteCore(address(proxy));
 
@@ -1126,7 +1129,7 @@ contract KiteCoreTest is Test {
         KiteCore impl = new KiteCore();
         ERC1967Proxy proxy = new ERC1967Proxy(
             address(impl),
-            abi.encodeCall(KiteCore.initialize, (admin, relayer, orchestrator, pauser, address(tok)))
+            abi.encodeCall(KiteCore.initialize, (admin, relayer, orchestrator, pauser, address(tok), 60 days))
         );
         r.kite = KiteCore(address(proxy));
         r.token = tok;
@@ -1305,9 +1308,90 @@ contract KiteCoreTest is Test {
 
     // ── Init tier (US3) ──────────────────────────────────────────────────
 
-    function testInitialize_Twice_Reverts() public {
+    /// @notice The init-once parameters landed exactly as passed, and cannot
+    ///         be changed: the only path back to `initialize` reverts
+    ///         (Q1/A — the governed gap has NO setter, spec FR-016).
+    function testInitialize_SetsRolesAssetAndGap() public {
+        assertTrue(kite.hasRole(relayerRole, relayer), "RELAYER_ROLE at init");
+        assertTrue(kite.hasRole(orchestratorRole, orchestrator), "ORCHESTRATOR_ROLE at init");
+        assertTrue(kite.hasRole(pauserRole, pauser), "PAUSER at init");
+        assertEq(kite.ausd(), address(ausd), "asset immutable at init");
+        assertEq(kite.minEventGap(), 60 days, "gap set once, from the initializer argument");
+        // Re-init with a DIFFERENT gap — the would-be change path — reverts.
         vm.expectRevert(Initializable.InvalidInitialization.selector);
-        kite.initialize(admin, relayer, orchestrator, pauser, address(ausd));
+        kite.initialize(admin, relayer, orchestrator, pauser, address(ausd), 30 days);
+    }
+
+    // ── Governed-gap tier (Q1/A, Feature 004) — contractual names in
+    //    specs/004.../contracts/deploy-seed-api.md ─────────────────────────
+
+    /// @dev Re-points the suite's `ausd`/`kite` at a deployment whose governed
+    ///      gap is `gapSec` — the demo configuration. Every fixture helper
+    ///      (_draft/_activate/_settle) then works unchanged against it.
+    function _deployWithGap(uint256 gapSec) internal {
+        ausd = new MockAUSD(address(this));
+        KiteCore impl = new KiteCore();
+        ERC1967Proxy proxy = new ERC1967Proxy(
+            address(impl),
+            abi.encodeCall(KiteCore.initialize, (admin, relayer, orchestrator, pauser, address(ausd), gapSec))
+        );
+        kite = KiteCore(address(proxy));
+        // The income-signature helpers sign over the domain of the LIVE proxy —
+        // re-derive it or every fact verifies against the stale address.
+        kiteDomain = keccak256(
+            abi.encode(
+                keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"),
+                keccak256("KiteCore"),
+                keccak256("1"),
+                block.chainid,
+                address(kite)
+            )
+        );
+        ausd.transfer(haji, 5_000e6); // the backer pays principal at activation
+        ausd.transfer(mill, 20_000e6);
+        vm.prank(mill);
+        ausd.approve(address(kite), type(uint256).max);
+        vm.startPrank(relayer);
+        kite.bindIdentity(budi, keccak256("budi@mera"));
+        kite.bindIdentity(haji, keccak256("haji@mera"));
+        vm.stopPrank();
+        vm.prank(admin);
+        kite.registerChannel(CHANNEL_ID, "Koperasi Mill", mill);
+    }
+
+    function testGap_MinEventGap_SetAtInit_NoSetter() public {
+        _deployWithGap(90 days);
+        assertEq(kite.minEventGap(), 90 days, "whatever init passed IS the value");
+        // No setter exists: the raw selector call must revert (no fallback).
+        (bool ok,) =
+            address(kite).call(abi.encodeWithSelector(bytes4(keccak256("setMinEventGap(uint256)")), 1 days));
+        assertFalse(ok, "no setter: the gap is init-once (FR-016)");
+    }
+
+    function testGap_Qualifying_At60Seconds_DemoDeployment() public {
+        _deployWithGap(60 seconds); // the demo deployment (Q1/A)
+        Terms memory t = _terms(600e6, 2000, 130, uint64(block.timestamp + 365 days));
+        uint256 id = _draft(budi, t, haji);
+        _activate(id, hajiPk, haji);
+        _settle(id, _day(1), 1500e6, keccak256("e1")); // first event: gap-free by definition
+        vm.warp(block.timestamp + 60 seconds); // exactly the demo bar — inclusive
+        _settle(id, _day(2), 1500e6, keccak256("e2"));
+        ISA memory isa = kite.isaOf(id);
+        assertEq(isa.eventCount, 2, "60 s apart: both qualify at the demo gap");
+        assertEq(isa.lastEventAt, block.timestamp);
+    }
+
+    function testGap_NonQualifying_At59Seconds_DemoDeployment() public {
+        _deployWithGap(60 seconds);
+        Terms memory t = _terms(600e6, 2000, 130, uint64(block.timestamp + 365 days));
+        uint256 id = _draft(budi, t, haji);
+        _activate(id, hajiPk, haji);
+        _settle(id, _day(1), 1500e6, keccak256("e1"));
+        vm.warp(block.timestamp + 59 seconds); // one second short of the bar
+        _settle(id, _day(2), 1500e6, keccak256("e2"));
+        ISA memory isa = kite.isaOf(id);
+        assertEq(isa.eventCount, 1, "59 s apart: splits normally, no qualifying credit");
+        assertEq(isa.remaining, 180e6, "780e6 - 300e6 - 300e6: the split happened, the credit did not");
     }
 }
 

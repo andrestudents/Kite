@@ -32,15 +32,22 @@ contract KiteCore is Initializable, Governed, UUPSUpgradeable, Completion {
         _disableInitializers();
     }
 
-    function initialize(address admin, address relayer, address orchestrator, address pauser, address ausdToken)
-        external
-        initializer
-    {
+    /// @dev `minEventGapSec` is the governed qualifying window (PLAN §6.2
+    ///      clarification, Feature 004 Q1/A): 60 days in production, 60 s in the
+    ///      demo deployment — set ONCE here, NO setter exists (spec FR-016).
+    function initialize(
+        address admin,
+        address relayer,
+        address orchestrator,
+        address pauser,
+        address ausdToken,
+        uint256 minEventGapSec
+    ) external initializer {
         if (admin == address(0) || relayer == address(0) || orchestrator == address(0) || pauser == address(0) || ausdToken == address(0))
         {
             revert Kite__ZeroAddress();
         }
-        __Governed_init(admin, relayer, orchestrator, pauser);
+        __Governed_init(admin, relayer, orchestrator, pauser, minEventGapSec);
         // UUPS has no init in OZ 5.x (implementation slot is ERC-1967, set at proxy deploy)
         __EIP712_init("KiteCore", "1"); // research.md D6/D12: domain mirrors app signatures
         // The money rail lives in the kite.isa ERC-7201 namespace so the ISA
