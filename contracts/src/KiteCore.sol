@@ -31,11 +31,6 @@ contract KiteCore is Initializable, Governed, UUPSUpgradeable, EIP712Upgradeable
     // ── Errors ──────────────────────────────────────────────────────────
     error Kite__ZeroAddress();
 
-    // ── Storage constant for views ──────────────────────────────────────
-    /// @dev The AUSD money rail, injected at initialization (research.md
-    ///      D13) so tests can wire a malicious token for reentrancy proofs.
-    IAUSD private _ausd;
-
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
@@ -52,12 +47,15 @@ contract KiteCore is Initializable, Governed, UUPSUpgradeable, EIP712Upgradeable
         __Governed_init(admin, relayer, orchestrator, pauser);
         // UUPS has no init in OZ 5.x (implementation slot is ERC-1967, set at proxy deploy)
         __EIP712_init("KiteCore", "1"); // research.md D6/D12: domain mirrors app signatures
-        _ausd = IAUSD(ausd);
+        // The money rail lives in the kite.isa ERC-7201 namespace so the ISA
+        // and Stream modules both reach it (research.md D13; a plain leaf
+        // var would be off-discipline AND invisible to the bases).
+        _isaStorage().ausd = IAUSD(ausd);
     }
 
     // ── Views (constitution IV: recomputable from public state) ─────────
     function ausd() external view returns (address) {
-        return address(_ausd);
+        return address(_isaStorage().ausd);
     }
 
     function isaOf(uint256 isaId) external view returns (ISA memory) {
@@ -101,16 +99,7 @@ contract KiteCore is Initializable, Governed, UUPSUpgradeable, EIP712Upgradeable
     // ── UUPS (ADMIN-only upgrade — spec FR-001/FR-017) ──────────────────
     function _authorizeUpgrade(address newImplementation) internal override onlyRole(DEFAULT_ADMIN_ROLE) {}
 
-    // ── T004 skeleton stubs — reverting until T012–T014 implement them ──
-    function activateWithPermit(uint256 isaId, uint256 deadline, uint8 v, bytes32 r, bytes32 s) external pure {
-        isaId;
-        deadline;
-        v;
-        r;
-        s;
-        revert();
-    }
-
+    // ── T004 skeleton stubs — reverting until T013–T014 implement them ──
     function receiveIncome(
         uint256 isaId,
         bytes32 purchaseRef,

@@ -3,15 +3,22 @@ pragma solidity ^0.8.20;
 
 import {KiteScoring} from "../KiteScoring.sol";
 import {Identity} from "./Identity.sol";
+// OZ 5.x guard state is TRANSIENT storage — the non-upgradeable guard is
+// upgrade-safe and shares one instance through the KiteCore diamond.
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 /// @dev Money-rail surface KiteCore needs (ERC-20 + EIP-2612 permit);
-///      MockAUSD implements it (research.md D12/D13).
+///      MockAUSD implements it (research.md D12/D13). DOMAIN_SEPARATOR +
+///      nonces let KiteCore pre-verify the permit and raise Kite__WrongBacker
+///      instead of letting OZ's InvalidSigner mask the real problem.
 interface IAUSD {
     function balanceOf(address account) external view returns (uint256);
     function transfer(address to, uint256 value) external returns (bool);
     function transferFrom(address from, address to, uint256 value) external returns (bool);
     function permit(address owner, address spender, uint256 value, uint256 deadline, uint8 v, bytes32 r, bytes32 s)
         external;
+    function DOMAIN_SEPARATOR() external view returns (bytes32);
+    function nonces(address owner) external view returns (uint256);
 }
 
 // ── Types (PLAN §6.2, field-for-field) ──────────────────────────────────
@@ -52,7 +59,7 @@ uint8 constant STATUS_CANCELLED = 5;
 ///         D8, §6.4 #7).
 /// @dev Owns the `kite.isa` ERC-7201 namespace (research.md D3). Named
 ///      ISAModule to avoid colliding with the §6.2 `ISA` struct above.
-abstract contract ISAModule is Identity {
+abstract contract ISAModule is Identity, ReentrancyGuard {
     // ── Errors / events ─────────────────────────────────────────────────
     error Kite__NotVerified(address account);
     error Kite__ShareOutOfBounds(uint16 shareBps);
@@ -83,6 +90,10 @@ abstract contract ISAModule is Identity {
         // distinctBackers support: first completed deal per (seeker, backer)? (research.md D8)
         mapping(address seeker => mapping(address backer => bool)) completedWithBacker;
         uint256 nextIsaId; // first id is 1; 0 never a valid id
+        IAUSD ausd; // the money rail, injected at init (research.md D13); lives in
+        // this namespace because BOTH ISA (permit/pull/pay) and Stream (pull
+        // gross) — both below ISAModule — need it, and ERC-7201 forbids plain
+        // upgradeable state outside a namespace
     }
 
     // keccak256(abi.encode(uint256(keccak256("kite.isa")) - 1)) & ~bytes32(uint256(0xff))
@@ -148,6 +159,46 @@ abstract contract ISAModule is Identity {
             status: STATUS_DRAFTED
         });
         emit ISADrafted(id, seeker, backer, terms);
+    }
+
+    /// @dev keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)")
+    bytes32 internal constant _PERMIT_TYPEHASH =
+        keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)");
+
+    // ── External surface (PLAN §6.1; research.md D5) ────────────────────
+    /// @notice ONE tx: permit → pull exactly principal → pay exactly principal
+    ///         to the seeker (constitution III). `msg.sender` is unrestricted —
+    ///         the backer's signature IS the authorization (PLAN D11). Atomic:
+    ///         any revert leaves the deal Drafted, nothing moved.
+    function activateWithPermit(uint256 isaId, uint256 deadline, uint8 v, bytes32 r, bytes32 s)
+        external
+        nonReentrant
+        whenNotPaused
+    {
+        ISAStorage storage $ = _isaStorage();
+        ISA storage isa = $.isas[isaId];
+        if (isa.status != STATUS_DRAFTED) revert Kite__NotDrafted(isaId, isa.status);
+
+        uint256 principal = isa.terms.principal;
+        // The permit is verified by THE TOKEN over ITS domain (research.md D5);
+        // we pre-recover so a signature by anyone but the NAMED backer fails
+        // as Kite__WrongBacker, not as an opaque OZ InvalidSigner. The permit
+        // call itself re-verifies; its OZ errors bubble (expiry, used nonce).
+        bytes32 permitHash = keccak256(
+            abi.encode(_PERMIT_TYPEHASH, isa.backer, address(this), principal, $.ausd.nonces(isa.backer), deadline)
+        );
+        address recovered =
+            ecrecover(keccak256(abi.encodePacked("\x19\x01", $.ausd.DOMAIN_SEPARATOR(), permitHash)), v, r, s);
+        if (recovered != isa.backer) revert Kite__WrongBacker(isaId, recovered);
+
+        $.ausd.permit(isa.backer, address(this), principal, deadline, v, r, s);
+        $.ausd.transferFrom(isa.backer, address(this), principal);
+        $.ausd.transfer(isa.seeker, principal);
+
+        isa.status = STATUS_ACTIVE;
+        isa.activatedAt = uint64(block.timestamp);
+        $.activeISA[isa.seeker] = isaId;
+        emit ISAActivated(isaId, isa.backer, principal);
     }
 
     /// @notice Pre-activation cancel, by either party, ONLY while Drafted.

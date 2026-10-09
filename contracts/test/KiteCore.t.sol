@@ -120,10 +120,12 @@ contract KiteCoreTest is Test {
     function _activate(uint256 id, uint256 backerPk, address backer) internal {
         uint256 principal = kite.isaOf(id).terms.principal;
         uint256 deadline = block.timestamp + 1 hours;
+        // The TOKEN verifies the permit over ITS domain (research.md D5);
+        // KiteCore pre-recovers over the same domain for Kite__WrongBacker.
         bytes32 digest = keccak256(
             abi.encodePacked(
                 "\x19\x01",
-                kiteDomain,
+                ausd.DOMAIN_SEPARATOR(),
                 keccak256(abi.encode(PERMIT_TYPEHASH, backer, address(kite), principal, ausd.nonces(backer), deadline))
             )
         );
