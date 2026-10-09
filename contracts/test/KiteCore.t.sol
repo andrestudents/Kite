@@ -3,6 +3,7 @@ pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
 import {Vm} from "forge-std/Vm.sol";
+import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import {KiteCore} from "../src/KiteCore.sol";
 import {MockAUSD} from "../src/MockAUSD.sol";
@@ -1096,5 +1097,295 @@ contract KiteCoreTest is Test {
         (, address pubkey, bool active) = kite.channelOf(3);
         assertTrue(active);
         assertEq(pubkey, vm.addr(0xF3));
+    }
+
+    // ────────────────────────────────────────────────────────────────────
+    // Reentrancy tier (US3) — research.md D13 rig: a MALICIOUS money rail
+    // (the initializer's ausd argument) that re-enters from its own
+    // transfer/transferFrom during real settlements. `nonReentrant` is
+    // declared FIRST on both entry points, so the guard fires before any
+    // other gate — every re-entry must revert, while the legit outer flow
+    // still completes atomically.
+    // ────────────────────────────────────────────────────────────────────
+
+    struct ReenterRig {
+        KiteCore kite;
+        MaliciousAUSD token;
+        address seeker;
+        address backer;
+        uint256 backerPk;
+        bytes32 domain;
+        uint256 id;
+    }
+
+    /// @dev A full KiteCore deployment on the malicious rail: identities,
+    ///      channel, a 600e6 draft (P 600 / share 20% / cap 1.2×) and the
+    ///      backer's standing approval.
+    function _rig() internal returns (ReenterRig memory r) {
+        MaliciousAUSD tok = new MaliciousAUSD();
+        KiteCore impl = new KiteCore();
+        ERC1967Proxy proxy = new ERC1967Proxy(
+            address(impl),
+            abi.encodeCall(KiteCore.initialize, (admin, relayer, orchestrator, pauser, address(tok)))
+        );
+        r.kite = KiteCore(address(proxy));
+        r.token = tok;
+        tok.aim(address(r.kite));
+
+        r.seeker = vm.addr(0xD9);
+        r.backer = vm.addr(0xDA);
+        r.backerPk = 0xDA;
+        vm.prank(relayer);
+        r.kite.bindIdentity(r.seeker, keccak256("rs@mera"));
+        vm.prank(relayer);
+        r.kite.bindIdentity(r.backer, keccak256("rb@mera"));
+        vm.prank(admin);
+        r.kite.registerChannel(1, "Rig Mill", mill);
+
+        r.domain = keccak256(
+            abi.encode(
+                keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"),
+                keccak256("KiteCore"),
+                keccak256("1"),
+                block.chainid,
+                address(r.kite)
+            )
+        );
+
+        Terms memory t =
+            Terms({principal: 600e6, shareBps: 2000, capMult: 120, termEnd: uint64(block.timestamp + 30 days), channelId: 1});
+        vm.prank(r.seeker);
+        r.id = r.kite.createISADraft(t, r.backer);
+
+        tok.deal(r.backer, 600e6);
+        tok.deal(mill, 20_000e6); // the channel funds settlements (D6)
+        vm.prank(r.backer);
+        tok.approve(address(r.kite), type(uint256).max);
+        vm.prank(mill);
+        tok.approve(address(r.kite), type(uint256).max);
+    }
+
+    function testReentrancy_ActivateWithPermit_Blocked() public {
+        ReenterRig memory r = _rig();
+        // Valid permit over the RAIL's own domain — the attacker rail allows all.
+        uint256 deadline = block.timestamp + 1 hours;
+        bytes32 digest = keccak256(
+            abi.encodePacked(
+                "\x19\x01",
+                r.token.DOMAIN_SEPARATOR(),
+                keccak256(abi.encode(PERMIT_TYPEHASH, r.backer, address(r.kite), 600e6, r.token.nonces(r.backer), deadline))
+            )
+        );
+        (uint8 v, bytes32 rv, bytes32 sv) = vm.sign(r.backerPk, digest);
+        r.token.arm(true, abi.encodeWithSelector(ISAModule.activateWithPermit.selector, r.id, deadline, v, rv, sv));
+
+        r.kite.activateWithPermit(r.id, deadline, v, rv, sv); // legit entry; hook fires mid-pull
+
+        assertGt(r.token.attempts(), 0, "re-entry was attempted");
+        assertEq(r.token.blocked(), r.token.attempts(), "EVERY re-entry hit the guard");
+        ISA memory isa = r.kite.isaOf(r.id);
+        assertEq(isa.status, STATUS_ACTIVE, "legit flow completed atomically anyway");
+        assertEq(r.token.balanceOf(r.seeker), 600e6, "seeker paid exactly principal");
+        assertEq(r.token.balanceOf(r.backer), 0, "backer paid exactly principal");
+    }
+
+    function testReentrancy_ReceiveIncome_Blocked() public {
+        ReenterRig memory r = _rig();
+        // Clean activation first (re-entry disarmed).
+        uint256 deadline = block.timestamp + 1 hours;
+        bytes32 digest = keccak256(
+            abi.encodePacked(
+                "\x19\x01",
+                r.token.DOMAIN_SEPARATOR(),
+                keccak256(abi.encode(PERMIT_TYPEHASH, r.backer, address(r.kite), 600e6, r.token.nonces(r.backer), deadline))
+            )
+        );
+        (uint8 v, bytes32 rv, bytes32 sv) = vm.sign(r.backerPk, digest);
+        r.kite.activateWithPermit(r.id, deadline, v, rv, sv);
+        assertEq(r.kite.isaOf(r.id).status, STATUS_ACTIVE);
+
+        // The channel signs a real fact; the re-entry payload is typed garbage —
+        // the guard must fire BEFORE the signature check even looks at it.
+        bytes32 ref = keccak256("rig/1");
+        bytes32 incomeDigest = keccak256(
+            abi.encodePacked(
+                "\x19\x01",
+                r.domain,
+                keccak256(abi.encode(INCOME_TYPEHASH, uint64(1), r.id, ref, 1500e6, keccak256("r1")))
+            )
+        );
+        (uint8 iv, bytes32 ir, bytes32 isig) = vm.sign(millPk, incomeDigest);
+        r.token.arm(
+            true,
+            abi.encodeWithSelector(
+                Stream.receiveIncome.selector, r.id, ref, uint256(1), bytes32(0), uint8(1), bytes32(0), bytes32(0)
+            )
+        );
+        vm.prank(orchestrator);
+        r.kite.receiveIncome(r.id, ref, 1500e6, keccak256("r1"), iv, ir, isig);
+
+        assertGt(r.token.attempts(), 0, "re-entry was attempted");
+        assertEq(r.token.blocked(), r.token.attempts(), "EVERY re-entry hit the guard");
+        ISA memory isa = r.kite.isaOf(r.id);
+        assertEq(isa.status, STATUS_ACTIVE);
+        assertEq(isa.remaining, 420e6, "rig cap 720e6: 1500e6 x 20% = 300e6 diverted atomically");
+    }
+
+    // ── Upgrade tier (US3) — ADMIN is the sole upgrade authority ────────
+
+    function testUpgrade_AdminOnly_UnauthorizedReverts() public {
+        address v2 = address(new KiteCoreV2());
+        vm.prank(relayer);
+        _expectAccess(relayer, adminRole);
+        kite.upgradeToAndCall(v2, "");
+        address stranger = vm.addr(0xE5);
+        vm.prank(stranger);
+        _expectAccess(stranger, adminRole);
+        kite.upgradeToAndCall(v2, "");
+        // Nothing bricked by the failed attempts: ADMIN still can.
+        vm.prank(admin);
+        kite.upgradeToAndCall(v2, "");
+        assertEq(KiteCoreV2(address(kite)).ping(), "v2");
+    }
+
+    function testUpgrade_StateSurvives_V2() public {
+        uint256 id = _runTo(2); // live deal + reputation across four namespaces
+        ISA memory before = kite.isaOf(id);
+        KiteScoring.Profile memory prof = kite.profileOf(budi);
+        address v2 = address(new KiteCoreV2()); // hoisted: a create in the args eats the prank
+
+        vm.prank(admin);
+        kite.upgradeToAndCall(v2, "");
+
+        assertEq(KiteCoreV2(address(kite)).ping(), "v2", "new code is live");
+        ISA memory after_ = kite.isaOf(id);
+        assertEq(after_.remaining, before.remaining, "kite.isa survived");
+        assertEq(after_.status, before.status);
+        assertEq(after_.eventCount, before.eventCount);
+        assertEq(kite.activeISA(budi), id, "active slot survived");
+        assertEq(kite.profileOf(budi).totalISAs, prof.totalISAs, "kite.isa profiles survived");
+        assertEq(kite.profileOf(budi).completed, prof.completed);
+        assertEq(kite.profileOf(budi).qualEvents, prof.qualEvents);
+        assertEq(kite.profileOf(budi).distinctBackers, prof.distinctBackers);
+        assertEq(kite.scoreOf(budi), 58);
+        assertTrue(kite.hasRole(relayerRole, relayer), "kite.governed roles survived");
+        assertFalse(kite.paused());
+        assertEq(kite.identityOf(budi), keccak256("budi@mera"), "kite.identity survived");
+        assertEq(kite.ausd(), address(ausd), "money rail pointer survived");
+        // And the settlement path still runs end-to-end on V2:
+        vm.warp(block.timestamp + 61 days);
+        _settle(id, _day(12), 1500e6, keccak256("d2"));
+        assertEq(kite.isaOf(id).remaining, 180e6);
+    }
+
+    function testUpgrade_ModuleNamespaces_Distinct() public pure {
+        // The four ERC-7201 slots: nonzero and pairwise distinct — a copy-paste
+        // collision would alias two modules' storage across upgrades.
+        bytes32 governed = _erc7201("kite.governed");
+        bytes32 identity = _erc7201("kite.identity");
+        bytes32 isa = _erc7201("kite.isa");
+        bytes32 stream = _erc7201("kite.stream");
+        assertTrue(governed != bytes32(0));
+        assertTrue(identity != bytes32(0));
+        assertTrue(isa != bytes32(0));
+        assertTrue(stream != bytes32(0));
+        assertTrue(governed != identity);
+        assertTrue(governed != isa);
+        assertTrue(governed != stream);
+        assertTrue(identity != isa);
+        assertTrue(identity != stream);
+        assertTrue(isa != stream);
+    }
+
+    /// @dev The ERC-7201 formula the modules use (same as OZ's StorageSlot
+    ///      derivation): keccak256(abi.encode(uint256(keccak256(label)) - 1)) & ~0xff.
+    function _erc7201(string memory label) internal pure returns (bytes32) {
+        return keccak256(abi.encode(uint256(keccak256(bytes(label))) - 1)) & ~bytes32(uint256(0xff));
+    }
+
+    // ── Init tier (US3) ──────────────────────────────────────────────────
+
+    function testInitialize_Twice_Reverts() public {
+        vm.expectRevert(Initializable.InvalidInitialization.selector);
+        kite.initialize(admin, relayer, orchestrator, pauser, address(ausd));
+    }
+}
+
+// ───────────────────────────────────────────────────────────────────────
+// Reentrancy rig (research.md D13): the initializer's ausd argument IS the
+// attack surface — a rail whose transfers re-enter KiteCore and COUNT what
+// the guard blocks. `require`s nothing: the outer flow must complete.
+// ───────────────────────────────────────────────────────────────────────
+contract MaliciousAUSD {
+    KiteCore internal kite;
+    bool internal armed;
+    bytes internal payload;
+    uint256 public attempts;
+    uint256 public blocked;
+    mapping(address account => uint256) public balanceOf;
+    mapping(address owner => mapping(address spender => uint256)) public allowance;
+
+    constructor() {
+        balanceOf[msg.sender] = 1_000_000e6;
+    }
+
+    function aim(address target) external {
+        kite = KiteCore(target);
+    }
+
+    function arm(bool on, bytes calldata reentry) external {
+        armed = on;
+        payload = reentry;
+    }
+
+    function deal(address to, uint256 amount) external {
+        balanceOf[to] += amount;
+    }
+
+    function approve(address spender, uint256 amount) external returns (bool) {
+        allowance[msg.sender][spender] = amount;
+        return true;
+    }
+
+    function transfer(address to, uint256 amount) external returns (bool) {
+        balanceOf[msg.sender] -= amount;
+        balanceOf[to] += amount;
+        _hook();
+        return true;
+    }
+
+    function transferFrom(address from, address to, uint256 amount) external returns (bool) {
+        if (allowance[from][msg.sender] != type(uint256).max) {
+            allowance[from][msg.sender] -= amount;
+        }
+        balanceOf[from] -= amount;
+        balanceOf[to] += amount;
+        _hook();
+        return true;
+    }
+
+    // Attacker-controlled rail: permits are free, the domain is arbitrary.
+    function permit(address, address, uint256, uint256, uint8, bytes32, bytes32) external pure {}
+
+    function DOMAIN_SEPARATOR() external pure returns (bytes32) {
+        return keccak256("Kite reentrancy rig");
+    }
+
+    function nonces(address) external pure returns (uint256) {
+        return 0;
+    }
+
+    function _hook() internal {
+        if (!armed) return;
+        attempts++;
+        (bool ok, ) = address(kite).call(payload);
+        if (!ok) ++blocked; // the guard fired — exactly what must happen
+    }
+}
+
+/// @dev Dummy successor for the upgrade tier: new code, zero storage changes.
+contract KiteCoreV2 is KiteCore {
+    function ping() external pure returns (string memory) {
+        return "v2";
     }
 }
