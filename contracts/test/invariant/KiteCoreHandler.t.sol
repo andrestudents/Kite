@@ -5,7 +5,6 @@ pragma solidity ^0.8.20;
 import {Test} from "forge-std/Test.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import {KiteCore} from "../../src/KiteCore.sol";
-import {KiteScoring} from "../../src/KiteScoring.sol";
 import {MockAUSD} from "../../src/MockAUSD.sol";
 import {
     Terms,
@@ -231,11 +230,14 @@ contract KiteCoreHandler is Test {
             channelId: 1
         });
         if (kiteContract.paused()) {
+            vm.prank(s);
             (bool ok,) = address(kiteContract).call(
                 abi.encodeWithSelector(ISAModule.createISADraft.selector, t, b)
             );
             if (ok) pauseDraftSuccess++;
         } else {
+            vm.prank(s); // the SEEKER drafts (bound identity) — without this
+            // prank every legal draft reverts NotVerified (T023 finding)
             (bool ok, bytes memory ret) = address(kiteContract).call(
                 abi.encodeWithSelector(ISAModule.createISADraft.selector, t, b)
             );
@@ -339,8 +341,15 @@ contract KiteCoreHandler is Test {
         bytes32 ref = keccak256(abi.encode("h-ref", id, settledId.length));
         bytes32 salt = bytes32(_r());
         (uint8 v, bytes32 r, bytes32 s) = _signIncome(id, ref, gross, salt);
-        (uint256 toBackerE, uint256 toSeekerE) = KiteScoring.divert(gross, isa.terms.shareBps, isa.remaining);
-        bool qualE = KiteScoring.isQualifyingEvent(isa.lastEventAt, block.timestamp, gross, isa.terms.principal);
+        // Expectations are computed INLINE, never by calling KiteScoring:
+        // a ghost mirror computed by the code under test verifies nothing
+        // (T023 finding). Formulas quoted from KiteScoring.sol / PLAN §6.3.
+        uint256 sliceE = (gross * isa.terms.shareBps) / 10000;
+        uint256 toBackerE = sliceE < isa.remaining ? sliceE : isa.remaining;
+        uint256 toSeekerE = gross - toBackerE;
+        bool qualE = (isa.lastEventAt == 0 || isa.lastEventAt + 60 days <= block.timestamp)
+            && gross * 10000 >= isa.terms.principal * 1000;
+        vm.prank(orchestrator); // receiveIncome is ORCHESTRATOR-only
         (bool ok, ) = address(kiteContract).call(
             abi.encodeWithSelector(
                 Stream.receiveIncome.selector, id, ref, gross, salt, v, r, s
@@ -389,6 +398,7 @@ contract KiteCoreHandler is Test {
     function settleReplay() public {
         if (settledId.length == 0) return;
         uint256 i = _r() % settledId.length;
+        vm.prank(orchestrator); // reach the replay guard, not the role check
         (bool ok, ) = address(kiteContract).call(
             abi.encodeWithSelector(
                 Stream.receiveIncome.selector,
