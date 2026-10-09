@@ -54,22 +54,44 @@ keys died with the process; `cancelDraft` needs a party's key, and no admin
 path may clear them (constitution IV). They stay Drafted forever — the honest
 cancel-absent behavior.
 
-## Source verification (SC-003)
+## Source verification (SC-003) — VERIFIED 2026-10-10
 
-`forge script --verify` aborts without an explorer API key, so verification runs
-as a straggler pass after the broadcast (research D11 flow). Monadscan's native
-endpoint is Etherscan V1-style and unresponsive; the working path is the Etherscan
-V2 multichain endpoint (chainid 10143 = monad-testnet) with a free
-[etherscan.io](https://etherscan.io/apis) key:
+All three contracts show verified source on
+[testnet.monadscan.com](https://testnet.monadscan.com) (impl, MockAUSD, proxy —
+every address URL in the table above renders source). Monadscan is Etherscan-built:
+the working path is the **Etherscan V2 multichain endpoint** with a free
+[etherscan.io](https://etherscan.io/myapikey) account key. Gotchas, so this stays
+reproducible:
 
 ```sh
-export ETHERSCAN_API_KEY=<your etherscan.io key>
-forge verify-contract 0xb2A358f6cA6a4aE13b6A14730C29DF6500D5FAcd src/KiteCore.sol:KiteCore \
-  --root contracts --chain-id 10143 --verifier etherscan \
-  --verifier-url 'https://api.etherscan.io/v2/api?chainid=10143' --compiler-version 0.8.36
+V="--root contracts --chain-id 10143 --verifier etherscan \
+   --verifier-url 'https://api.etherscan.io/v2/api?chainid=10143' --compiler-version 0.8.36"
+
+# 1. implementation — no ctor args
+forge verify-contract 0xb2A358f6cA6a4aE13b6A14730C29DF6500D5FAcd src/KiteCore.sol:KiteCore $V
+
+# 2. MockAUSD — ctor initialHolder; pass args via FILE (inline form got
+#    "Invalid constructor arguments" from the V2 endpoint)
+echo 0x7A968ba34b0F7eE9eb2Fb8e5C97267626757ffA1 > /tmp/ausd.args
+forge verify-contract 0x0309764915AFC7a2a7CDd1E64c58a57c1F1705E3 src/MockAUSD.sol:MockAUSD \
+  $V --constructor-args-path /tmp/ausd.args
+
+# 3. proxy — (address,bytes); read the EXACT deploy-time args from the broadcast
+#    record's `arguments` field ([impl, initialize calldata incl. selector])
+python3 -c "
+import json
+j = json.load(open('contracts/broadcast/DeployKiteCore.s.sol/10143/run-latest.json'))
+for tx in j['transactions']:
+    if tx.get('contractName') == 'ERC1967Proxy':
+        a = tx['arguments']
+        open('/tmp/proxy.args', 'w').write(a[0] + '\n' + a[1] + '\n')
+        break"
+forge verify-contract 0x3B6C79756efa8d13e4beA36F323F8aC67774C0fD \
+  lib/openzeppelin-contracts/contracts/proxy/ERC1967/ERC1967Proxy.sol:ERC1967Proxy \
+  $V --constructor-args-path /tmp/proxy.args
+#    ^ note the OZ path segment: lib/openzeppelin-contracts/contracts/...
+# Submission returns a GUID; poll: forge verify-check <GUID> --verifier etherscan \
+#   --verifier-url 'https://api.etherscan.io/v2/api?chainid=10143'
 ```
 
-(Impl: no ctor args. Proxy: pass `--constructor-args-path` / encoded ERC-1967 +
-initialize call if attempted. MockAUSD: ctor arg = deployer address.)
-
-Gate: every address URL above shows verified source. Status: PENDING API key.
+Gate: every address URL above shows verified source. **Status: GREEN.**
