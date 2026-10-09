@@ -34,6 +34,12 @@ abstract contract Stream is ISAModule, EIP712Upgradeable {
         bool qualifying
     );
 
+    /// @notice ORCHESTRATOR reconciliation signal (WF-3 Reconcile, PLAN §7.5):
+    ///         a console figure disagreed with the settled fact. Emits ONLY —
+    ///         zero state change (§6.2; testRole flagMismatch asserts storage
+    ///         and balances byte-identical).
+    event MismatchFlagged(uint256 indexed day, uint256 expected, uint256 actual);
+
     // ── Types ───────────────────────────────────────────────────────────
     /// @dev EIP-712 payload; `isaId` is bound so a compromised orchestrator
     ///      cannot route a genuine mill fact to a different deal on the same
@@ -185,5 +191,13 @@ abstract contract Stream is ISAModule, EIP712Upgradeable {
         if (isa.remaining == 0) {
             _completeInternal(f.isaId, isa, STATUS_COMPLETED_CAPPED, 0);
         }
+    }
+
+    // ── Reconciliation (PLAN §6.1 flagMismatch) ─────────────────────────
+    /// @notice ORCHESTRATOR flags a console-vs-ledger discrepancy. Emits
+    ///         ONLY — the contract holds no dispute state; resolution is an
+    ///         offchain/operator concern for the MVP.
+    function flagMismatch(uint256 day, uint256 expected, uint256 actual) external onlyRole(ORCHESTRATOR_ROLE) {
+        emit MismatchFlagged(day, expected, actual);
     }
 }

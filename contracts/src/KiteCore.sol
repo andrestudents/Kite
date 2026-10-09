@@ -95,16 +95,6 @@ contract KiteCore is Initializable, Governed, UUPSUpgradeable, Completion {
     // ── UUPS (ADMIN-only upgrade — spec FR-001/FR-017) ──────────────────
     function _authorizeUpgrade(address newImplementation) internal override onlyRole(DEFAULT_ADMIN_ROLE) {}
 
-    // ── T004 skeleton stubs — reverting until T014 implements them ──
-    function completeAtTerm(uint256 isaId) external pure {
-        isaId;
-        revert();
-    }
-
-    function flagMismatch(uint256 day, uint256 expected, uint256 actual) external pure {
-        day;
-        expected;
-        actual;
-        revert();
-    }
+    // All §6.1 external functions implemented (T010–T014); the surface is
+    // complete — UUPS upgrade authority stays ADMIN-only above.
 }
