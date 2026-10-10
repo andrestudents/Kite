@@ -5,7 +5,11 @@
 import { KiteError } from "@kite/core";
 import type { AnyDb } from "@kite/core/db";
 import { Hono } from "hono";
+import { healthRoutes } from "./routes/health.js";
+import { meRoutes } from "./routes/me.js";
+import { profileRoutes } from "./routes/profile.js";
 import { purchasesRoutes } from "./routes/purchases.js";
+import { quoteRoutes } from "./routes/quote.js";
 import type { ChainClient } from "./services/chain.js";
 
 export interface ApiDeps {
@@ -53,6 +57,8 @@ export function createApp(deps: ApiDeps): Hono {
 
 function mountRoutes(app: Hono, deps: ApiDeps): void {
   app.route("/", purchasesRoutes(deps));
-  // routes/health.ts (T027) · routes/quote.ts (T028) · routes/me.ts (T029) ·
-  // routes/profile.ts (T030) mount here.
+  app.route("/", healthRoutes(deps));
+  app.route("/", quoteRoutes(deps));
+  app.route("/", meRoutes(deps));
+  app.route("/", profileRoutes(deps));
 }
