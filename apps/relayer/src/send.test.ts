@@ -1,6 +1,7 @@
 // T022: nonce resync (the chain count WINS after a simulated restart), the
-// FR-013 pre-resend status gate, capped backoff + terminal_at, and the daily
-// native-spend ceiling. The wallet is a mock — no network here.
+// D7 proof-gated confirmation, the FR-013 pre-resend proof gate, capped
+// backoff + terminal_at, and the daily native-spend ceiling. The wallet is a
+// mock — no network here.
 import { beforeEach, describe, expect, it } from "bun:test";
 import { eq } from "drizzle-orm";
 import { KiteError } from "@kite/core";
@@ -8,7 +9,15 @@ import { type AnyDb, drips, relayerJobs } from "@kite/core/db";
 import { makeTestDb, type TestDb } from "@kite/core/testing";
 import { assertDripWithinDailyCap, nativeSpendTodayWei } from "./caps.js";
 import { enqueue, getJob, setJobStatus } from "./queue.js";
-import { MAX_ATTEMPTS, backoffMs, resendGated, sendOnce, type RelayerWallet, type SendPlan } from "./send.js";
+import {
+  MAX_ATTEMPTS,
+  backoffMs,
+  resendGated,
+  sendOnce,
+  type MinedReceipt,
+  type RelayerWallet,
+  type SendPlan,
+} from "./send.js";
 
 const PLAN: SendPlan = {
   address: `0x${"11".repeat(20)}` as `0x${string}`,
@@ -22,7 +31,8 @@ interface WalletScript {
   pendingCount: bigint;
   writeHashes: string[];
   writeCalls: { plan: SendPlan; nonce: number }[];
-  receiptStatus: "success" | "reverted" | null;
+  /** Map txHash → mined status; a missing hash is UNMINED (null). */
+  receipts: Record<string, "success" | "reverted">;
   throwOnWrite?: Error;
 }
 
@@ -42,16 +52,38 @@ function mockWallet(script: WalletScript): RelayerWallet {
       }
       return hash as `0x${string}`;
     },
-    async receipt() {
-      return script.receiptStatus === null ? null : { status: script.receiptStatus };
+    async sendNative() {
+      throw new Error("native sends are not scripted in this test");
+    },
+    async receiptWithLogs(txHash) {
+      const status = script.receipts[txHash];
+      return status ? { status, logs: [] } : null;
+    },
+    async balanceOfNative() {
+      return 0n;
+    },
+    async identityOf() {
+      return `0x${"00".repeat(32)}`;
+    },
+    async isaStatusOf() {
+      return 0;
     },
   };
 }
 
-async function seedJob(db: AnyDb, kind = "bind_identity", status = "pending", nonce: number | null = null) {
+async function seedJob(
+  db: AnyDb,
+  kind = "bind_identity",
+  status = "pending",
+  nonce: number | null = null,
+): Promise<Awaited<ReturnType<typeof getJob>>> {
   const { job } = await enqueue(db, { kind, payload: { wallet: "0xabc", identityHash: `0x${"aa".repeat(32)}` } });
   if (status !== "pending") {
     await setJobStatus(db, job.id, status);
+  }
+  // A real `sent` row always carries its broadcast hash (markSent writes both).
+  if (status === "sent") {
+    await db.update(relayerJobs).set({ txHash: "0xseedtx" }).where(eq(relayerJobs.id, job.id));
   }
   if (nonce !== null) {
     await db.update(relayerJobs).set({ nonce }).where(eq(relayerJobs.id, job.id));
@@ -77,7 +109,7 @@ describe("sendOnce (T022)", () => {
 
   it("nonce drift after a simulated restart: the chain pending count wins (D6)", async () => {
     const job = await seedJob(db, "bind_identity", "pending", 4); // a stale local record
-    const script: WalletScript = { pendingCount: 41n, writeHashes: ["0xhash1"], writeCalls: [], receiptStatus: "success" };
+    const script: WalletScript = { pendingCount: 41n, writeHashes: ["0xhash1"], writeCalls: [], receipts: { "0xhash1": "success" } };
     const outcome = await sendOnce(db, mockWallet(script), job, PLAN);
     expect(outcome.status).toBe("confirmed");
     expect(script.writeCalls[0]?.nonce).toBe(41); // NOT the stale 4
@@ -90,7 +122,7 @@ describe("sendOnce (T022)", () => {
 
   it("every send carries the published fixed gas limit verbatim (D10)", async () => {
     const job = await seedJob(db);
-    const script: WalletScript = { pendingCount: 0n, writeHashes: ["0xhash2"], writeCalls: [], receiptStatus: null };
+    const script: WalletScript = { pendingCount: 0n, writeHashes: ["0xhash2"], writeCalls: [], receipts: {} };
     const outcome = await sendOnce(db, mockWallet(script), job, PLAN, { receiptTries: 1 });
     expect(outcome.status).toBe("sent"); // unmined — in-flight record kept
     expect(script.writeCalls[0]?.plan.gasFixedLimit).toBe(158_000);
@@ -102,7 +134,7 @@ describe("sendOnce (T022)", () => {
   it("records attempts and last_error on failure; terminal_at when MAX_ATTEMPTS is exhausted", async () => {
     const job = await seedJob(db);
     const boom = new Error("socket hang up");
-    const script: WalletScript = { pendingCount: 0n, writeHashes: [], writeCalls: [], receiptStatus: null, throwOnWrite: boom };
+    const script: WalletScript = { pendingCount: 0n, writeHashes: [], writeCalls: [], receipts: {}, throwOnWrite: boom };
 
     for (let i = 1; i <= MAX_ATTEMPTS; i++) {
       const current = await getJob(db, job.id);
@@ -119,6 +151,17 @@ describe("sendOnce (T022)", () => {
       }
     }
   });
+
+  it("a success receipt without the per-kind proof is retryable, never confirmed (D7)", async () => {
+    const job = await seedJob(db);
+    const script: WalletScript = { pendingCount: 0n, writeHashes: ["0xhash5"], writeCalls: [], receipts: { "0xhash5": "success" } };
+    const outcome = await sendOnce(db, mockWallet(script), job, PLAN, { proof: async () => false });
+    if (outcome.status !== "retryable") {
+      throw new Error("expected retryable");
+    }
+    expect(outcome.error).toContain("proof is missing");
+    expect((await getJob(db, job.id)).status).toBe("sent"); // stays in-flight for the gated re-claim
+  });
 });
 
 describe("resendGated (FR-013: never a blind resend)", () => {
@@ -128,45 +171,72 @@ describe("resendGated (FR-013: never a blind resend)", () => {
     db = await makeTestDb();
   });
 
-  it("confirms from the read-back without a second broadcast when the effect landed", async () => {
-    const job = await seedJob(db, "bind_identity", "sent");
-    const script: WalletScript = { pendingCount: 0n, writeHashes: [], writeCalls: [], receiptStatus: null };
+  it("confirms from the proof without a second broadcast when the effect landed", async () => {
+    const job = await seedJob(db, "bind_identity", "sent"); // txHash 0xseedtx
+    const script: WalletScript = {
+      pendingCount: 0n,
+      writeHashes: [],
+      writeCalls: [],
+      receipts: { "0xseedtx": "success" },
+    };
     const outcome = await resendGated(db, mockWallet(script), job, PLAN, async () => true);
     expect(outcome.status).toBe("confirmed");
     expect(script.writeCalls.length).toBe(0); // no resend
     expect((await getJob(db, job.id)).status).toBe("confirmed");
   });
 
-  it("resends only after the read-back proves the effect did NOT land", async () => {
-    const job = await seedJob(db, "bind_identity", "sent", 7);
-    const script: WalletScript = { pendingCount: 55n, writeHashes: ["0xhash3"], writeCalls: [], receiptStatus: "success" };
-    const outcome = await resendGated(db, mockWallet(script), job, PLAN, async () => false);
+  it("resends only after the mined receipt + proof show the effect did NOT land", async () => {
+    const job = await seedJob(db, "bind_identity", "sent", 7); // txHash 0xseedtx
+    const script: WalletScript = {
+      pendingCount: 55n,
+      writeHashes: ["0xhash3"],
+      writeCalls: [],
+      receipts: { "0xseedtx": "reverted", "0xhash3": "success" },
+    };
+    // The proof reads chain state: false until the resend lands, then true.
+    const proof = async () => script.writeCalls.length > 0;
+    const outcome = await resendGated(db, mockWallet(script), job, PLAN, proof);
     expect(outcome.status).toBe("confirmed");
     expect(script.writeCalls.length).toBe(1); // exactly one proven resend
     expect(script.writeCalls[0]?.nonce).toBe(55); // resynced again
   });
 
-  it("confirmed is finished history — no read-back, no send", async () => {
-    const job = await seedJob(db, "bind_identity", "confirmed");
-    const script: WalletScript = { pendingCount: 0n, writeHashes: [], writeCalls: [], receiptStatus: null };
-    let readBacks = 0;
+  it("keeps waiting on an unmined receipt — no resend against a live mempool entry", async () => {
+    const job = await seedJob(db, "bind_identity", "sent");
+    const script: WalletScript = { pendingCount: 0n, writeHashes: [], writeCalls: [], receipts: {} }; // 0xseedtx unmined
     const outcome = await resendGated(db, mockWallet(script), job, PLAN, async () => {
-      readBacks++;
-      return true;
+      throw new Error("proof must not run while unmined");
     });
-    expect(outcome.status).toBe("confirmed");
-    expect(readBacks).toBe(0);
+    expect(outcome.status).toBe("sent");
     expect(script.writeCalls.length).toBe(0);
   });
 
-  it("a pending job (crash before broadcast) may always send", async () => {
-    const job = await seedJob(db, "bind_identity", "pending");
-    const script: WalletScript = { pendingCount: 9n, writeHashes: ["0xhash4"], writeCalls: [], receiptStatus: "success" };
+  it("confirmed is finished history — no proof, no send", async () => {
+    const job = await seedJob(db, "bind_identity", "confirmed");
+    const script: WalletScript = { pendingCount: 0n, writeHashes: [], writeCalls: [], receipts: {} };
+    let proofs = 0;
     const outcome = await resendGated(db, mockWallet(script), job, PLAN, async () => {
-      throw new Error("read-back must not run for pending jobs");
+      proofs++;
+      return true;
+    });
+    expect(outcome.status).toBe("confirmed");
+    expect(proofs).toBe(0);
+    expect(script.writeCalls.length).toBe(0);
+  });
+
+  it("a pending job (crash before broadcast) sends without a pre-send proof — the gate is skipped", async () => {
+    const job = await seedJob(db, "bind_identity", "pending");
+    const script: WalletScript = { pendingCount: 9n, writeHashes: ["0xhash4"], writeCalls: [], receipts: { "0xhash4": "success" } };
+    let proofCalls = 0;
+    const outcome = await resendGated(db, mockWallet(script), job, PLAN, async () => {
+      proofCalls++;
+      return true;
     });
     expect(outcome.status).toBe("confirmed");
     expect(script.writeCalls.length).toBe(1);
+    expect(script.writeCalls[0]?.nonce).toBe(9);
+    // The proof ran exactly once — on the fresh receipt (D7), never before the broadcast.
+    expect(proofCalls).toBe(1);
   });
 });
 
