@@ -5,17 +5,17 @@
 // it (confirm by read-back or gated resend, FR-013) instead of starting a
 // second transaction. SKIP LOCKED keeps concurrent claimers on different rows;
 // the read-back gate keeps a racing pair from ever double-sending.
-import { and, asc, eq, isNull } from "drizzle-orm";
+
 import { KiteError } from "@kite/core";
 import {
+  type AnyDb,
+  execute,
   JOB_KINDS,
   JOB_STATUS,
-  type AnyDb,
-  type JobKind,
   type RelayerJob,
-  execute,
   relayerJobs,
 } from "@kite/core/db";
+import { and, asc, eq, isNull } from "drizzle-orm";
 
 export interface EnqueueInput {
   kind: string;

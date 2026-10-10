@@ -1,11 +1,17 @@
 // T016: the §7.2 rule 3 double entry — writer-asserted balance, append-only.
 import { beforeEach, describe, expect, it } from "bun:test";
 import { KiteError } from "@kite/core";
-import { ledgerEntries, purchases, type Purchase } from "@kite/core/db";
+import { ledgerEntries, type Purchase, purchases } from "@kite/core/db";
 import { makeTestDb, type TestDb } from "@kite/core/testing";
 import { entriesFor, writeSettlement } from "./ledger.js";
 
-const SPLIT = { gross: 1_500_000_000, toBacker: 300_000_000, toSeeker: 1_200_000_000, backer: "0xbacker", seeker: "0xseeker" };
+const SPLIT = {
+  gross: 1_500_000_000,
+  toBacker: 300_000_000,
+  toSeeker: 1_200_000_000,
+  backer: "0xbacker",
+  seeker: "0xseeker",
+};
 
 async function seedPurchase(db: TestDb, ref: `0x${string}`): Promise<Purchase> {
   const id = crypto.randomUUID();
@@ -16,7 +22,12 @@ async function seedPurchase(db: TestDb, ref: `0x${string}`): Promise<Purchase> {
     purchaseRef: ref,
     grossAusd: 1_500_000_000,
     status: "PAID",
-    millSig: { salt: `0x${"11".repeat(32)}`, v: 27, r: `0x${"22".repeat(32)}`, s: `0x${"33".repeat(32)}` },
+    millSig: {
+      salt: `0x${"11".repeat(32)}`,
+      v: 27,
+      r: `0x${"22".repeat(32)}`,
+      s: `0x${"33".repeat(32)}`,
+    },
   });
   const rows = await db.select().from(purchases);
   return rows[0] as Purchase;

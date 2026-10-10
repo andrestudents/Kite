@@ -4,21 +4,24 @@
 // bytes32 salt) over domain ("KiteCore","1",chainId,KITE_DEPLOYMENT.kiteCore).
 // The registry captures {salt,v,r,s} at creation (§7.1 anti-collusion record —
 // constitution V): the mill attests the purchase BEFORE settlement exists.
+
+import { KITE_DEPLOYMENT } from "@kite/contracts";
+import type { MillSig } from "@kite/core/db";
 import {
+  type Address,
   encodeAbiParameters,
   encodePacked,
+  type Hash,
+  type Hex,
   keccak256,
   recoverAddress,
   toHex,
-  type Address,
-  type Hash,
-  type Hex,
 } from "viem";
-import { KITE_DEPLOYMENT } from "@kite/contracts";
-import type { MillSig } from "@kite/core/db";
 
 const INCOME_TYPEHASH = keccak256(
-  toHex("IncomeEvent(uint64 channelId,uint256 isaId,bytes32 purchaseRef,uint256 gross,bytes32 salt)"),
+  toHex(
+    "IncomeEvent(uint64 channelId,uint256 isaId,bytes32 purchaseRef,uint256 gross,bytes32 salt)",
+  ),
 );
 const DOMAIN_TYPEHASH = keccak256(
   toHex("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"),
@@ -70,7 +73,9 @@ export function incomeDigest(payload: IncomePayload): Hash {
       payload.salt,
     ]),
   );
-  return keccak256(encodePacked(["string", "bytes32", "bytes32"], ["\x19\x01", domain, structHash]));
+  return keccak256(
+    encodePacked(["string", "bytes32", "bytes32"], ["\x19\x01", domain, structHash]),
+  );
 }
 
 /** Recover the signer of a stored millSig for this payload. */

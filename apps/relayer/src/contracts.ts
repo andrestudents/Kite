@@ -1,9 +1,10 @@
 // T023–T025 — the relayer's onchain constants. Addresses come from the
 // committed deployment record, ABIs from the committed forge-inspect dumps,
 // gas from the PUBLISHED fixed limits (PLAN §6.1) — nothing is estimated.
+
+import { abis, KITE_DEPLOYMENT, KITE_GAS_LIMITS, MOCK_AUSD_GAS_LIMITS } from "@kite/contracts";
 import type { Abi } from "viem";
 import { keccak256, toHex } from "viem";
-import { KITE_DEPLOYMENT, KITE_GAS_LIMITS, MOCK_AUSD_GAS_LIMITS, abis } from "@kite/contracts";
 
 export const CORE = KITE_DEPLOYMENT.kiteCore as `0x${string}`;
 export const AUSD = KITE_DEPLOYMENT.ausd as `0x${string}`;

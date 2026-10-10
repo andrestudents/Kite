@@ -2,11 +2,11 @@
 // the UNIQUE(channel_id, purchase_ref) lock and the append-only transition
 // log must actually fire (research D4/D17).
 import { beforeEach, describe, expect, it } from "bun:test";
-import type { Hono } from "hono";
-import { privateKeyToAccount, sign } from "viem/accounts";
 import { KiteError, type PurchaseDto } from "@kite/core";
 import { purchases } from "@kite/core/db";
 import { makeTestDb, type TestDb } from "@kite/core/testing";
+import type { Hono } from "hono";
+import { privateKeyToAccount, sign } from "viem/accounts";
 import { createApp } from "../app.js";
 import type { ChainClient } from "./chain.js";
 import { incomeDigest } from "./income-sig.js";
@@ -184,7 +184,11 @@ describe("createPurchase (§7.2 rule 1)", () => {
 
   it("rejects unknown and inactive channels", async () => {
     for (const overrides of [
-      { channelOf: async () => { throw new Error("rpc revert"); } },
+      {
+        channelOf: async () => {
+          throw new Error("rpc revert");
+        },
+      },
       { channelOf: async () => ({ name: "x", pubkey: MILL.address, active: false }) },
     ]) {
       try {
@@ -197,7 +201,10 @@ describe("createPurchase (§7.2 rule 1)", () => {
   });
 
   it("rejects an isa from another channel or nonexistent", async () => {
-    for (const isa of [{ ...ISA_ONCHAIN, channelId: 9 }, { ...ISA_ONCHAIN, status: 0 }]) {
+    for (const isa of [
+      { ...ISA_ONCHAIN, channelId: 9 },
+      { ...ISA_ONCHAIN, status: 0 },
+    ]) {
       try {
         await createPurchase(db, fakeChain({ isaOf: async () => isa }), await intentOf());
         throw new Error("should have thrown");
@@ -238,7 +245,9 @@ describe("markPurchasePaid (§7.2 rule 2, FR-007)", () => {
   });
 
   it("404-shapes unknown ids", async () => {
-    await expect(markPurchasePaid(db, "not-a-uuid", "mita")).rejects.toMatchObject({ code: "purchase_not_found" });
+    await expect(markPurchasePaid(db, "not-a-uuid", "mita")).rejects.toMatchObject({
+      code: "purchase_not_found",
+    });
     await expect(getPurchase(db, "00000000-0000-0000-0000-000000000000")).rejects.toMatchObject({
       code: "purchase_not_found",
     });
@@ -296,10 +305,15 @@ describe("purchase routes (http-api.md shapes)", () => {
     });
     expect(got.status).toBe(200);
 
-    const missing = await app.request("/api/channel/purchases/11111111-1111-1111-1111-111111111111", {
-      headers: { "x-api-key": mitaKey },
-    });
+    const missing = await app.request(
+      "/api/channel/purchases/11111111-1111-1111-1111-111111111111",
+      {
+        headers: { "x-api-key": mitaKey },
+      },
+    );
     expect(missing.status).toBe(404);
-    expect(((await missing.json()) as { error: { code: string } }).error.code).toBe("purchase_not_found");
+    expect(((await missing.json()) as { error: { code: string } }).error.code).toBe(
+      "purchase_not_found",
+    );
   });
 });

@@ -4,12 +4,24 @@
 // containing AUSD's Transfer(from, to, value): MockAUSD exposes no
 // authorizationState view, and a spent/reverting call emits no event — the
 // log is the only sound evidence that THIS authorization landed.
+
+import {
+  AUSD,
+  AUSD_ABI,
+  addressTopic,
+  TRANSFER_TOPIC,
+  TRANSFER_WITH_AUTH_GAS,
+} from "../contracts.js";
 import { registerHandler } from "../dispatch.js";
-import { resendGated, type MinedReceipt } from "../send.js";
-import { AUSD, AUSD_ABI, TRANSFER_TOPIC, TRANSFER_WITH_AUTH_GAS, addressTopic } from "../contracts.js";
+import { type MinedReceipt, resendGated } from "../send.js";
 import { asPayload, requireAddress, requireBytes32, requireSig, requireUint } from "./parse.js";
 
-function transferLanded(receipt: MinedReceipt, from: string, to: string, valueWei: bigint): boolean {
+function transferLanded(
+  receipt: MinedReceipt,
+  from: string,
+  to: string,
+  valueWei: bigint,
+): boolean {
   return receipt.logs.some((raw) => {
     const log = raw as { address?: string; topics?: string[]; data?: string };
     return (
@@ -33,7 +45,8 @@ registerHandler("transfer_with_authorization", async (ctx, job) => {
   const nonce = requireBytes32(p, "nonce");
   const { v, r, s } = requireSig(p);
 
-  const proof = (receipt: MinedReceipt) => Promise.resolve(transferLanded(receipt, from, to, valueAusd));
+  const proof = (receipt: MinedReceipt) =>
+    Promise.resolve(transferLanded(receipt, from, to, valueAusd));
   return resendGated(
     ctx.db,
     ctx.wallet,

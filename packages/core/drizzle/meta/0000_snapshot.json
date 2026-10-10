@@ -243,12 +243,8 @@
           "name": "ledger_entries_purchase_id_purchases_id_fk",
           "tableFrom": "ledger_entries",
           "tableTo": "purchases",
-          "columnsFrom": [
-            "purchase_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["purchase_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -307,12 +303,8 @@
           "name": "purchase_transitions_purchase_id_purchases_id_fk",
           "tableFrom": "purchase_transitions",
           "tableTo": "purchases",
-          "columnsFrom": [
-            "purchase_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["purchase_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -538,9 +530,7 @@
         "relayer_jobs_client_ref_unique": {
           "name": "relayer_jobs_client_ref_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "client_ref"
-          ]
+          "columns": ["client_ref"]
         }
       },
       "policies": {},
@@ -605,9 +595,7 @@
         "users_wallet_unique": {
           "name": "users_wallet_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "wallet"
-          ]
+          "columns": ["wallet"]
         }
       },
       "policies": {},

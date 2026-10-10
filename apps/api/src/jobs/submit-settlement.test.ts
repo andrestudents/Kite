@@ -2,11 +2,11 @@
 // (US1-AC4), wrong-state refusals, transient errors rethrown. The broadcast
 // leg is injected; observation runs the real processNewLogs over a fake chain.
 import { beforeEach, describe, expect, it } from "bun:test";
-import { KiteError } from "@kite/core";
+import type { KiteError } from "@kite/core";
 import { purchases, purchaseTransitions } from "@kite/core/db";
 import { makeTestDb, type TestDb } from "@kite/core/testing";
 import type { ChainClient, SettlementLog } from "../services/chain.js";
-import { isTerminalRevert, submitSettlement, type IncomeCall } from "./submit-settlement.js";
+import { type IncomeCall, isTerminalRevert, submitSettlement } from "./submit-settlement.js";
 
 const REF = `0x${"c0".repeat(32)}`;
 
@@ -88,7 +88,12 @@ describe("submitSettlement (T019)", () => {
       purchaseRef: REF,
       grossAusd: 1_500_000_000,
       status: "PAID",
-      millSig: { salt: `0x${"dd".repeat(32)}`, v: 28, r: `0x${"aa".repeat(32)}`, s: `0x${"bb".repeat(32)}` },
+      millSig: {
+        salt: `0x${"dd".repeat(32)}`,
+        v: 28,
+        r: `0x${"aa".repeat(32)}`,
+        s: `0x${"bb".repeat(32)}`,
+      },
     });
     return id;
   }
@@ -150,7 +155,12 @@ describe("submitSettlement (T019)", () => {
       purchaseRef: REF,
       grossAusd: 1,
       status: "PENDING",
-      millSig: { salt: `0x${"dd".repeat(32)}`, v: 28, r: `0x${"aa".repeat(32)}`, s: `0x${"bb".repeat(32)}` },
+      millSig: {
+        salt: `0x${"dd".repeat(32)}`,
+        v: 28,
+        r: `0x${"aa".repeat(32)}`,
+        s: `0x${"bb".repeat(32)}`,
+      },
     });
     try {
       await submitSettlement(db, fakeChain([]), id, { submit: okSubmit, passes: 1 });
@@ -179,7 +189,11 @@ describe("submitSettlement (T019)", () => {
   it("throws settlement_not_observed when passes run out without a settlement", async () => {
     const id = await seedPaid();
     try {
-      await submitSettlement(db, fakeChain([]), id, { submit: okSubmit, passes: 2, sleep: async () => {} });
+      await submitSettlement(db, fakeChain([]), id, {
+        submit: okSubmit,
+        passes: 2,
+        sleep: async () => {},
+      });
       throw new Error("should have thrown");
     } catch (e) {
       expect((e as KiteError).code).toBe("settlement_not_observed");

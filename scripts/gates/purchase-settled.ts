@@ -10,16 +10,16 @@
 //
 // Exit 0 = PASS, 1 = FAIL. Every step prints its evidence.
 import { createHash, randomBytes } from "node:crypto";
+import { KiteError, requireEnv } from "@kite/core";
+import { isas, type Purchase, purchases } from "@kite/core/db";
 import { eq } from "drizzle-orm";
 import { sign } from "viem/accounts";
-import { KiteError, requireEnv } from "@kite/core";
-import { isas, purchases, type Purchase } from "@kite/core/db";
-import { createPurchase, markPurchasePaid } from "../../apps/api/src/services/purchase-service.js";
-import { entriesFor } from "../../apps/api/src/services/ledger.js";
-import { makeChainClient, type IsaOnchain } from "../../apps/api/src/services/chain.js";
-import { incomeDigest } from "../../apps/api/src/services/income-sig.js";
-import { submitSettlement } from "../../apps/api/src/jobs/submit-settlement.js";
 import { apiEnv } from "../../apps/api/src/env.js";
+import { submitSettlement } from "../../apps/api/src/jobs/submit-settlement.js";
+import { type IsaOnchain, makeChainClient } from "../../apps/api/src/services/chain.js";
+import { incomeDigest } from "../../apps/api/src/services/income-sig.js";
+import { entriesFor } from "../../apps/api/src/services/ledger.js";
+import { createPurchase, markPurchasePaid } from "../../apps/api/src/services/purchase-service.js";
 
 const ISA_ID = Number(process.argv[2] ?? 1);
 const GROSS_AUSD = Number(process.argv[3] ?? 1_000_000); // 1 AUSD in base units
@@ -64,7 +64,8 @@ async function main(): Promise<void> {
   }
 
   // 1. Fresh purchase identity + the mill's signature (T013 encoding, in-process).
-  const purchaseRef = `0x${createHash("sha256").update(randomBytes(32)).digest("hex")}` as `0x${string}`;
+  const purchaseRef =
+    `0x${createHash("sha256").update(randomBytes(32)).digest("hex")}` as `0x${string}`;
   const salt = `0x${createHash("sha256").update(randomBytes(32)).digest("hex")}` as `0x${string}`;
   const channelId = before.channelId;
   const millKey = requireEnv("MILL_KEY") as `0x${string}`;
@@ -83,7 +84,11 @@ async function main(): Promise<void> {
 
   // 2. Register (the same call POST /api/channel/purchases serves).
   const { purchase, created } = await createPurchase(db, chain, intent);
-  step("purchase registered", created && purchase.status === "PENDING", `id=${purchase.id} status=${purchase.status}`);
+  step(
+    "purchase registered",
+    created && purchase.status === "PENDING",
+    `id=${purchase.id} status=${purchase.status}`,
+  );
 
   // 3. The mill records payment (PENDING → PAID).
   const paid = await markPurchasePaid(db, purchase.id, "gate:purchase-settled");
@@ -134,7 +139,9 @@ async function main(): Promise<void> {
       ` | contract remaining=${after.remaining} status=${STATUS_NAMES[after.status]}`,
   );
 
-  console.log(`=== SC-002 ${failed ? "FAIL" : "PASS"} — deal ${ISA_ID}, purchase ${purchase.id} ===`);
+  console.log(
+    `=== SC-002 ${failed ? "FAIL" : "PASS"} — deal ${ISA_ID}, purchase ${purchase.id} ===`,
+  );
   process.exit(failed ? 1 : 0);
 }
 

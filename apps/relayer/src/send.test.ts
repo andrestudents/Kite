@@ -3,20 +3,19 @@
 // backoff + terminal_at, and the daily native-spend ceiling. The wallet is a
 // mock — no network here.
 import { beforeEach, describe, expect, it } from "bun:test";
-import { eq } from "drizzle-orm";
-import { KiteError } from "@kite/core";
+import type { KiteError } from "@kite/core";
 import { type AnyDb, drips, relayerJobs } from "@kite/core/db";
 import { makeTestDb, type TestDb } from "@kite/core/testing";
+import { eq } from "drizzle-orm";
 import { assertDripWithinDailyCap, nativeSpendTodayWei } from "./caps.js";
 import { enqueue, getJob, setJobStatus } from "./queue.js";
 import {
-  MAX_ATTEMPTS,
   backoffMs,
-  resendGated,
-  sendOnce,
-  type MinedReceipt,
+  MAX_ATTEMPTS,
   type RelayerWallet,
+  resendGated,
   type SendPlan,
+  sendOnce,
 } from "./send.js";
 
 const PLAN: SendPlan = {
@@ -77,7 +76,10 @@ async function seedJob(
   status = "pending",
   nonce: number | null = null,
 ): Promise<Awaited<ReturnType<typeof getJob>>> {
-  const { job } = await enqueue(db, { kind, payload: { wallet: "0xabc", identityHash: `0x${"aa".repeat(32)}` } });
+  const { job } = await enqueue(db, {
+    kind,
+    payload: { wallet: "0xabc", identityHash: `0x${"aa".repeat(32)}` },
+  });
   if (status !== "pending") {
     await setJobStatus(db, job.id, status);
   }
@@ -109,7 +111,12 @@ describe("sendOnce (T022)", () => {
 
   it("nonce drift after a simulated restart: the chain pending count wins (D6)", async () => {
     const job = await seedJob(db, "bind_identity", "pending", 4); // a stale local record
-    const script: WalletScript = { pendingCount: 41n, writeHashes: ["0xhash1"], writeCalls: [], receipts: { "0xhash1": "success" } };
+    const script: WalletScript = {
+      pendingCount: 41n,
+      writeHashes: ["0xhash1"],
+      writeCalls: [],
+      receipts: { "0xhash1": "success" },
+    };
     const outcome = await sendOnce(db, mockWallet(script), job, PLAN);
     expect(outcome.status).toBe("confirmed");
     expect(script.writeCalls[0]?.nonce).toBe(41); // NOT the stale 4
@@ -122,7 +129,12 @@ describe("sendOnce (T022)", () => {
 
   it("every send carries the published fixed gas limit verbatim (D10)", async () => {
     const job = await seedJob(db);
-    const script: WalletScript = { pendingCount: 0n, writeHashes: ["0xhash2"], writeCalls: [], receipts: {} };
+    const script: WalletScript = {
+      pendingCount: 0n,
+      writeHashes: ["0xhash2"],
+      writeCalls: [],
+      receipts: {},
+    };
     const outcome = await sendOnce(db, mockWallet(script), job, PLAN, { receiptTries: 1 });
     expect(outcome.status).toBe("sent"); // unmined — in-flight record kept
     expect(script.writeCalls[0]?.plan.gasFixedLimit).toBe(158_000);
@@ -134,7 +146,13 @@ describe("sendOnce (T022)", () => {
   it("records attempts and last_error on failure; terminal_at when MAX_ATTEMPTS is exhausted", async () => {
     const job = await seedJob(db);
     const boom = new Error("socket hang up");
-    const script: WalletScript = { pendingCount: 0n, writeHashes: [], writeCalls: [], receipts: {}, throwOnWrite: boom };
+    const script: WalletScript = {
+      pendingCount: 0n,
+      writeHashes: [],
+      writeCalls: [],
+      receipts: {},
+      throwOnWrite: boom,
+    };
 
     for (let i = 1; i <= MAX_ATTEMPTS; i++) {
       const current = await getJob(db, job.id);
@@ -154,7 +172,12 @@ describe("sendOnce (T022)", () => {
 
   it("a success receipt without the per-kind proof is retryable, never confirmed (D7)", async () => {
     const job = await seedJob(db);
-    const script: WalletScript = { pendingCount: 0n, writeHashes: ["0xhash5"], writeCalls: [], receipts: { "0xhash5": "success" } };
+    const script: WalletScript = {
+      pendingCount: 0n,
+      writeHashes: ["0xhash5"],
+      writeCalls: [],
+      receipts: { "0xhash5": "success" },
+    };
     const outcome = await sendOnce(db, mockWallet(script), job, PLAN, { proof: async () => false });
     if (outcome.status !== "retryable") {
       throw new Error("expected retryable");
@@ -203,7 +226,12 @@ describe("resendGated (FR-013: never a blind resend)", () => {
 
   it("keeps waiting on an unmined receipt — no resend against a live mempool entry", async () => {
     const job = await seedJob(db, "bind_identity", "sent");
-    const script: WalletScript = { pendingCount: 0n, writeHashes: [], writeCalls: [], receipts: {} }; // 0xseedtx unmined
+    const script: WalletScript = {
+      pendingCount: 0n,
+      writeHashes: [],
+      writeCalls: [],
+      receipts: {},
+    }; // 0xseedtx unmined
     const outcome = await resendGated(db, mockWallet(script), job, PLAN, async () => {
       throw new Error("proof must not run while unmined");
     });
@@ -213,7 +241,12 @@ describe("resendGated (FR-013: never a blind resend)", () => {
 
   it("confirmed is finished history — no proof, no send", async () => {
     const job = await seedJob(db, "bind_identity", "confirmed");
-    const script: WalletScript = { pendingCount: 0n, writeHashes: [], writeCalls: [], receipts: {} };
+    const script: WalletScript = {
+      pendingCount: 0n,
+      writeHashes: [],
+      writeCalls: [],
+      receipts: {},
+    };
     let proofs = 0;
     const outcome = await resendGated(db, mockWallet(script), job, PLAN, async () => {
       proofs++;
@@ -226,7 +259,12 @@ describe("resendGated (FR-013: never a blind resend)", () => {
 
   it("a pending job (crash before broadcast) sends without a pre-send proof — the gate is skipped", async () => {
     const job = await seedJob(db, "bind_identity", "pending");
-    const script: WalletScript = { pendingCount: 9n, writeHashes: ["0xhash4"], writeCalls: [], receipts: { "0xhash4": "success" } };
+    const script: WalletScript = {
+      pendingCount: 9n,
+      writeHashes: ["0xhash4"],
+      writeCalls: [],
+      receipts: { "0xhash4": "success" },
+    };
     let proofCalls = 0;
     const outcome = await resendGated(db, mockWallet(script), job, PLAN, async () => {
       proofCalls++;

@@ -3,9 +3,10 @@
 // Σ in == Σ out == gross asserted by the WRITER — an unbalanced settlement
 // never touches the table. Append-only: this module has no update or delete
 // path, and nothing else writes ledger_entries.
+
+import { assertMoneyInteger, KiteError } from "@kite/core";
+import { type AnyDb, execute, ledgerEntries, type Purchase } from "@kite/core/db";
 import { eq } from "drizzle-orm";
-import { KiteError, assertMoneyInteger } from "@kite/core";
-import { execute, ledgerEntries, type AnyDb, type Purchase } from "@kite/core/db";
 
 export interface SettlementSplit {
   /** Total settled, AUSD base units — equals the IncomeSettled gross. */
@@ -20,7 +21,11 @@ export interface SettlementSplit {
   seeker: string;
 }
 
-export async function writeSettlement(db: AnyDb, purchase: Purchase, split: SettlementSplit): Promise<void> {
+export async function writeSettlement(
+  db: AnyDb,
+  purchase: Purchase,
+  split: SettlementSplit,
+): Promise<void> {
   const gross = assertMoneyInteger(split.gross, "gross");
   const toBacker = assertMoneyInteger(split.toBacker, "toBacker");
   const toSeeker = assertMoneyInteger(split.toSeeker, "toSeeker");

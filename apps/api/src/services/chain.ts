@@ -4,16 +4,11 @@
 // KITE_DEPLOYMENT.rpcUrl. JSON-RPC batching stays OFF (the Foundation RPC
 // rejects batches). Tests inject a fake ChainClient — nothing here is hit
 // under bun test.
-import {
-  createPublicClient,
-  getAbiItem,
-  http,
-  type Abi,
-  type PublicClient,
-} from "viem";
-import { monadTestnet } from "viem/chains";
-import { KITE_DEPLOYMENT, abis } from "@kite/contracts";
+
+import { abis, KITE_DEPLOYMENT } from "@kite/contracts";
 import { rpcUrl } from "@kite/core";
+import { type Abi, createPublicClient, getAbiItem, http, type PublicClient } from "viem";
+import { monadTestnet } from "viem/chains";
 
 export const PROXY = KITE_DEPLOYMENT.kiteCore;
 export const AUSD = KITE_DEPLOYMENT.ausd;

@@ -1,9 +1,10 @@
 // The relayer's HTTP surface (T021): one INTERNAL key owns enqueue + status.
 // Errors leave as {error:{code,message}} exactly like the API side; no
 // payload, key, or error detail is ever echoed to a caller.
-import { Hono } from "hono";
+
 import { KiteError, verifyApiKey } from "@kite/core";
 import type { AnyDb } from "@kite/core/db";
+import { Hono } from "hono";
 import { enqueue, getJob, toJobDto } from "./queue.js";
 
 export interface RelayerDeps {

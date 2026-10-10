@@ -24,7 +24,13 @@ registerHandler("drip", async (ctx, job) => {
 
   // D7 proof: the (fresh) wallet's native balance rose to the drip amount.
   const proof = async () => (await ctx.wallet.balanceOfNative(wallet)) >= ctx.dripMonWei;
-  const outcome = await resendNativeGated(ctx.db, ctx.wallet, job, { to: wallet, valueWei: ctx.dripMonWei }, proof);
+  const outcome = await resendNativeGated(
+    ctx.db,
+    ctx.wallet,
+    job,
+    { to: wallet, valueWei: ctx.dripMonWei },
+    proof,
+  );
 
   if (outcome.status === "confirmed" && outcome.txHash) {
     // The PK insert IS the once-lock; a racing duplicate lands here as a no-op.

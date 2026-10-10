@@ -3,9 +3,10 @@
 // number — a warm-derived limit OOG'd on Monad, see packages/contracts).
 // The D7 proof is isaOf(isaId).status == 2 onchain — the contract is the only
 // authority for ISA state (constitution IV).
+
+import { ACTIVATE_GAS, CORE, CORE_ABI } from "../contracts.js";
 import { registerHandler } from "../dispatch.js";
 import { resendGated } from "../send.js";
-import { ACTIVATE_GAS, CORE, CORE_ABI } from "../contracts.js";
 import { asPayload, requireSig, requireUint } from "./parse.js";
 
 registerHandler("activate_with_permit", async (ctx, job) => {

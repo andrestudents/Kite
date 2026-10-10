@@ -1,7 +1,7 @@
 // @kite/api — boot: guard env, open Neon, build the app, serve (API_PORT).
 import { makeNeonDb } from "@kite/core/db";
-import { apiEnv } from "./env.js";
 import { createApp } from "./app.js";
+import { apiEnv } from "./env.js";
 import { makeChainClient } from "./services/chain.js";
 
 const env = apiEnv();

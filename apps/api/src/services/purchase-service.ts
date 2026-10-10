@@ -4,21 +4,22 @@
 // http-api contract fixes. Rows are never deleted; the UNIQUE
 // (channel_id, purchase_ref) is the replay lock; every change appends to
 // purchase_transitions.
-import { and, desc, eq } from "drizzle-orm";
-import { KiteError, assertMoneyInteger, type PurchaseDto } from "@kite/core";
+
+import { assertMoneyInteger, KiteError, type PurchaseDto } from "@kite/core";
 import {
-  PURCHASE_STATUS,
-  PURCHASE_TRANSITIONS,
   type AnyDb,
+  execute,
   type MillSig,
   type NewPurchase,
+  PURCHASE_STATUS,
+  PURCHASE_TRANSITIONS,
   type Purchase,
-  execute,
-  purchaseTransitions,
   purchases,
+  purchaseTransitions,
 } from "@kite/core/db";
+import { and, desc, eq } from "drizzle-orm";
 import type { ChainClient } from "./chain.js";
-import { verifyMillSignature, type IncomePayload } from "./income-sig.js";
+import { type IncomePayload, verifyMillSignature } from "./income-sig.js";
 
 const HEX32 = /^0x[0-9a-fA-F]{64}$/;
 const UUID = /^[0-9a-fA-F-]{36}$/;
@@ -87,7 +88,10 @@ export function validateIntent(raw: unknown): PurchaseIntent {
     throw new KiteError("bad_request", "millSig.v must be 27 or 28");
   }
   if (typeof r !== "string" || !HEX32.test(r) || typeof s !== "string" || !HEX32.test(s)) {
-    throw new KiteError("bad_request", "millSig.r and millSig.s must be 0x-prefixed bytes32 hex strings");
+    throw new KiteError(
+      "bad_request",
+      "millSig.r and millSig.s must be 0x-prefixed bytes32 hex strings",
+    );
   }
   return { channelId, isaId, purchaseRef: body.purchaseRef, grossAusd, millSig: { salt, v, r, s } };
 }
@@ -158,12 +162,17 @@ export async function createPurchase(
   const existing = await db
     .select()
     .from(purchases)
-    .where(and(eq(purchases.channelId, intent.channelId), eq(purchases.purchaseRef, intent.purchaseRef)))
+    .where(
+      and(eq(purchases.channelId, intent.channelId), eq(purchases.purchaseRef, intent.purchaseRef)),
+    )
     .limit(1);
   const existingRow = existing[0];
   if (existingRow) {
     if (!sameIntent(existingRow, intent)) {
-      throw new KiteError("purchase_ref_conflict", "purchase_ref already used with a different payload");
+      throw new KiteError(
+        "purchase_ref_conflict",
+        "purchase_ref already used with a different payload",
+      );
     }
     return { purchase: toPurchaseDto(existingRow), created: false };
   }

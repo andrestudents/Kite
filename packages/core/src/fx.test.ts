@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { FX_PAIRS, FX_SOURCE, QUOTE_TTL_MS, isFxPair, lockQuote } from "./fx.js";
+import { FX_PAIRS, FX_SOURCE, isFxPair, lockQuote, QUOTE_TTL_MS } from "./fx.js";
 
 describe("fx pairs (PLAN §7.4, D13)", () => {
   it("carries the fixed demo constants with their scales", () => {

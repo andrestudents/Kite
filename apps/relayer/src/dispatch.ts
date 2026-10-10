@@ -8,7 +8,12 @@
 // immediately.
 import { KiteError } from "@kite/core";
 import type { AnyDb, JobKind, RelayerJob } from "@kite/core/db";
-import { MAX_ATTEMPTS, markRetryableOrTerminal, type JobOutcome, type RelayerWallet } from "./send.js";
+import {
+  type JobOutcome,
+  MAX_ATTEMPTS,
+  markRetryableOrTerminal,
+  type RelayerWallet,
+} from "./send.js";
 
 export interface RelayerContext {
   db: AnyDb;
@@ -30,7 +35,12 @@ export async function dispatchJob(ctx: RelayerContext, job: RelayerJob): Promise
   if (!handler) {
     // All four kinds register at boot; this is a build/registration bug —
     // terminal, retrying cannot fix it.
-    return markRetryableOrTerminal(ctx.db, job, MAX_ATTEMPTS, `no handler registered for ${job.kind}`);
+    return markRetryableOrTerminal(
+      ctx.db,
+      job,
+      MAX_ATTEMPTS,
+      `no handler registered for ${job.kind}`,
+    );
   }
   try {
     const outcome = await handler(ctx, job);

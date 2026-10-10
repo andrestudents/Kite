@@ -2,8 +2,9 @@
 // the mill's console authorizes its own payment lifecycle (http-api decision
 // record). Bad auth → 401 with no key echo; errors leave via the app-level
 // onError as {error:{code,message}}.
-import { Hono } from "hono";
+
 import { KiteError, verifyApiKey } from "@kite/core";
+import { Hono } from "hono";
 import type { ApiDeps } from "../app.js";
 import { createPurchase, getPurchase, markPurchasePaid } from "../services/purchase-service.js";
 

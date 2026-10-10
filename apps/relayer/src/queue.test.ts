@@ -3,10 +3,10 @@
 // per claim, ahead of pending work) so its resolution is a READ-BACK decision,
 // never a blind second send (FR-013).
 import { beforeEach, describe, expect, it } from "bun:test";
-import type { Hono } from "hono";
-import { KiteError } from "@kite/core";
+import type { KiteError } from "@kite/core";
 import { relayerJobs } from "@kite/core/db";
 import { makeTestDb, type TestDb } from "@kite/core/testing";
+import type { Hono } from "hono";
 import { createRelayerApp } from "./app.js";
 import { claimJob, enqueue, getJob, setJobStatus } from "./queue.js";
 
@@ -23,7 +23,12 @@ describe("enqueue (§7.2 rule 1 for jobs)", () => {
     expect(job.status).toBe("pending");
     expect(job.attempts).toBe(0);
 
-    for (const kind of ["activate_with_permit", "transfer_with_authorization", "bind_identity", "drip"]) {
+    for (const kind of [
+      "activate_with_permit",
+      "transfer_with_authorization",
+      "bind_identity",
+      "drip",
+    ]) {
       const ok = await enqueue(db, { kind, payload: {} });
       expect(ok.created).toBe(true);
     }
@@ -36,8 +41,16 @@ describe("enqueue (§7.2 rule 1 for jobs)", () => {
   });
 
   it("collapses duplicate clientRefs onto the original job", async () => {
-    const first = await enqueue(db, { kind: "drip", payload: { wallet: "0xabc" }, clientRef: "wf-1" });
-    const second = await enqueue(db, { kind: "drip", payload: { wallet: "0xabc" }, clientRef: "wf-1" });
+    const first = await enqueue(db, {
+      kind: "drip",
+      payload: { wallet: "0xabc" },
+      clientRef: "wf-1",
+    });
+    const second = await enqueue(db, {
+      kind: "drip",
+      payload: { wallet: "0xabc" },
+      clientRef: "wf-1",
+    });
     expect(second.created).toBe(false);
     expect(second.job.id).toBe(first.job.id);
     const all = await db.select().from(relayerJobs);
@@ -71,7 +84,10 @@ describe("claimJob (D5: one transaction in flight per key)", () => {
     await setJobStatus(db, b.job.id, "confirmed");
     const third = await claimJob(db);
     expect(third?.id).not.toBe(b.job.id);
-    await setJobStatus(db, third!.id, "confirmed");
+    if (third === undefined) {
+      throw new Error("expected a third claim");
+    }
+    await setJobStatus(db, third.id, "confirmed");
     expect(await claimJob(db)).toBeUndefined();
   });
 
@@ -138,7 +154,11 @@ describe("relayer routes (http-api shapes)", () => {
   });
 
   it("GET /jobs/:id returns the 7-field shape; unknown id → 404 job_not_found", async () => {
-    const { job } = await enqueue(db, { kind: "drip", payload: { wallet: "0xa" }, clientRef: "wf-2" });
+    const { job } = await enqueue(db, {
+      kind: "drip",
+      payload: { wallet: "0xa" },
+      clientRef: "wf-2",
+    });
     const res = await app.request(`/api/jobs/${job.id}`, { headers: { "x-api-key": internalKey } });
     expect(res.status).toBe(200);
     const dto = (await res.json()) as Record<string, unknown>;
@@ -152,9 +172,13 @@ describe("relayer routes (http-api shapes)", () => {
       "txHash",
     ]);
 
-    const missing = await app.request("/api/jobs/999999", { headers: { "x-api-key": internalKey } });
+    const missing = await app.request("/api/jobs/999999", {
+      headers: { "x-api-key": internalKey },
+    });
     expect(missing.status).toBe(404);
-    expect(((await missing.json()) as { error: { code: string } }).error.code).toBe("job_not_found");
+    expect(((await missing.json()) as { error: { code: string } }).error.code).toBe(
+      "job_not_found",
+    );
   });
 
   it("getJob rejects non-numeric ids", async () => {

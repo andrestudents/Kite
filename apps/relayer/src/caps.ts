@@ -4,9 +4,10 @@
 // only if (committed + amountWei) stays within RELAYER_DAILY_CAP_MON_WEI.
 // Demo scale: one worker, so the check-then-send race window is theoretical;
 // the drips PK still guarantees exactly one drip per wallet regardless.
-import { eq, gte } from "drizzle-orm";
+
 import { KiteError } from "@kite/core";
 import { type AnyDb, drips } from "@kite/core/db";
+import { eq, gte } from "drizzle-orm";
 
 function startOfTodayUtc(): Date {
   const now = new Date();
@@ -14,10 +15,7 @@ function startOfTodayUtc(): Date {
 }
 
 export async function nativeSpendTodayWei(db: AnyDb, amountPerDripWei: bigint): Promise<bigint> {
-  const rows = await db
-    .select()
-    .from(drips)
-    .where(gte(drips.createdAt, startOfTodayUtc()));
+  const rows = await db.select().from(drips).where(gte(drips.createdAt, startOfTodayUtc()));
   return BigInt(rows.length) * amountPerDripWei;
 }
 

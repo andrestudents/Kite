@@ -7,15 +7,16 @@
 // in-process (no separate watcher). A terminal revert (deal no longer active,
 // cap reached) is the FAILED leg: failed_reason + the PAID → FAILED transition.
 // Exit 0 settled / 1 failed.
+
+import { abis, KITE_DEPLOYMENT, KITE_GAS_LIMITS } from "@kite/contracts";
+import { KiteError, requireEnv } from "@kite/core";
+import { type AnyDb, PURCHASE_STATUS, purchases } from "@kite/core/db";
 import { eq } from "drizzle-orm";
 import type { Abi, Hex } from "viem";
 import { createWalletClient, http } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { monadTestnet } from "viem/chains";
-import { KITE_DEPLOYMENT, KITE_GAS_LIMITS, abis } from "@kite/contracts";
-import { KiteError, requireEnv } from "@kite/core";
-import { type AnyDb, PURCHASE_STATUS, purchases } from "@kite/core/db";
-import { rpcUrl, type ChainClient } from "../services/chain.js";
+import { type ChainClient, rpcUrl } from "../services/chain.js";
 import { markPurchaseFailed } from "../services/purchase-service.js";
 import { processNewLogs } from "./watch-settlements.js";
 
@@ -112,7 +113,10 @@ export async function submitSettlement(
     throw new KiteError("purchase_not_found", "no such purchase");
   }
   if (purchase.status !== PURCHASE_STATUS.PAID) {
-    throw new KiteError("invalid_transition", `settlement submit expects a PAID purchase, got ${purchase.status}`);
+    throw new KiteError(
+      "invalid_transition",
+      `settlement submit expects a PAID purchase, got ${purchase.status}`,
+    );
   }
 
   const submit = opts.submit ?? defaultSubmitter();
@@ -131,7 +135,9 @@ export async function submitSettlement(
       s: purchase.millSig.s as Hex,
       gasLimit: GAS_LIMIT,
     });
-    console.log(`[submit-settlement] receiveIncome broadcast at fixed limit ${GAS_LIMIT}: ${txHash}`);
+    console.log(
+      `[submit-settlement] receiveIncome broadcast at fixed limit ${GAS_LIMIT}: ${txHash}`,
+    );
   } catch (err) {
     if (!isTerminalRevert(err)) {
       throw err; // transient (network …) — the caller may retry
@@ -170,7 +176,11 @@ if (import.meta.main) {
   const { makeChainClient } = await import("../services/chain.js");
   try {
     const env = apiEnv();
-    const outcome = await submitSettlement(makeNeonDb(env.databaseUrl), makeChainClient(), purchaseId);
+    const outcome = await submitSettlement(
+      makeNeonDb(env.databaseUrl),
+      makeChainClient(),
+      purchaseId,
+    );
     console.log(
       `[submit-settlement] ${outcome.status}${outcome.txHash ? ` tx=${outcome.txHash}` : ""}` +
         (outcome.reason ? ` reason=${outcome.reason}` : ""),

@@ -2,17 +2,16 @@
 // process, at most one transaction in flight per key). Pacing: idle ticks
 // wait 1s; a retryable outcome waits the job's capped backoff before the
 // next claim, so attempts breathe instead of hammering.
-import { backoffMs } from "./send.js";
-import { claimJob } from "./queue.js";
+
 import { dispatchJob, type RelayerContext } from "./dispatch.js";
+import { claimJob } from "./queue.js";
+import { backoffMs } from "./send.js";
 
 export interface WorkerHandle {
   stop(): void;
   /** Resolves when the loop notices the stop flag. */
   done(): Promise<void>;
 }
-
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 export function startWorker(ctx: RelayerContext): WorkerHandle {
   let running = true;

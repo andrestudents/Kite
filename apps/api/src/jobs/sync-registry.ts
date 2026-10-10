@@ -5,8 +5,8 @@
 // watcher, /api/me and /api/p/:id all read this cache; chain is corrected
 // INTO the DB here, never the reverse.
 import { KITE_DEPLOYMENT } from "@kite/contracts";
-import { ISA_STATUS_BY_CODE, type AnyDb, channels, isas } from "@kite/core/db";
-import { type ChainClient } from "../services/chain.js";
+import { type AnyDb, channels, ISA_STATUS_BY_CODE, isas } from "@kite/core/db";
+import type { ChainClient } from "../services/chain.js";
 
 // Bounded getLogs ranges — topic-filtered, so generous chunks stay RPC-friendly.
 const RANGE = 50_000n;

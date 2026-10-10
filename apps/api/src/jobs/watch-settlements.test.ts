@@ -2,7 +2,14 @@
 // unmatched counter — the observer is the only writer of SETTLED, so every
 // guarantee here is a money guarantee.
 import { beforeEach, describe, expect, it } from "bun:test";
-import { ledgerEntries, purchases, purchaseTransitions, isas, jobState, webhookEvents } from "@kite/core/db";
+import {
+  isas,
+  jobState,
+  ledgerEntries,
+  purchases,
+  purchaseTransitions,
+  webhookEvents,
+} from "@kite/core/db";
 import { makeTestDb, type TestDb } from "@kite/core/testing";
 import type { ChainClient, SettlementLog } from "../services/chain.js";
 import { processNewLogs, SETTLEMENTS_BLOCK_KEY, UNMATCHED_KEY } from "./watch-settlements.js";
@@ -41,7 +48,11 @@ function logAt(block: number, logIndex: number, ref: string = REF): SettlementLo
   };
 }
 
-function fakeChain(logs: SettlementLog[], head: bigint, overrides: Partial<ChainClient> = {}): ChainClient {
+function fakeChain(
+  logs: SettlementLog[],
+  head: bigint,
+  overrides: Partial<ChainClient> = {},
+): ChainClient {
   return {
     chainId: async () => 10143,
     blockNumber: async () => head,
@@ -73,7 +84,12 @@ async function seedPaidPurchase(db: TestDb, ref: string): Promise<string> {
     purchaseRef: ref,
     grossAusd: 1_500_000_000,
     status: "PAID",
-    millSig: { salt: `0x${"11".repeat(32)}`, v: 27, r: `0x${"22".repeat(32)}`, s: `0x${"33".repeat(32)}` },
+    millSig: {
+      salt: `0x${"11".repeat(32)}`,
+      v: 27,
+      r: `0x${"22".repeat(32)}`,
+      s: `0x${"33".repeat(32)}`,
+    },
   });
   return id;
 }
@@ -91,7 +107,7 @@ describe("processNewLogs (T018)", () => {
   });
 
   it("settles a PAID purchase: tx hash, block timestamp, ledger split, isa read-back, checkpoint", async () => {
-    const id = await seedPaidPurchase(db, REF);
+    await seedPaidPurchase(db, REF);
     const result = await processNewLogs(db, fakeChain([logAt(50, 2)], 100n));
 
     expect(result.settled).toBe(1);
@@ -160,10 +176,7 @@ describe("processNewLogs (T018)", () => {
 
   it("counts unmatched events and leaves purchases untouched", async () => {
     await seedPaidPurchase(db, REF); // matches REF, not OTHER_REF
-    const result = await processNewLogs(
-      db,
-      fakeChain([logAt(60, 1, OTHER_REF)], 100n),
-    );
+    const result = await processNewLogs(db, fakeChain([logAt(60, 1, OTHER_REF)], 100n));
 
     expect(result.settled).toBe(0);
     expect(result.unmatched).toBe(1);

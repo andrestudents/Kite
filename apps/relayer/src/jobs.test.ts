@@ -3,10 +3,10 @@
 // LOG / isaOf status 2), the drips PK once-lock + daily cap, and the
 // bad_request fast-terminal for malformed payloads. No network here.
 import { beforeEach, describe, expect, it } from "bun:test";
-import { eq } from "drizzle-orm";
 import { type AnyDb, drips, relayerJobs } from "@kite/core/db";
 import { makeTestDb, type TestDb } from "@kite/core/testing";
-import { AUSD, CORE, TRANSFER_TOPIC, addressTopic } from "./contracts.js";
+import { eq } from "drizzle-orm";
+import { AUSD, addressTopic, CORE, TRANSFER_TOPIC } from "./contracts.js";
 import { dispatchJob, type RelayerContext } from "./dispatch.js";
 import { enqueue, getJob, setJobStatus } from "./queue.js";
 import { MAX_ATTEMPTS, type MinedReceipt, type RelayerWallet, type SendPlan } from "./send.js";
@@ -44,7 +44,9 @@ interface Script {
 function jobWallet(script: Script): RelayerWallet {
   return {
     async transactionCountPending() {
-      return script.transactionCountPending ? script.transactionCountPending() : (script.pendingCount ?? 0n);
+      return script.transactionCountPending
+        ? script.transactionCountPending()
+        : (script.pendingCount ?? 0n);
     },
     async writeCall(plan, nonce) {
       script.onWrite?.(plan, nonce);
@@ -75,7 +77,11 @@ function jobWallet(script: Script): RelayerWallet {
   };
 }
 
-function testCtx(db: AnyDb, wallet: RelayerWallet, dailyCapMonWei = 2_000_000_000_000_000_000n): RelayerContext {
+function testCtx(
+  db: AnyDb,
+  wallet: RelayerWallet,
+  dailyCapMonWei = 2_000_000_000_000_000_000n,
+): RelayerContext {
   return { db, wallet, dripMonWei: DRIP_MON_WEI, dailyCapMonWei };
 }
 
@@ -150,7 +156,12 @@ describe("bind_identity (T023)", () => {
         return "0xnever";
       },
     });
-    const job = await seedJob(db, "bind_identity", { wallet: W, identityHash: HASH }, { status: "sent", txHash: "0xseedtx" });
+    const job = await seedJob(
+      db,
+      "bind_identity",
+      { wallet: W, identityHash: HASH },
+      { status: "sent", txHash: "0xseedtx" },
+    );
     const outcome = await dispatchJob(testCtx(db, wallet), job);
     expect(outcome.status).toBe("confirmed");
     expect(writes).toBe(0);
@@ -315,7 +326,10 @@ describe("transfer_with_authorization (T024)", () => {
       pendingCount: 21n, // the resync yields 21 → a NEW hash, not the seeded one
       writeHash: (_plan, n) => `0xauth${n}`,
       onWrite: (plan, n) => calls.push({ plan, nonce: n }),
-      receiptFor: (tx) => (tx === "0xauth21" ? { status: "success", logs: [transferLog(W, R, VALUE)] } : { status: "reverted", logs: [] }),
+      receiptFor: (tx) =>
+        tx === "0xauth21"
+          ? { status: "success", logs: [transferLog(W, R, VALUE)] }
+          : { status: "reverted", logs: [] },
     });
     const job = await seedJob(
       db,
@@ -372,7 +386,12 @@ describe("activate_with_permit (T025)", () => {
         return "0xnever";
       },
     });
-    const job = await seedJob(db, "activate_with_permit", { isaId: 7, deadline: 9_000, ...SIG }, { status: "sent", txHash: "0xseedtx" });
+    const job = await seedJob(
+      db,
+      "activate_with_permit",
+      { isaId: 7, deadline: 9_000, ...SIG },
+      { status: "sent", txHash: "0xseedtx" },
+    );
     const outcome = await dispatchJob(testCtx(db, wallet), job);
     expect(outcome.status).toBe("confirmed");
     expect(writes).toBe(0);

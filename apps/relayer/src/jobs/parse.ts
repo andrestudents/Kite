@@ -1,8 +1,9 @@
 // T023–T025 — payload guards for the job handlers. A malformed payload can
 // never succeed, so every guard throws bad_request (which dispatchJob turns
 // into an IMMEDIATE terminal — no retries burned on a deterministic failure).
-import { isAddress, isHex } from "viem";
+
 import { KiteError } from "@kite/core";
+import { isAddress, isHex } from "viem";
 
 function bad(what: string): never {
   throw new KiteError("bad_request", what);
@@ -40,7 +41,11 @@ export function requireUint(p: Record<string, unknown>, key: string): number {
 }
 
 /** An EIP-712/3009 signature triplet {v, r, s}. */
-export function requireSig(p: Record<string, unknown>): { v: number; r: `0x${string}`; s: `0x${string}` } {
+export function requireSig(p: Record<string, unknown>): {
+  v: number;
+  r: `0x${string}`;
+  s: `0x${string}`;
+} {
   const v = requireUint(p, "v");
   if (v !== 27 && v !== 28) {
     bad("payload.v must be 27 or 28");

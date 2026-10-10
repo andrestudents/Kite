@@ -10,20 +10,22 @@
 //
 // processNewLogs() is the exported unit so submit-settlement and the gates
 // drive observation IN-PROCESS (SC-002 needs no separately-running watcher).
-import { and, eq } from "drizzle-orm";
+
 import { KITE_DEPLOYMENT } from "@kite/contracts";
+import { KiteError } from "@kite/core";
 import {
-  PURCHASE_STATUS,
   type AnyDb,
-  ISA_STATUS_BY_CODE,
   execute,
+  ISA_STATUS_BY_CODE,
   isas,
   jobState,
+  PURCHASE_STATUS,
   purchases,
   purchaseTransitions,
   webhookEvents,
 } from "@kite/core/db";
-import { type ChainClient, type IsaOnchain, type SettlementLog } from "../services/chain.js";
+import { and, eq } from "drizzle-orm";
+import type { ChainClient, IsaOnchain, SettlementLog } from "../services/chain.js";
 import { writeSettlement } from "../services/ledger.js";
 
 export const SETTLEMENTS_BLOCK_KEY = "settlements_block";
@@ -39,13 +41,20 @@ export interface ProcessResult {
 }
 
 async function checkpointOf(db: AnyDb, chain: ChainClient): Promise<bigint> {
-  const rows = await db.select().from(jobState).where(eq(jobState.key, SETTLEMENTS_BLOCK_KEY)).limit(1);
+  const rows = await db
+    .select()
+    .from(jobState)
+    .where(eq(jobState.key, SETTLEMENTS_BLOCK_KEY))
+    .limit(1);
   const row = rows[0];
   if (row) {
     return BigInt(row.value);
   }
   const seeded = await chain.blockAtOrAfter(KITE_DEPLOYMENT.deployedAt);
-  await db.insert(jobState).values({ key: SETTLEMENTS_BLOCK_KEY, value: seeded.toString() }).onConflictDoNothing();
+  await db
+    .insert(jobState)
+    .values({ key: SETTLEMENTS_BLOCK_KEY, value: seeded.toString() })
+    .onConflictDoNothing();
   return seeded;
 }
 
@@ -118,12 +127,16 @@ export async function processNewLogs(db: AnyDb, chain: ChainClient): Promise<Pro
           continue;
         }
 
+        const blockSec = blockTime.get(Number(log.blockNumber));
+        if (blockSec === undefined) {
+          throw new KiteError("internal", `no block time cached for block ${log.blockNumber}`);
+        }
         await tx
           .update(purchases)
           .set({
             status: PURCHASE_STATUS.SETTLED,
             txHash: log.txHash,
-            settledAt: new Date(blockTime.get(Number(log.blockNumber))! * 1000),
+            settledAt: new Date(blockSec * 1000),
           })
           .where(and(eq(purchases.id, purchase.id), eq(purchases.status, PURCHASE_STATUS.PAID)));
         await tx.insert(purchaseTransitions).values({
@@ -145,10 +158,7 @@ export async function processNewLogs(db: AnyDb, chain: ChainClient): Promise<Pro
       // FR-009 read-back: every isa touched by this range re-projects from chain.
       for (const [isaId, isa] of isaById) {
         const row = upsertIsaRow(isaId, isa);
-        await tx
-          .insert(isas)
-          .values(row)
-          .onConflictDoUpdate({ target: isas.isaId, set: row });
+        await tx.insert(isas).values(row).onConflictDoUpdate({ target: isas.isaId, set: row });
       }
 
       await tx

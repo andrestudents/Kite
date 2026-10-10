@@ -13,14 +13,15 @@
 //      (FR-013 — "gated on a previous-job status check").
 // Retry bookkeeping: attempts++, last_error, capped backoff, terminal_at
 // when MAX_ATTEMPTS is exhausted (§7.3: "failed" iff terminal_at is set).
+
+import { abis, KITE_DEPLOYMENT } from "@kite/contracts";
+import { rpcUrl } from "@kite/core";
+import { type AnyDb, JOB_STATUS, type RelayerJob, relayerJobs } from "@kite/core/db";
 import { eq } from "drizzle-orm";
 import type { Abi, Hash } from "viem";
 import { createPublicClient, createWalletClient, http } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { monadTestnet } from "viem/chains";
-import { KITE_DEPLOYMENT, abis } from "@kite/contracts";
-import { rpcUrl } from "@kite/core";
-import { JOB_STATUS, type AnyDb, type RelayerJob, relayerJobs } from "@kite/core/db";
 
 export const MAX_ATTEMPTS = 3;
 
@@ -79,13 +80,28 @@ export interface RelayerWallet {
 
 export function makeRelayerWallet(relayerKey: string): RelayerWallet {
   const account = privateKeyToAccount(relayerKey as `0x${string}`);
-  const wallet = createWalletClient({ account, chain: monadTestnet, transport: http(rpcUrl(), { timeout: 30_000 }) });
-  const publicClient = createPublicClient({ chain: monadTestnet, transport: http(rpcUrl(), { timeout: 15_000 }) });
+  const wallet = createWalletClient({
+    account,
+    chain: monadTestnet,
+    transport: http(rpcUrl(), { timeout: 30_000 }),
+  });
+  const publicClient = createPublicClient({
+    chain: monadTestnet,
+    transport: http(rpcUrl(), { timeout: 15_000 }),
+  });
   const read = (functionName: string, args: unknown[] = []): Promise<unknown> =>
-    publicClient.readContract({ address: KITE_DEPLOYMENT.kiteCore, abi: abis.kitecore as Abi, functionName, args });
+    publicClient.readContract({
+      address: KITE_DEPLOYMENT.kiteCore,
+      abi: abis.kitecore as Abi,
+      functionName,
+      args,
+    });
   return {
     async transactionCountPending() {
-      const count = await publicClient.getTransactionCount({ address: account.address, blockTag: "pending" });
+      const count = await publicClient.getTransactionCount({
+        address: account.address,
+        blockTag: "pending",
+      });
       return BigInt(count);
     },
     async writeCall(plan, nonce) {
@@ -128,7 +144,13 @@ export type JobOutcome =
   | { status: "retryable"; error: string } // attempts < MAX — re-claim later
   | { status: "terminal"; error: string }; // attempts exhausted — terminal_at set
 
-async function markSent(db: AnyDb, job: RelayerJob, txHash: string, nonce: number, attempts: number): Promise<void> {
+async function markSent(
+  db: AnyDb,
+  job: RelayerJob,
+  txHash: string,
+  nonce: number,
+  attempts: number,
+): Promise<void> {
   await db
     .update(relayerJobs)
     .set({ status: JOB_STATUS.sent, txHash, nonce, attempts, lastError: null })
@@ -137,11 +159,19 @@ async function markSent(db: AnyDb, job: RelayerJob, txHash: string, nonce: numbe
 
 /** Marks a job confirmed without a broadcast — the read-back path. */
 export async function confirmJob(db: AnyDb, job: RelayerJob): Promise<void> {
-  await db.update(relayerJobs).set({ status: JOB_STATUS.confirmed }).where(eq(relayerJobs.id, job.id));
+  await db
+    .update(relayerJobs)
+    .set({ status: JOB_STATUS.confirmed })
+    .where(eq(relayerJobs.id, job.id));
 }
 
 /** Bookkeeping for a failed attempt — shared by sendOnce and dispatchJob. */
-export async function markRetryableOrTerminal(db: AnyDb, job: RelayerJob, attempts: number, error: string): Promise<JobOutcome> {
+export async function markRetryableOrTerminal(
+  db: AnyDb,
+  job: RelayerJob,
+  attempts: number,
+  error: string,
+): Promise<JobOutcome> {
   if (attempts >= MAX_ATTEMPTS) {
     await db
       .update(relayerJobs)
@@ -190,7 +220,10 @@ async function broadcast(
       if (receipt?.status === "success") {
         if (opts.proof && !(await opts.proof(receipt))) {
           // Mined success without the effect: never confirm, never blind-resend.
-          return { status: "retryable", error: `${label} receipt succeeded but the proof is missing (${txHash})` };
+          return {
+            status: "retryable",
+            error: `${label} receipt succeeded but the proof is missing (${txHash})`,
+          };
         }
         await confirmJob(db, job);
         return { status: "confirmed", txHash };
@@ -209,13 +242,41 @@ async function broadcast(
 }
 
 /** ONE contract-call attempt for a claimed job (D6/D10 above). */
-export async function sendOnce(db: AnyDb, wallet: RelayerWallet, job: RelayerJob, plan: SendPlan, opts: SendOptions = {}): Promise<JobOutcome> {
-  return broadcast(db, wallet, job, job.attempts + 1, (nonce) => wallet.writeCall(plan, nonce), plan.functionName, opts);
+export async function sendOnce(
+  db: AnyDb,
+  wallet: RelayerWallet,
+  job: RelayerJob,
+  plan: SendPlan,
+  opts: SendOptions = {},
+): Promise<JobOutcome> {
+  return broadcast(
+    db,
+    wallet,
+    job,
+    job.attempts + 1,
+    (nonce) => wallet.writeCall(plan, nonce),
+    plan.functionName,
+    opts,
+  );
 }
 
 /** ONE native-transfer attempt (the drip). */
-export async function sendNativeOnce(db: AnyDb, wallet: RelayerWallet, job: RelayerJob, send: NativeSend, opts: SendOptions = {}): Promise<JobOutcome> {
-  return broadcast(db, wallet, job, job.attempts + 1, (nonce) => wallet.sendNative(send.to, send.valueWei, nonce), "native transfer", opts);
+export async function sendNativeOnce(
+  db: AnyDb,
+  wallet: RelayerWallet,
+  job: RelayerJob,
+  send: NativeSend,
+  opts: SendOptions = {},
+): Promise<JobOutcome> {
+  return broadcast(
+    db,
+    wallet,
+    job,
+    job.attempts + 1,
+    (nonce) => wallet.sendNative(send.to, send.valueWei, nonce),
+    "native transfer",
+    opts,
+  );
 }
 
 /**
@@ -226,7 +287,13 @@ export async function sendNativeOnce(db: AnyDb, wallet: RelayerWallet, job: Rela
  * job (crash before broadcast) may always send; `confirmed` is finished
  * history. The SAME proof guards the fresh send's receipt (option 4 above).
  */
-async function gatedSend(db: AnyDb, wallet: RelayerWallet, job: RelayerJob, proof: EffectProof, attempt: () => Promise<JobOutcome>): Promise<JobOutcome> {
+async function gatedSend(
+  db: AnyDb,
+  wallet: RelayerWallet,
+  job: RelayerJob,
+  proof: EffectProof,
+  attempt: () => Promise<JobOutcome>,
+): Promise<JobOutcome> {
   if (job.status === JOB_STATUS.confirmed) {
     return { status: "confirmed", txHash: job.txHash ?? "" };
   }
@@ -253,7 +320,9 @@ export async function resendGated(
   proof: EffectProof,
   opts: Omit<SendOptions, "proof"> = {},
 ): Promise<JobOutcome> {
-  return gatedSend(db, wallet, job, proof, () => sendOnce(db, wallet, job, plan, { ...opts, proof }));
+  return gatedSend(db, wallet, job, proof, () =>
+    sendOnce(db, wallet, job, plan, { ...opts, proof }),
+  );
 }
 
 /** The gate for the drip (native transfer). */
@@ -265,5 +334,7 @@ export async function resendNativeGated(
   proof: EffectProof,
   opts: Omit<SendOptions, "proof"> = {},
 ): Promise<JobOutcome> {
-  return gatedSend(db, wallet, job, proof, () => sendNativeOnce(db, wallet, job, send, { ...opts, proof }));
+  return gatedSend(db, wallet, job, proof, () =>
+    sendNativeOnce(db, wallet, job, send, { ...opts, proof }),
+  );
 }

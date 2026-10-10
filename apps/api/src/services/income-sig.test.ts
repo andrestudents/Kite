@@ -1,9 +1,13 @@
 // T013: test vectors generated + verified with viem in-test — the encoding
 // must match SignIncome.s.sol byte-for-byte (research D8).
 import { describe, expect, it } from "bun:test";
-import { privateKeyToAccount } from "viem/accounts";
-import { sign } from "viem/accounts";
-import { verifyMillSignature, incomeDigest, recoverIncomeSigner, type IncomePayload } from "./income-sig.js";
+import { privateKeyToAccount, sign } from "viem/accounts";
+import {
+  type IncomePayload,
+  incomeDigest,
+  recoverIncomeSigner,
+  verifyMillSignature,
+} from "./income-sig.js";
 
 const PAYLOAD: IncomePayload = {
   channelId: 1,
@@ -35,9 +39,13 @@ describe("incomeDigest (SignIncome.s.sol encoding)", () => {
     const base = incomeDigest(PAYLOAD);
     expect(incomeDigest({ ...PAYLOAD, channelId: 2 })).not.toBe(base);
     expect(incomeDigest({ ...PAYLOAD, isaId: 4 })).not.toBe(base);
-    expect(incomeDigest({ ...PAYLOAD, purchaseRef: `0x${"a2".repeat(32)}` as `0x${string}` })).not.toBe(base);
+    expect(
+      incomeDigest({ ...PAYLOAD, purchaseRef: `0x${"a2".repeat(32)}` as `0x${string}` }),
+    ).not.toBe(base);
     expect(incomeDigest({ ...PAYLOAD, gross: 1_500_000_001 })).not.toBe(base);
-    expect(incomeDigest({ ...PAYLOAD, salt: `0x${"7e".repeat(32)}` as `0x${string}` })).not.toBe(base);
+    expect(incomeDigest({ ...PAYLOAD, salt: `0x${"7e".repeat(32)}` as `0x${string}` })).not.toBe(
+      base,
+    );
   });
 });
 
@@ -62,9 +70,9 @@ describe("recover + verify (T013 vector)", () => {
   it("rejects a signature over different payload bytes", async () => {
     const mill = privateKeyToAccount(`0x${"9d".repeat(32)}` as `0x${string}`);
     const sig = await millSign(`0x${"9d".repeat(32)}` as `0x${string}`, PAYLOAD);
-    expect(
-      await verifyMillSignature(sig, { ...PAYLOAD, gross: 2_000_000_000 }, mill.address),
-    ).toBe(false);
+    expect(await verifyMillSignature(sig, { ...PAYLOAD, gross: 2_000_000_000 }, mill.address)).toBe(
+      false,
+    );
   });
 
   it("treats v as parity: v:1 (yParity 1) recovers like v:28; v:0 does not", async () => {
@@ -74,7 +82,9 @@ describe("recover + verify (T013 vector)", () => {
       expect(await verifyMillSignature({ ...sig, v: 1 }, PAYLOAD, mill.address)).toBe(true);
     }
     // the other parity recovers a different (wrong) signer
-    expect(await verifyMillSignature({ ...sig, v: sig.v === 28 ? 27 : 28 }, PAYLOAD, mill.address)).toBe(false);
+    expect(
+      await verifyMillSignature({ ...sig, v: sig.v === 28 ? 27 : 28 }, PAYLOAD, mill.address),
+    ).toBe(false);
     // malformed parity → wrong signer → false, never a throw
     expect(await verifyMillSignature({ ...sig, v: 0 }, PAYLOAD, mill.address)).toBe(false);
   });

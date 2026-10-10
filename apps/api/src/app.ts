@@ -1,11 +1,12 @@
 // Hono app factory: every error leaves as {error:{code,message}} with a
 // mapped HTTP status — no stack traces, no env/key echo. Route modules mount
 // here as they land; tests build the app over a PGlite db + fake chain.
-import { Hono } from "hono";
+
 import { KiteError } from "@kite/core";
 import type { AnyDb } from "@kite/core/db";
-import type { ChainClient } from "./services/chain.js";
+import { Hono } from "hono";
 import { purchasesRoutes } from "./routes/purchases.js";
+import type { ChainClient } from "./services/chain.js";
 
 export interface ApiDeps {
   db: AnyDb;
@@ -44,9 +45,7 @@ export function createApp(deps: ApiDeps): Hono {
     return c.json({ error: { code: "internal", message: "internal error" } }, 500);
   });
 
-  app.notFound((c) =>
-    c.json({ error: { code: "not_found", message: "no such route" } }, 404),
-  );
+  app.notFound((c) => c.json({ error: { code: "not_found", message: "no such route" } }, 404));
 
   mountRoutes(app, deps);
   return app;
