@@ -79,7 +79,10 @@ contract KiteCoreTest is Test {
         KiteCore impl = new KiteCore();
         ERC1967Proxy proxy = new ERC1967Proxy(
             address(impl),
-            abi.encodeCall(KiteCore.initialize, (admin, relayer, orchestrator, pauser, address(ausd)))
+            // Q1/A: the suite runs at the PROTOCOL gap (60 days) — the §6.3
+            // literal journey must prove the real qualifying bar. The 60-second
+            // demo configuration has its own tier below (testGap_).
+            abi.encodeCall(KiteCore.initialize, (admin, relayer, orchestrator, pauser, address(ausd), 60 days))
         );
         kite = KiteCore(address(proxy));
 
@@ -138,7 +141,7 @@ contract KiteCoreTest is Test {
 
     function _activate(uint256 id, uint256 backerPk, address backer) internal {
         uint256 principal = kite.isaOf(id).terms.principal;
-        uint256 deadline = block.timestamp + 1 hours;
+        uint256 deadline = vm.getBlockTimestamp() + 1 hours;
         // The TOKEN verifies the permit over ITS domain (research.md D5);
         // KiteCore pre-recovers over the same domain for Kite__WrongBacker.
         bytes32 digest = keccak256(
@@ -183,22 +186,22 @@ contract KiteCoreTest is Test {
         // Deal 1 (backer h1): P 600e6, cap 1.2× → 720e6. Two harvests of
         // 1800e6 slice 360e6 each → cap reached exactly at event 2. The term
         // must COVER both harvests (+61d/+122d) — D7 is a hard stop.
-        Terms memory t1 = _terms(600e6, 2000, 120, uint64(block.timestamp + 180 days));
+        Terms memory t1 = _terms(600e6, 2000, 120, uint64(vm.getBlockTimestamp() + 180 days));
         uint256 id1 = _draft(budi, t1, h1);
         _activate(id1, h1Pk, h1);
-        vm.warp(block.timestamp + 61 days);
+        vm.warp(vm.getBlockTimestamp() + 61 days);
         _settle(id1, _day(1), 1800e6, keccak256("s1"));
-        vm.warp(block.timestamp + 61 days);
+        vm.warp(vm.getBlockTimestamp() + 61 days);
         _settle(id1, _day(2), 1800e6, keccak256("s2"));
         assertEq(kite.isaOf(id1).status, STATUS_COMPLETED_CAPPED);
 
         // Deal 2 (backer h2): same shape.
-        Terms memory t2 = _terms(600e6, 2000, 120, uint64(block.timestamp + 180 days));
+        Terms memory t2 = _terms(600e6, 2000, 120, uint64(vm.getBlockTimestamp() + 180 days));
         uint256 id2 = _draft(budi, t2, h2);
         _activate(id2, h2Pk, h2);
-        vm.warp(block.timestamp + 61 days);
+        vm.warp(vm.getBlockTimestamp() + 61 days);
         _settle(id2, _day(3), 1800e6, keccak256("s3"));
-        vm.warp(block.timestamp + 61 days);
+        vm.warp(vm.getBlockTimestamp() + 61 days);
         _settle(id2, _day(4), 1800e6, keccak256("s4"));
         assertEq(kite.isaOf(id2).status, STATUS_COMPLETED_CAPPED);
 
@@ -210,7 +213,7 @@ contract KiteCoreTest is Test {
     /// @notice Drafts the 6.3 demo deal: P 600e6 / share 20% / cap 1.3× →
     ///         cap 780e6, 12-month term, channel 1, backer Pak Haji.
     function _demoDraft() internal returns (uint256 id) {
-        Terms memory t = _terms(600e6, 2000, 130, uint64(block.timestamp + 365 days));
+        Terms memory t = _terms(600e6, 2000, 130, uint64(vm.getBlockTimestamp() + 365 days));
         id = _draft(budi, t, haji);
     }
 
@@ -226,15 +229,15 @@ contract KiteCoreTest is Test {
             _activate(id, hajiPk, haji);
         }
         if (stage >= 2) {
-            vm.warp(block.timestamp + 61 days);
+            vm.warp(vm.getBlockTimestamp() + 61 days);
             _settle(id, _day(11), 1500e6, keccak256("d1"));
         }
         if (stage >= 3) {
-            vm.warp(block.timestamp + 61 days);
+            vm.warp(vm.getBlockTimestamp() + 61 days);
             _settle(id, _day(12), 1500e6, keccak256("d2"));
         }
         if (stage >= 4) {
-            vm.warp(block.timestamp + 61 days);
+            vm.warp(vm.getBlockTimestamp() + 61 days);
             _settle(id, _day(13), 1500e6, keccak256("d3"));
         }
     }
@@ -264,7 +267,7 @@ contract KiteCoreTest is Test {
         uint256 backerBefore = ausd.balanceOf(haji);
         uint256 seekerBefore = ausd.balanceOf(budi);
 
-        vm.warp(block.timestamp + 61 days);
+        vm.warp(vm.getBlockTimestamp() + 61 days);
         _settle(id, _day(11), 1500e6, keccak256("d1"));
 
         assertEq(ausd.balanceOf(haji), backerBefore + 300e6, "6.3 panen 1: backer +300");
@@ -278,7 +281,7 @@ contract KiteCoreTest is Test {
         uint256 backerBefore = ausd.balanceOf(haji);
         uint256 seekerBefore = ausd.balanceOf(budi);
 
-        vm.warp(block.timestamp + 61 days);
+        vm.warp(vm.getBlockTimestamp() + 61 days);
         _settle(id, _day(12), 1500e6, keccak256("d2"));
 
         assertEq(ausd.balanceOf(haji), backerBefore + 300e6, "6.3 panen 2: backer +300");
@@ -292,7 +295,7 @@ contract KiteCoreTest is Test {
         uint256 backerBefore = ausd.balanceOf(haji);
         uint256 seekerBefore = ausd.balanceOf(budi);
 
-        vm.warp(block.timestamp + 61 days);
+        vm.warp(vm.getBlockTimestamp() + 61 days);
         _settle(id, _day(13), 1500e6, keccak256("d3"));
 
         // Slice would be 300e6 but remaining is 180e6 — the cap wins (6.4 #1).
@@ -309,7 +312,7 @@ contract KiteCoreTest is Test {
         uint256 id = _runTo(3); // activated + panen 1 + panen 2 settled
         assertEq(kite.scoreOf(budi), 58, "prepared score holds DURING the deal (6.4 #7)");
 
-        vm.warp(block.timestamp + 61 days);
+        vm.warp(vm.getBlockTimestamp() + 61 days);
         _settle(id, _day(13), 1500e6, keccak256("d3"));
 
         // {3,3,7,3} → H 40 · C 11 · V 40 → 91 — exactly at completion.
@@ -323,7 +326,7 @@ contract KiteCoreTest is Test {
 
     function testLiteral_Cap_Formula_PrincipalTimesCapMultOver100() public {
         _prepareBudi(); // score 58 → maxP 1296e6
-        Terms memory t = _terms(1000e6, 2000, 150, uint64(block.timestamp + 365 days));
+        Terms memory t = _terms(1000e6, 2000, 150, uint64(vm.getBlockTimestamp() + 365 days));
         uint256 id = _draft(budi, t, haji);
         assertEq(kite.isaOf(id).remaining, 1500e6, "1000e6 x 150 / 100");
         assertEq(kite.isaOf(id).status, STATUS_DRAFTED);
@@ -346,7 +349,7 @@ contract KiteCoreTest is Test {
 
     function testBoundary_Draft_Share999_Reverts() public {
         address s = _newVerifiedSeeker(0xD1, keccak256("s1@mera"));
-        Terms memory t = _terms(600e6, 999, 120, uint64(block.timestamp + 30 days));
+        Terms memory t = _terms(600e6, 999, 120, uint64(vm.getBlockTimestamp() + 30 days));
         vm.prank(s);
         vm.expectRevert(abi.encodeWithSelector(ISAModule.Kite__ShareOutOfBounds.selector, uint16(999)));
         kite.createISADraft(t, haji);
@@ -354,7 +357,7 @@ contract KiteCoreTest is Test {
 
     function testBoundary_Draft_Share1000_Ok() public {
         address s = _newVerifiedSeeker(0xD1, keccak256("s1@mera"));
-        Terms memory t = _terms(600e6, 1000, 120, uint64(block.timestamp + 30 days));
+        Terms memory t = _terms(600e6, 1000, 120, uint64(vm.getBlockTimestamp() + 30 days));
         vm.prank(s);
         uint256 id = kite.createISADraft(t, haji);
         assertEq(kite.isaOf(id).status, STATUS_DRAFTED);
@@ -362,7 +365,7 @@ contract KiteCoreTest is Test {
 
     function testBoundary_Draft_Share2000_Ok() public {
         address s = _newVerifiedSeeker(0xD1, keccak256("s1@mera"));
-        Terms memory t = _terms(600e6, 2000, 120, uint64(block.timestamp + 30 days));
+        Terms memory t = _terms(600e6, 2000, 120, uint64(vm.getBlockTimestamp() + 30 days));
         vm.prank(s);
         uint256 id = kite.createISADraft(t, haji);
         assertEq(kite.isaOf(id).status, STATUS_DRAFTED);
@@ -370,7 +373,7 @@ contract KiteCoreTest is Test {
 
     function testBoundary_Draft_Share2001_Reverts() public {
         address s = _newVerifiedSeeker(0xD1, keccak256("s1@mera"));
-        Terms memory t = _terms(600e6, 2001, 120, uint64(block.timestamp + 30 days));
+        Terms memory t = _terms(600e6, 2001, 120, uint64(vm.getBlockTimestamp() + 30 days));
         vm.prank(s);
         vm.expectRevert(abi.encodeWithSelector(ISAModule.Kite__ShareOutOfBounds.selector, uint16(2001)));
         kite.createISADraft(t, haji);
@@ -378,7 +381,7 @@ contract KiteCoreTest is Test {
 
     function testBoundary_Draft_Cap119_Reverts() public {
         address s = _newVerifiedSeeker(0xD1, keccak256("s1@mera"));
-        Terms memory t = _terms(600e6, 2000, 119, uint64(block.timestamp + 30 days));
+        Terms memory t = _terms(600e6, 2000, 119, uint64(vm.getBlockTimestamp() + 30 days));
         vm.prank(s);
         vm.expectRevert(abi.encodeWithSelector(ISAModule.Kite__CapMultOutOfBounds.selector, uint16(119)));
         kite.createISADraft(t, haji);
@@ -386,7 +389,7 @@ contract KiteCoreTest is Test {
 
     function testBoundary_Draft_Cap120_Ok() public {
         address s = _newVerifiedSeeker(0xD1, keccak256("s1@mera"));
-        Terms memory t = _terms(600e6, 2000, 120, uint64(block.timestamp + 30 days));
+        Terms memory t = _terms(600e6, 2000, 120, uint64(vm.getBlockTimestamp() + 30 days));
         vm.prank(s);
         uint256 id = kite.createISADraft(t, haji);
         assertEq(kite.isaOf(id).remaining, 720e6, "600e6 x 120 / 100");
@@ -394,7 +397,7 @@ contract KiteCoreTest is Test {
 
     function testBoundary_Draft_Cap150_Ok() public {
         address s = _newVerifiedSeeker(0xD1, keccak256("s1@mera"));
-        Terms memory t = _terms(600e6, 2000, 150, uint64(block.timestamp + 30 days));
+        Terms memory t = _terms(600e6, 2000, 150, uint64(vm.getBlockTimestamp() + 30 days));
         vm.prank(s);
         uint256 id = kite.createISADraft(t, haji);
         assertEq(kite.isaOf(id).remaining, 900e6, "600e6 x 150 / 100");
@@ -402,7 +405,7 @@ contract KiteCoreTest is Test {
 
     function testBoundary_Draft_Cap151_Reverts() public {
         address s = _newVerifiedSeeker(0xD1, keccak256("s1@mera"));
-        Terms memory t = _terms(600e6, 2000, 151, uint64(block.timestamp + 30 days));
+        Terms memory t = _terms(600e6, 2000, 151, uint64(vm.getBlockTimestamp() + 30 days));
         vm.prank(s);
         vm.expectRevert(abi.encodeWithSelector(ISAModule.Kite__CapMultOutOfBounds.selector, uint16(151)));
         kite.createISADraft(t, haji);
@@ -412,11 +415,11 @@ contract KiteCoreTest is Test {
 
     function testBoundary_Draft_TermBeyond24Months_Reverts() public {
         address s = _newVerifiedSeeker(0xD1, keccak256("s1@mera"));
-        Terms memory t = _terms(600e6, 2000, 120, uint64(block.timestamp + 730 days + 1));
+        Terms memory t = _terms(600e6, 2000, 120, uint64(vm.getBlockTimestamp() + 730 days + 1));
         vm.prank(s);
         vm.expectRevert(
             abi.encodeWithSelector(
-                ISAModule.Kite__TermTooLong.selector, uint64(block.timestamp + 730 days + 1), uint64(block.timestamp + 730 days)
+                ISAModule.Kite__TermTooLong.selector, uint64(vm.getBlockTimestamp() + 730 days + 1), uint64(vm.getBlockTimestamp() + 730 days)
             )
         );
         kite.createISADraft(t, haji);
@@ -424,7 +427,7 @@ contract KiteCoreTest is Test {
 
     function testBoundary_Draft_TermExactly24Months_Ok() public {
         address s = _newVerifiedSeeker(0xD1, keccak256("s1@mera"));
-        Terms memory t = _terms(600e6, 2000, 120, uint64(block.timestamp + 730 days));
+        Terms memory t = _terms(600e6, 2000, 120, uint64(vm.getBlockTimestamp() + 730 days));
         vm.prank(s);
         uint256 id = kite.createISADraft(t, haji);
         assertEq(kite.isaOf(id).status, STATUS_DRAFTED);
@@ -434,7 +437,7 @@ contract KiteCoreTest is Test {
 
     function testBoundary_Draft_PrincipalAboveMaxP_Reverts() public {
         _prepareBudi(); // score 58 → maxP 1296e6
-        Terms memory t = _terms(1296e6 + 1, 2000, 120, uint64(block.timestamp + 30 days));
+        Terms memory t = _terms(1296e6 + 1, 2000, 120, uint64(vm.getBlockTimestamp() + 30 days));
         vm.prank(budi);
         vm.expectRevert(abi.encodeWithSelector(ISAModule.Kite__PrincipalAboveMax.selector, 1296e6 + 1, 1296e6));
         kite.createISADraft(t, haji);
@@ -442,7 +445,7 @@ contract KiteCoreTest is Test {
 
     function testBoundary_Draft_PrincipalExactlyMaxP_Ok() public {
         _prepareBudi(); // score 58 → maxP 1296e6
-        Terms memory t = _terms(1296e6, 2000, 120, uint64(block.timestamp + 30 days));
+        Terms memory t = _terms(1296e6, 2000, 120, uint64(vm.getBlockTimestamp() + 30 days));
         vm.prank(budi);
         uint256 id = kite.createISADraft(t, haji);
         assertEq(kite.isaOf(id).remaining, 1296e6 * 120 / 100, "1296e6 x 120 / 100 = 1555200000");
@@ -450,7 +453,7 @@ contract KiteCoreTest is Test {
 
     function testBoundary_Draft_PrincipalAboveScore0Max_Reverts() public {
         address s = _newVerifiedSeeker(0xD1, keccak256("s1@mera"));
-        Terms memory t = _terms(600e6 + 1, 2000, 120, uint64(block.timestamp + 30 days));
+        Terms memory t = _terms(600e6 + 1, 2000, 120, uint64(vm.getBlockTimestamp() + 30 days));
         vm.prank(s);
         vm.expectRevert(abi.encodeWithSelector(ISAModule.Kite__PrincipalAboveMax.selector, 600e6 + 1, 600e6));
         kite.createISADraft(t, haji);
@@ -460,7 +463,7 @@ contract KiteCoreTest is Test {
 
     function testBoundary_Draft_UnknownChannel_Reverts() public {
         address s = _newVerifiedSeeker(0xD1, keccak256("s1@mera"));
-        Terms memory t = Terms({principal: 600e6, shareBps: 2000, capMult: 120, termEnd: uint64(block.timestamp + 30 days), channelId: 99});
+        Terms memory t = Terms({principal: 600e6, shareBps: 2000, capMult: 120, termEnd: uint64(vm.getBlockTimestamp() + 30 days), channelId: 99});
         vm.prank(s);
         vm.expectRevert(abi.encodeWithSelector(Identity.Kite__UnknownChannel.selector, uint64(99)));
         kite.createISADraft(t, haji);
@@ -468,7 +471,7 @@ contract KiteCoreTest is Test {
 
     function testBoundary_Draft_SeekerWithActiveDeal_Reverts() public {
         uint256 id = _runTo(1); // demo deal ACTIVE for budi
-        Terms memory t = _terms(600e6, 2000, 120, uint64(block.timestamp + 30 days));
+        Terms memory t = _terms(600e6, 2000, 120, uint64(vm.getBlockTimestamp() + 30 days));
         vm.prank(budi);
         vm.expectRevert(abi.encodeWithSelector(ISAModule.Kite__HasActiveISA.selector, budi, id));
         kite.createISADraft(t, haji);
@@ -476,7 +479,7 @@ contract KiteCoreTest is Test {
 
     function testBoundary_Draft_SeekerUnverified_Reverts() public {
         address ghost = vm.addr(0xE1); // never bound
-        Terms memory t = _terms(600e6, 2000, 120, uint64(block.timestamp + 30 days));
+        Terms memory t = _terms(600e6, 2000, 120, uint64(vm.getBlockTimestamp() + 30 days));
         vm.prank(ghost);
         vm.expectRevert(abi.encodeWithSelector(ISAModule.Kite__NotVerified.selector, ghost));
         kite.createISADraft(t, haji);
@@ -629,7 +632,7 @@ contract KiteCoreTest is Test {
 
     function testBoundary_Income_ReplaySameTuple_Reverts() public {
         uint256 id = _runTo(1);
-        vm.warp(block.timestamp + 61 days);
+        vm.warp(vm.getBlockTimestamp() + 61 days);
         _settle(id, _day(11), 1500e6, keccak256("d1"));
         // PLAN §6.2 eventHash, byte-for-byte: (channelId, purchaseRef, gross, salt).
         bytes32 eventHash = keccak256(abi.encode(uint64(CHANNEL_ID), _day(11), uint256(1500e6), keccak256("d1")));
@@ -641,7 +644,7 @@ contract KiteCoreTest is Test {
 
     function testBoundary_Income_ReplaySameRefNewSalt_Reverts() public {
         uint256 id = _runTo(1);
-        vm.warp(block.timestamp + 61 days);
+        vm.warp(vm.getBlockTimestamp() + 61 days);
         _settle(id, _day(11), 1500e6, keccak256("d1"));
         // Same purchaseRef, fresh salt: the settledRefs guard still fires —
         // the NEW eventHash is named in the revert (§6.4 #2, second clause).
@@ -681,7 +684,7 @@ contract KiteCoreTest is Test {
 
     function testBoundary_Income_ZeroGross_SettlesZero_NeverQualifies() public {
         uint256 id = _runTo(1);
-        vm.warp(block.timestamp + 61 days);
+        vm.warp(vm.getBlockTimestamp() + 61 days);
         uint256 backerBefore = ausd.balanceOf(haji);
         uint256 seekerBefore = ausd.balanceOf(budi);
         bytes32 ref = keccak256("purchase/zero"); // fresh ref — a failed harvest
@@ -709,7 +712,7 @@ contract KiteCoreTest is Test {
         uint256 id = _runTo(1);
         // 61d − 1s after activation, no prior event: the gap clause passes,
         // so ONLY the 10%-of-principal clause can (and does) disqualify.
-        vm.warp(block.timestamp + 61 days - 1 seconds);
+        vm.warp(vm.getBlockTimestamp() + 61 days - 1 seconds);
         uint256 backerBefore = ausd.balanceOf(haji);
         uint256 seekerBefore = ausd.balanceOf(budi);
 
@@ -725,7 +728,7 @@ contract KiteCoreTest is Test {
 
     function testBoundary_Income_SliceEqualsRemaining_CompletesExactly() public {
         uint256 id = _runTo(3); // remaining 180e6
-        vm.warp(block.timestamp + 61 days);
+        vm.warp(vm.getBlockTimestamp() + 61 days);
         uint256 backerBefore = ausd.balanceOf(haji);
         uint256 seekerBefore = ausd.balanceOf(budi);
 
@@ -845,7 +848,7 @@ contract KiteCoreTest is Test {
         (uint8 v, bytes32 r, bytes32 s) = _signIncome(id, _day(11), 1500e6, keccak256("d1"));
         kite.receiveIncome(id, _day(11), 1500e6, keccak256("d1"), v, r, s);
 
-        Terms memory t = _terms(600e6, 2000, 120, uint64(block.timestamp + 30 days));
+        Terms memory t = _terms(600e6, 2000, 120, uint64(vm.getBlockTimestamp() + 30 days));
         vm.prank(relayer);
         vm.expectRevert(abi.encodeWithSelector(ISAModule.Kite__NotVerified.selector, relayer)); // draft (unbound)
         kite.createISADraft(t, haji);
@@ -871,7 +874,7 @@ contract KiteCoreTest is Test {
     function testRole_Orchestrator_OnlyIncomeCompleteFlag() public {
         uint256 id = _runTo(1);
         // Those three, OK:
-        vm.warp(block.timestamp + 61 days);
+        vm.warp(vm.getBlockTimestamp() + 61 days);
         _settle(id, _day(11), 1500e6, keccak256("d1")); // income
         assertEq(kite.isaOf(id).remaining, 480e6);
         vm.warp(uint256(kite.isaOf(id).terms.termEnd));
@@ -888,7 +891,7 @@ contract KiteCoreTest is Test {
         _expectAccess(orchestrator, relayerRole); // bind
         kite.bindIdentity(orchestrator, keccak256("orc@mera"));
 
-        Terms memory t = _terms(600e6, 2000, 120, uint64(block.timestamp + 30 days));
+        Terms memory t = _terms(600e6, 2000, 120, uint64(vm.getBlockTimestamp() + 30 days));
         vm.prank(orchestrator);
         vm.expectRevert(abi.encodeWithSelector(ISAModule.Kite__NotVerified.selector, orchestrator)); // draft
         kite.createISADraft(t, haji);
@@ -907,7 +910,7 @@ contract KiteCoreTest is Test {
         assertFalse(kite.paused());
 
         // Every fund-adjacent call reverts for the pauser as actor:
-        Terms memory t = _terms(600e6, 2000, 120, uint64(block.timestamp + 30 days));
+        Terms memory t = _terms(600e6, 2000, 120, uint64(vm.getBlockTimestamp() + 30 days));
         vm.prank(pauser);
         vm.expectRevert(abi.encodeWithSelector(ISAModule.Kite__NotVerified.selector, pauser)); // draft
         kite.createISADraft(t, haji);
@@ -953,7 +956,7 @@ contract KiteCoreTest is Test {
         _expectAccess(admin, orchestratorRole); // income
         kite.receiveIncome(id, _day(11), 1500e6, keccak256("d1"), v, r, s);
 
-        Terms memory t = _terms(600e6, 2000, 120, uint64(block.timestamp + 30 days));
+        Terms memory t = _terms(600e6, 2000, 120, uint64(vm.getBlockTimestamp() + 30 days));
         vm.prank(admin);
         vm.expectRevert(abi.encodeWithSelector(ISAModule.Kite__NotVerified.selector, admin)); // draft
         kite.createISADraft(t, haji);
@@ -970,7 +973,7 @@ contract KiteCoreTest is Test {
         _expectAccess(stranger, relayerRole);
         kite.bindIdentity(stranger, keccak256("s5@mera"));
 
-        Terms memory t = _terms(600e6, 2000, 120, uint64(block.timestamp + 30 days));
+        Terms memory t = _terms(600e6, 2000, 120, uint64(vm.getBlockTimestamp() + 30 days));
         vm.prank(stranger);
         vm.expectRevert(abi.encodeWithSelector(ISAModule.Kite__NotVerified.selector, stranger)); // draft
         kite.createISADraft(t, haji);
@@ -1038,7 +1041,7 @@ contract KiteCoreTest is Test {
     function testPause_Blocks_CreateISADraft() public {
         vm.prank(pauser);
         kite.pause();
-        Terms memory t = _terms(600e6, 2000, 120, uint64(block.timestamp + 30 days));
+        Terms memory t = _terms(600e6, 2000, 120, uint64(vm.getBlockTimestamp() + 30 days));
         vm.prank(budi);
         vm.expectRevert(abi.encodeWithSelector(Governed.Kite__Paused.selector));
         kite.createISADraft(t, haji);
@@ -1051,7 +1054,7 @@ contract KiteCoreTest is Test {
         // All reads/signing BEFORE expectRevert — _activate's internal view
         // calls into the token would consume the expectation.
         uint256 principal = kite.isaOf(id).terms.principal;
-        uint256 deadline = block.timestamp + 1 hours;
+        uint256 deadline = vm.getBlockTimestamp() + 1 hours;
         bytes32 digest = keccak256(
             abi.encodePacked(
                 "\x19\x01",
@@ -1070,7 +1073,7 @@ contract KiteCoreTest is Test {
         vm.prank(pauser);
         kite.pause();
         assertTrue(kite.paused());
-        vm.warp(block.timestamp + 61 days);
+        vm.warp(vm.getBlockTimestamp() + 61 days);
         _settle(id, _day(11), 1500e6, keccak256("d1")); // never blocked (6.4 #10)
         assertEq(kite.isaOf(id).remaining, 480e6);
         assertEq(kite.isaOf(id).status, STATUS_ACTIVE);
@@ -1126,7 +1129,7 @@ contract KiteCoreTest is Test {
         KiteCore impl = new KiteCore();
         ERC1967Proxy proxy = new ERC1967Proxy(
             address(impl),
-            abi.encodeCall(KiteCore.initialize, (admin, relayer, orchestrator, pauser, address(tok)))
+            abi.encodeCall(KiteCore.initialize, (admin, relayer, orchestrator, pauser, address(tok), 60 days))
         );
         r.kite = KiteCore(address(proxy));
         r.token = tok;
@@ -1153,7 +1156,7 @@ contract KiteCoreTest is Test {
         );
 
         Terms memory t =
-            Terms({principal: 600e6, shareBps: 2000, capMult: 120, termEnd: uint64(block.timestamp + 30 days), channelId: 1});
+            Terms({principal: 600e6, shareBps: 2000, capMult: 120, termEnd: uint64(vm.getBlockTimestamp() + 30 days), channelId: 1});
         vm.prank(r.seeker);
         r.id = r.kite.createISADraft(t, r.backer);
 
@@ -1168,7 +1171,7 @@ contract KiteCoreTest is Test {
     function testReentrancy_ActivateWithPermit_Blocked() public {
         ReenterRig memory r = _rig();
         // Valid permit over the RAIL's own domain — the attacker rail allows all.
-        uint256 deadline = block.timestamp + 1 hours;
+        uint256 deadline = vm.getBlockTimestamp() + 1 hours;
         bytes32 digest = keccak256(
             abi.encodePacked(
                 "\x19\x01",
@@ -1192,7 +1195,7 @@ contract KiteCoreTest is Test {
     function testReentrancy_ReceiveIncome_Blocked() public {
         ReenterRig memory r = _rig();
         // Clean activation first (re-entry disarmed).
-        uint256 deadline = block.timestamp + 1 hours;
+        uint256 deadline = vm.getBlockTimestamp() + 1 hours;
         bytes32 digest = keccak256(
             abi.encodePacked(
                 "\x19\x01",
@@ -1273,7 +1276,7 @@ contract KiteCoreTest is Test {
         assertEq(kite.identityOf(budi), keccak256("budi@mera"), "kite.identity survived");
         assertEq(kite.ausd(), address(ausd), "money rail pointer survived");
         // And the settlement path still runs end-to-end on V2:
-        vm.warp(block.timestamp + 61 days);
+        vm.warp(vm.getBlockTimestamp() + 61 days);
         _settle(id, _day(12), 1500e6, keccak256("d2"));
         assertEq(kite.isaOf(id).remaining, 180e6);
     }
@@ -1305,9 +1308,90 @@ contract KiteCoreTest is Test {
 
     // ── Init tier (US3) ──────────────────────────────────────────────────
 
-    function testInitialize_Twice_Reverts() public {
+    /// @notice The init-once parameters landed exactly as passed, and cannot
+    ///         be changed: the only path back to `initialize` reverts
+    ///         (Q1/A — the governed gap has NO setter, spec FR-016).
+    function testInitialize_SetsRolesAssetAndGap() public {
+        assertTrue(kite.hasRole(relayerRole, relayer), "RELAYER_ROLE at init");
+        assertTrue(kite.hasRole(orchestratorRole, orchestrator), "ORCHESTRATOR_ROLE at init");
+        assertTrue(kite.hasRole(pauserRole, pauser), "PAUSER at init");
+        assertEq(kite.ausd(), address(ausd), "asset immutable at init");
+        assertEq(kite.minEventGap(), 60 days, "gap set once, from the initializer argument");
+        // Re-init with a DIFFERENT gap — the would-be change path — reverts.
         vm.expectRevert(Initializable.InvalidInitialization.selector);
-        kite.initialize(admin, relayer, orchestrator, pauser, address(ausd));
+        kite.initialize(admin, relayer, orchestrator, pauser, address(ausd), 30 days);
+    }
+
+    // ── Governed-gap tier (Q1/A, Feature 004) — contractual names in
+    //    specs/004.../contracts/deploy-seed-api.md ─────────────────────────
+
+    /// @dev Re-points the suite's `ausd`/`kite` at a deployment whose governed
+    ///      gap is `gapSec` — the demo configuration. Every fixture helper
+    ///      (_draft/_activate/_settle) then works unchanged against it.
+    function _deployWithGap(uint256 gapSec) internal {
+        ausd = new MockAUSD(address(this));
+        KiteCore impl = new KiteCore();
+        ERC1967Proxy proxy = new ERC1967Proxy(
+            address(impl),
+            abi.encodeCall(KiteCore.initialize, (admin, relayer, orchestrator, pauser, address(ausd), gapSec))
+        );
+        kite = KiteCore(address(proxy));
+        // The income-signature helpers sign over the domain of the LIVE proxy —
+        // re-derive it or every fact verifies against the stale address.
+        kiteDomain = keccak256(
+            abi.encode(
+                keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"),
+                keccak256("KiteCore"),
+                keccak256("1"),
+                block.chainid,
+                address(kite)
+            )
+        );
+        ausd.transfer(haji, 5_000e6); // the backer pays principal at activation
+        ausd.transfer(mill, 20_000e6);
+        vm.prank(mill);
+        ausd.approve(address(kite), type(uint256).max);
+        vm.startPrank(relayer);
+        kite.bindIdentity(budi, keccak256("budi@mera"));
+        kite.bindIdentity(haji, keccak256("haji@mera"));
+        vm.stopPrank();
+        vm.prank(admin);
+        kite.registerChannel(CHANNEL_ID, "Koperasi Mill", mill);
+    }
+
+    function testGap_MinEventGap_SetAtInit_NoSetter() public {
+        _deployWithGap(90 days);
+        assertEq(kite.minEventGap(), 90 days, "whatever init passed IS the value");
+        // No setter exists: the raw selector call must revert (no fallback).
+        (bool ok,) =
+            address(kite).call(abi.encodeWithSelector(bytes4(keccak256("setMinEventGap(uint256)")), 1 days));
+        assertFalse(ok, "no setter: the gap is init-once (FR-016)");
+    }
+
+    function testGap_Qualifying_At60Seconds_DemoDeployment() public {
+        _deployWithGap(60 seconds); // the demo deployment (Q1/A)
+        Terms memory t = _terms(600e6, 2000, 130, uint64(vm.getBlockTimestamp() + 365 days));
+        uint256 id = _draft(budi, t, haji);
+        _activate(id, hajiPk, haji);
+        _settle(id, _day(1), 1500e6, keccak256("e1")); // first event: gap-free by definition
+        vm.warp(vm.getBlockTimestamp() + 60 seconds); // exactly the demo bar — inclusive
+        _settle(id, _day(2), 1500e6, keccak256("e2"));
+        ISA memory isa = kite.isaOf(id);
+        assertEq(isa.eventCount, 2, "60 s apart: both qualify at the demo gap");
+        assertEq(isa.lastEventAt, vm.getBlockTimestamp());
+    }
+
+    function testGap_NonQualifying_At59Seconds_DemoDeployment() public {
+        _deployWithGap(60 seconds);
+        Terms memory t = _terms(600e6, 2000, 130, uint64(vm.getBlockTimestamp() + 365 days));
+        uint256 id = _draft(budi, t, haji);
+        _activate(id, hajiPk, haji);
+        _settle(id, _day(1), 1500e6, keccak256("e1"));
+        vm.warp(vm.getBlockTimestamp() + 59 seconds); // one second short of the bar
+        _settle(id, _day(2), 1500e6, keccak256("e2"));
+        ISA memory isa = kite.isaOf(id);
+        assertEq(isa.eventCount, 1, "59 s apart: splits normally, no qualifying credit");
+        assertEq(isa.remaining, 180e6, "780e6 - 300e6 - 300e6: the split happened, the credit did not");
     }
 }
 

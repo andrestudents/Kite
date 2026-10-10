@@ -111,7 +111,7 @@ contract KiteCoreHandler is Test {
         KiteCore impl = new KiteCore();
         ERC1967Proxy proxy = new ERC1967Proxy(
             address(impl),
-            abi.encodeCall(KiteCore.initialize, (admin, relayer, orchestrator, pauser, address(ausdToken)))
+            abi.encodeCall(KiteCore.initialize, (admin, relayer, orchestrator, pauser, address(ausdToken), 60 days))
         );
         kiteContract = KiteCore(address(proxy));
         domain = keccak256(
@@ -487,7 +487,7 @@ contract KiteCoreHandler is Test {
         KiteCore impl = new KiteCore();
         ERC1967Proxy proxy = new ERC1967Proxy(
             address(impl),
-            abi.encodeCall(KiteCore.initialize, (admin, relayer, orchestrator, pauser, address(tok)))
+            abi.encodeCall(KiteCore.initialize, (admin, relayer, orchestrator, pauser, address(tok), 60 days))
         );
         KiteCore rig = KiteCore(address(proxy));
         tok.aim(address(rig));

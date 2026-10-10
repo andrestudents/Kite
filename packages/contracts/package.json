@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "gen:abis": "forge inspect --json --root ../../contracts KiteCore abi > src/abis/kitecore.abi.json && forge inspect --json --root ../../contracts MockAUSD abi > src/abis/mockausd.abi.json"
   },
   "devDependencies": {
     "@kite/tsconfig": "workspace:*",

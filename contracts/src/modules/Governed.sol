@@ -21,6 +21,7 @@ abstract contract Governed is Initializable, AccessControlUpgradeable {
 
     // ── Errors / events ─────────────────────────────────────────────────
     error Kite__Paused();
+    error Kite__ZeroGap();
     event Paused(address indexed account);
     event Unpaused(address indexed account);
 
@@ -28,6 +29,11 @@ abstract contract Governed is Initializable, AccessControlUpgradeable {
     /// @custom:storage-location erc7201:kite.governed
     struct GovernedStorage {
         bool paused;
+        // §6.2 qualifying window in seconds, set ONCE at initialize() —
+        // protocol value 60 days, demo deployment 60 s (PLAN §6.2
+        // clarification, Feature 004 Q1/A). NO SETTER: init-once like the
+        // asset, so the score-integrity knob can never turn (spec FR-016).
+        uint256 minEventGap;
     }
 
     // keccak256(abi.encode(uint256(keccak256("kite.governed")) - 1)) & ~bytes32(uint256(0xff))
@@ -45,13 +51,16 @@ abstract contract Governed is Initializable, AccessControlUpgradeable {
         address admin,
         address relayer,
         address orchestrator,
-        address pauser
+        address pauser,
+        uint256 minEventGapSec
     ) internal onlyInitializing {
+        if (minEventGapSec == 0) revert Kite__ZeroGap();
         __AccessControl_init();
         _grantRole(DEFAULT_ADMIN_ROLE, admin); // ADMIN (spec FR-001)
         _grantRole(RELAYER_ROLE, relayer);
         _grantRole(ORCHESTRATOR_ROLE, orchestrator);
         _grantRole(PAUSER_ROLE, pauser);
+        _governedStorage().minEventGap = minEventGapSec; // init-once (Q1/A)
     }
 
     // ── Pause (asymmetric — PLAN §6.2, constitution VII) ────────────────
@@ -74,5 +83,13 @@ abstract contract Governed is Initializable, AccessControlUpgradeable {
 
     function paused() public view returns (bool) {
         return _governedStorage().paused;
+    }
+
+    /// @notice The configured qualifying window in seconds (PLAN §6.2
+    ///         MIN_EVENT_GAP as a governed parameter, Q1/A). Init-once —
+    ///         deliberately NO setter (spec FR-016): the disclosure story is
+    ///         "born with this value, nothing can change it".
+    function minEventGap() public view returns (uint256) {
+        return _governedStorage().minEventGap;
     }
 }

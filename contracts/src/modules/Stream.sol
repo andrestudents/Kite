@@ -174,10 +174,12 @@ abstract contract Stream is ISAModule, EIP712Upgradeable {
         _isaStorage().ausd.transfer(isa.seeker, toSeeker);
         isa.remaining -= toBacker;
 
-        // Qualifying bookkeeping (§6.3): gap >= 60d AND gross >= 10% of
-        // principal; non-qualifying events still split, they count toward
-        // nothing. Profiles update ONLY at completion (research.md D8).
-        bool qualifying = KiteScoring.isQualifyingEvent(isa.lastEventAt, block.timestamp, f.gross, isa.terms.principal);
+        // Qualifying bookkeeping (§6.3): gap >= the governed minEventGap (set
+        // at init — Q1/A) AND gross >= 10% of principal; non-qualifying events
+        // still split, they count toward nothing. Profiles update ONLY at
+        // completion (research.md D8).
+        bool qualifying =
+            KiteScoring.isQualifyingEvent(isa.lastEventAt, block.timestamp, f.gross, isa.terms.principal, minEventGap());
         if (qualifying) {
             isa.lastEventAt = uint64(block.timestamp);
             isa.eventCount++;
