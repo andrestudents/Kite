@@ -12,7 +12,7 @@
     "format": "biome check --write .",
     "typecheck": "turbo run typecheck",
     "health": "bun scripts/healthcheck.ts",
-    "test": "bun test",
+    "test": "bun test packages apps scripts",
     "db:push": "drizzle-kit push --dialect postgresql --schema ./packages/core/src/db/schema.ts --out ./packages/core/drizzle --url \"$DATABASE_URL\" && bun scripts/stamp-recon-baseline.ts",
     "dev:api": "cd apps/api && bun run dev",
     "dev:relayer": "cd apps/relayer && bun run dev"
