@@ -4,10 +4,22 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "db:push": "drizzle-kit push"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./db": "./src/db/index.ts"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "^1.0.0",
+    "drizzle-orm": "^0.44.0"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.3.0",
     "@kite/tsconfig": "workspace:*",
+    "@types/bun": "^1.2.0",
+    "drizzle-kit": "^0.31.0",
     "typescript": "^5.9.0"
   }
 }

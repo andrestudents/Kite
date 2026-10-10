@@ -10,5 +10,8 @@
   "devDependencies": {
     "@kite/tsconfig": "workspace:*",
     "typescript": "^5.9.0"
+  },
+  "exports": {
+    ".": "./src/index.ts"
   }
 }
