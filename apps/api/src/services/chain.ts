@@ -18,7 +18,7 @@ import { optionalEnv } from "@kite/core";
 export const PROXY = KITE_DEPLOYMENT.kiteCore;
 export const AUSD = KITE_DEPLOYMENT.ausd;
 
-const CORE_ABI = abis.kitecore as unknown as Abi;
+export const CORE_ABI = abis.kitecore as unknown as Abi;
 const AUSD_ABI = abis.mockausd as unknown as Abi;
 const INCOME_SETTLED = getAbiItem({ abi: CORE_ABI, name: "IncomeSettled" });
 const CHANNEL_REGISTERED = getAbiItem({ abi: CORE_ABI, name: "ChannelRegistered" });

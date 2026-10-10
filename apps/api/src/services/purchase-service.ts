@@ -246,6 +246,38 @@ export async function markPurchasePaid(db: AnyDb, id: string, actor: string): Pr
   }
 }
 
+/** The internal terminal leg (T019): PAID → FAILED on a terminal revert,
+ *  with the reason recorded (§7.2 aux failed_reason). Never an HTTP route. */
+export async function markPurchaseFailed(
+  db: AnyDb,
+  id: string,
+  actor: string,
+  reason: string,
+): Promise<PurchaseDto> {
+  if (!UUID.test(id)) {
+    throw new KiteError("purchase_not_found", "no such purchase");
+  }
+  return execute(db, async (tx) => {
+    const row = mustRow(await tx.select().from(purchases).where(eq(purchases.id, id)).limit(1));
+    const allowed = PURCHASE_TRANSITIONS[row.status as PurchaseDto["status"]] ?? [];
+    if (!allowed.includes(PURCHASE_STATUS.FAILED)) {
+      throw new KiteError("invalid_transition", `cannot move ${row.status} → FAILED`);
+    }
+    const updated = await tx
+      .update(purchases)
+      .set({ status: PURCHASE_STATUS.FAILED, failedReason: reason })
+      .where(and(eq(purchases.id, id), eq(purchases.status, row.status)))
+      .returning();
+    await tx.insert(purchaseTransitions).values({
+      purchaseId: id,
+      fromStatus: row.status,
+      toStatus: PURCHASE_STATUS.FAILED,
+      actor,
+    });
+    return toPurchaseDto(mustRow(updated));
+  });
+}
+
 /** Transition log reader — the append-only evidence trail (never edited). */
 export async function transitionsOf(db: AnyDb, id: string) {
   return db
