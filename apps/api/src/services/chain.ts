@@ -21,6 +21,16 @@ export const AUSD = KITE_DEPLOYMENT.ausd;
 const CORE_ABI = abis.kitecore as unknown as Abi;
 const AUSD_ABI = abis.mockausd as unknown as Abi;
 const INCOME_SETTLED = getAbiItem({ abi: CORE_ABI, name: "IncomeSettled" });
+const CHANNEL_REGISTERED = getAbiItem({ abi: CORE_ABI, name: "ChannelRegistered" });
+// Any isa lifecycle event reveals its isaId; isaOf() then states the truth.
+const ISA_EVENT_NAMES = [
+  "ISADrafted",
+  "ISAActivated",
+  "ISACompletedCapped",
+  "ISACompletedAtTerm",
+  "ISACancelled",
+] as const;
+const ISA_EVENTS = ISA_EVENT_NAMES.map((name) => getAbiItem({ abi: CORE_ABI, name }));
 
 /** isaOf() read back — integer money as numbers (D14; ≪ 2^53 at demo scale). */
 export interface IsaOnchain {
@@ -79,7 +89,14 @@ export interface ChainClient {
   balanceAusd(wallet: string): Promise<bigint>;
   minEventGap(): Promise<number>;
   blockTimestamp(blockNumber: bigint): Promise<number>;
+  /** Smallest block whose timestamp is ≥ the target (binary search) — how the
+   *  watcher seed resolves "the deployment block" from KITE_DEPLOYMENT.deployedAt. */
+  blockAtOrAfter(timestampSec: number): Promise<bigint>;
   settlementLogs(fromBlock: bigint, toBlock: bigint): Promise<SettlementLog[]>;
+  /** Distinct channel ids registered in the range (T017 bootstrap). */
+  channelRegisteredIds(fromBlock: bigint, toBlock: bigint): Promise<number[]>;
+  /** Distinct isaIds touched by any isa lifecycle event in the range (T017). */
+  isaEventIds(fromBlock: bigint, toBlock: bigint): Promise<number[]>;
 }
 
 export function rpcUrl(): string {
@@ -182,6 +199,24 @@ export function makeChainClient(): ChainClient {
       const block = await client.getBlock({ blockNumber });
       return Number(block.timestamp);
     },
+    async blockAtOrAfter(target) {
+      const timestampOf = async (n: bigint) =>
+        Number((await client.getBlock({ blockNumber: n })).timestamp);
+      let lo = 0n;
+      let hi = await client.getBlockNumber();
+      if ((await timestampOf(hi)) < target) {
+        return hi; // chain head is older than the target — nothing to find later
+      }
+      while (lo < hi) {
+        const mid = (lo + hi) / 2n;
+        if ((await timestampOf(mid)) < target) {
+          lo = mid + 1n;
+        } else {
+          hi = mid;
+        }
+      }
+      return lo;
+    },
     async settlementLogs(fromBlock, toBlock) {
       // JSON-imported ABI keeps viem's log typing broad — decode explicitly.
       const logs = (await client.getLogs({
@@ -217,6 +252,30 @@ export function makeChainClient(): ChainClient {
         logIndex: log.logIndex,
         txHash: log.transactionHash,
       }));
+    },
+    async channelRegisteredIds(fromBlock, toBlock) {
+      const logs = (await client.getLogs({
+        address: PROXY,
+        event: CHANNEL_REGISTERED as never,
+        fromBlock,
+        toBlock,
+      })) as unknown as Array<{ args: { id: bigint } }>;
+      return [...new Set(logs.map((log) => Number(log.args.id)))];
+    },
+    async isaEventIds(fromBlock, toBlock) {
+      const ids = new Set<number>();
+      for (const event of ISA_EVENTS) {
+        const logs = (await client.getLogs({
+          address: PROXY,
+          event: event as never,
+          fromBlock,
+          toBlock,
+        })) as unknown as Array<{ args: { isaId: bigint } }>;
+        for (const log of logs) {
+          ids.add(Number(log.args.isaId));
+        }
+      }
+      return [...ids];
     },
   };
 }
