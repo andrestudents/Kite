@@ -13,10 +13,12 @@ import {
 } from "viem";
 import { monadTestnet } from "viem/chains";
 import { KITE_DEPLOYMENT, abis } from "@kite/contracts";
-import { optionalEnv } from "@kite/core";
+import { rpcUrl } from "@kite/core";
 
 export const PROXY = KITE_DEPLOYMENT.kiteCore;
 export const AUSD = KITE_DEPLOYMENT.ausd;
+// D10 priority lives in @kite/core — re-exported for the job modules.
+export { rpcUrl };
 
 export const CORE_ABI = abis.kitecore as unknown as Abi;
 const AUSD_ABI = abis.mockausd as unknown as Abi;
@@ -97,10 +99,6 @@ export interface ChainClient {
   channelRegisteredIds(fromBlock: bigint, toBlock: bigint): Promise<number[]>;
   /** Distinct isaIds touched by any isa lifecycle event in the range (T017). */
   isaEventIds(fromBlock: bigint, toBlock: bigint): Promise<number[]>;
-}
-
-export function rpcUrl(): string {
-  return optionalEnv("ALCHEMY_RPC_URL") ?? optionalEnv("RPC_URL") ?? KITE_DEPLOYMENT.rpcUrl;
 }
 
 export function makeChainClient(): ChainClient {

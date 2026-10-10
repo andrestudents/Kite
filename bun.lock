@@ -92,6 +92,7 @@
       "name": "@kite/core",
       "version": "0.0.0",
       "dependencies": {
+        "@kite/contracts": "workspace:*",
         "@neondatabase/serverless": "^1.0.0",
         "drizzle-orm": "^0.44.0",
       },

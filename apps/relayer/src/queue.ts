@@ -5,7 +5,7 @@
 // it (confirm by read-back or gated resend, FR-013) instead of starting a
 // second transaction. SKIP LOCKED keeps concurrent claimers on different rows;
 // the read-back gate keeps a racing pair from ever double-sending.
-import { asc, eq } from "drizzle-orm";
+import { and, asc, eq, isNull } from "drizzle-orm";
 import { KiteError } from "@kite/core";
 import {
   JOB_KINDS,
@@ -97,7 +97,7 @@ export async function claimJob(db: AnyDb): Promise<RelayerJob | undefined> {
     const inFlight = await tx
       .select()
       .from(relayerJobs)
-      .where(eq(relayerJobs.status, JOB_STATUS.sent))
+      .where(and(eq(relayerJobs.status, JOB_STATUS.sent), isNull(relayerJobs.terminalAt)))
       .orderBy(asc(relayerJobs.id))
       .limit(1)
       .for("update", { skipLocked: true });
@@ -107,7 +107,7 @@ export async function claimJob(db: AnyDb): Promise<RelayerJob | undefined> {
     const queued = await tx
       .select()
       .from(relayerJobs)
-      .where(eq(relayerJobs.status, JOB_STATUS.pending))
+      .where(and(eq(relayerJobs.status, JOB_STATUS.pending), isNull(relayerJobs.terminalAt)))
       .orderBy(asc(relayerJobs.id))
       .limit(1)
       .for("update", { skipLocked: true });
