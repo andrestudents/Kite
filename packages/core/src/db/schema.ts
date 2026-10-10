@@ -58,11 +58,13 @@ export const isas = pgTable("isas", {
   termEnd: bigint("term_end", { mode: "number" }).notNull(),
 });
 
-/** The §7.2 state machine: PENDING → PAID → SETTLED (+ FAILED), forward only. */
+/** The §7.2 state machine: PENDING → PAID → SETTLED (+ FAILED), forward only.
+ *  id is uuid (§7.3: "serial/uuid") so the creation transition row ships in
+ *  the SAME atomic batch as the purchase — no dependent returning-id write. */
 export const purchases = pgTable(
   "purchases",
   {
-    id: serial("id").primaryKey(),
+    id: uuid("id").defaultRandom().primaryKey(),
     channelId: numeric("channel_id", { mode: "number" }).notNull(),
     isaId: numeric("isa_id", { mode: "number" }).notNull(),
     purchaseRef: text("purchase_ref").notNull(),
@@ -128,7 +130,7 @@ export const reconDaily = pgTable("recon_daily", {
 /** Append-only lifecycle log (§7.2 rule 2) — rows are never edited or deleted. */
 export const purchaseTransitions = pgTable("purchase_transitions", {
   id: serial("id").primaryKey(),
-  purchaseId: integer("purchase_id")
+  purchaseId: uuid("purchase_id")
     .notNull()
     .references(() => purchases.id),
   fromStatus: text("from_status").notNull(),
@@ -140,7 +142,7 @@ export const purchaseTransitions = pgTable("purchase_transitions", {
 /** Append-only double entry (§7.2 rule 3): per purchase Σ in == Σ out == gross. */
 export const ledgerEntries = pgTable("ledger_entries", {
   id: serial("id").primaryKey(),
-  purchaseId: integer("purchase_id")
+  purchaseId: uuid("purchase_id")
     .notNull()
     .references(() => purchases.id),
   account: text("account").notNull(),

@@ -77,7 +77,7 @@ export function incomeDigest(payload: IncomePayload): Hash {
 export async function recoverIncomeSigner(sig: MillSig, payload: IncomePayload): Promise<Address> {
   return recoverAddress({
     hash: incomeDigest(payload),
-    signature: { r: sig.r as Hex, s: sig.s as Hex, v: sig.v as 27 | 28 },
+    signature: { r: sig.r as Hex, s: sig.s as Hex, v: BigInt(sig.v) },
   });
 }
 

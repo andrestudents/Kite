@@ -5,6 +5,7 @@ import { Hono } from "hono";
 import { KiteError } from "@kite/core";
 import type { AnyDb } from "@kite/core/db";
 import type { ChainClient } from "./services/chain.js";
+import { purchasesRoutes } from "./routes/purchases.js";
 
 export interface ApiDeps {
   db: AnyDb;
@@ -25,6 +26,9 @@ const STATUS_BY_CODE: Record<string, 400 | 401 | 404 | 409 | 422> = {
   purchase_ref_conflict: 409,
   invalid_transition: 409,
   money_must_be_integer: 422,
+  unknown_channel: 422,
+  unknown_isa: 422,
+  invalid_signature: 422,
 };
 
 export function createApp(deps: ApiDeps): Hono {
@@ -49,8 +53,7 @@ export function createApp(deps: ApiDeps): Hono {
 }
 
 function mountRoutes(app: Hono, deps: ApiDeps): void {
+  app.route("/", purchasesRoutes(deps));
   // routes/health.ts (T027) · routes/quote.ts (T028) · routes/me.ts (T029) ·
-  // routes/profile.ts (T030) · routes/purchases.ts (T014) mount here.
-  void app;
-  void deps;
+  // routes/profile.ts (T030) mount here.
 }

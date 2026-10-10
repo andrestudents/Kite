@@ -37,7 +37,7 @@ CREATE TABLE "job_state" (
 --> statement-breakpoint
 CREATE TABLE "ledger_entries" (
 	"id" serial PRIMARY KEY NOT NULL,
-	"purchase_id" integer NOT NULL,
+	"purchase_id" uuid NOT NULL,
 	"account" text NOT NULL,
 	"side" text NOT NULL,
 	"amount_ausd" bigint NOT NULL
@@ -45,7 +45,7 @@ CREATE TABLE "ledger_entries" (
 --> statement-breakpoint
 CREATE TABLE "purchase_transitions" (
 	"id" serial PRIMARY KEY NOT NULL,
-	"purchase_id" integer NOT NULL,
+	"purchase_id" uuid NOT NULL,
 	"from_status" text NOT NULL,
 	"to_status" text NOT NULL,
 	"actor" text NOT NULL,
@@ -53,7 +53,7 @@ CREATE TABLE "purchase_transitions" (
 );
 --> statement-breakpoint
 CREATE TABLE "purchases" (
-	"id" serial PRIMARY KEY NOT NULL,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"channel_id" numeric NOT NULL,
 	"isa_id" numeric NOT NULL,
 	"purchase_ref" text NOT NULL,

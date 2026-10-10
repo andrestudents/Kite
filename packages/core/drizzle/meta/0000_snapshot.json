@@ -1,5 +1,5 @@
 {
-  "id": "c76e77a0-046c-456f-bead-5447ea6700cb",
+  "id": "daa44edb-2207-4853-afbd-e1206a606d42",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -214,7 +214,7 @@
         },
         "purchase_id": {
           "name": "purchase_id",
-          "type": "integer",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
@@ -271,7 +271,7 @@
         },
         "purchase_id": {
           "name": "purchase_id",
-          "type": "integer",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
@@ -329,9 +329,10 @@
       "columns": {
         "id": {
           "name": "id",
-          "type": "serial",
+          "type": "uuid",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "default": "gen_random_uuid()"
         },
         "channel_id": {
           "name": "channel_id",
