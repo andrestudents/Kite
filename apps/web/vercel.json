@@ -5,7 +5,7 @@
     "rewrites": [
         {
             "source": "/api/:path*",
-            "destination": "https://kite-api-ghoi.onrender.com/:path*"
+            "destination": "https://kite-api-ghoi.onrender.com/api/:path*"
         }
     ]
 }
