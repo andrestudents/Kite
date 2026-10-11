@@ -1,17 +1,10 @@
 {
-  "extends": "@kite/tsconfig/nextjs.json",
+  "extends": "@kite/tsconfig/base.json",
   "compilerOptions": {
-    "paths": {
-      "@/*": ["./src/*"]
-    }
+    "lib": ["dom", "dom.iterable", "es2022"],
+    "jsx": "react-jsx",
+    "esModuleInterop": true,
+    "types": ["vite/client", "bun"]
   },
-  "include": [
-    "next-env.d.ts",
-    "**/*.ts",
-    "**/*.tsx",
-    ".next/types/**/*.ts",
-    ".next/dev/types/**/*.ts",
-    "**/*.mts"
-  ],
-  "exclude": ["node_modules"]
+  "include": ["src", "smoke", "demo", "vite.config.ts"]
 }
