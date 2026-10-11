@@ -61,6 +61,10 @@ export const ms: Locale = {
   desktop: {
     title: "Sambung di telefon anda",
     body: "Imbas kod ini dengan telefon anda. Skrin ini hanya pendamping.",
+    addressNote: "Atau taip alamat halaman ini di telefon anda:",
+    stepSignup: "Membuat akaun",
+    stepPhone: "Langkah nombor telefon",
+    stepVerify: "Pengesahan identiti",
   },
 };
 

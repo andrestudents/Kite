@@ -10,6 +10,7 @@ import { makeAdapterForDevice } from "../auth/demo-adapter.js";
 import { clearSessionBlob, loadSessionBlob } from "../auth/session.js";
 import type { AccountSession, AuthAdapter } from "../auth/types.js";
 import { id as locale } from "../locales/id.js";
+import { DesktopHandoff, isCoarsePointer, type OnboardingStep } from "../screens/DesktopFrame.js";
 import { Home } from "../screens/Home.js";
 import { Phone } from "../screens/Phone.js";
 import { Signup } from "../screens/Signup.js";
@@ -31,6 +32,9 @@ export function App() {
   const [banner, setBanner] = useState<string | undefined>(undefined);
   const [wallet, setWallet] = useState<string>("");
   const [adapter, setAdapter] = useState<AuthAdapter | null>(null);
+  // T026: coarse pointer (phone) runs the ceremonies; a desktop renders the
+  // honest hand-off for every onboarding route instead (FR-013).
+  const [handoff] = useState<boolean>(() => !isCoarsePointer());
   const liveSession = useRef<AccountSession | null>(null);
   const api = useRef(makeApiClient({ baseUrl: API_URL, onUnauthorized }));
 
@@ -93,6 +97,11 @@ export function App() {
         {locale.common.loading}
       </main>
     );
+  }
+  // T026/FR-013: on a desktop, every ceremony route is the phone hand-off —
+  // no biometric ceremony is ever attempted here. Home (reads-only) stays.
+  if (handoff && route !== "home") {
+    return <DesktopHandoff locale={locale} step={route as OnboardingStep} />;
   }
   if (route === "signup") {
     return (

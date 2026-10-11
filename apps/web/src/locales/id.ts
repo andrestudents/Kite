@@ -62,6 +62,10 @@ export const id = {
   desktop: {
     title: "Lanjut di ponselmu",
     body: "Pindai kode ini dengan ponselmu. Layar ini hanya pendamping.",
+    addressNote: "Atau ketik alamat halaman ini di ponselmu:",
+    stepSignup: "Membuat akun",
+    stepPhone: "Langkah nomor HP",
+    stepVerify: "Verifikasi identitas",
   },
 } as const;
 
