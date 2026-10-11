@@ -1,0 +1,6 @@
+# bun test configuration — T036 rework.
+# contracts/lib/** holds vendored OpenZeppelin suites: they are NOT our tests
+# and 56+ of them fail under bun's runner (they expect hardhat/ethers).
+
+[test]
+pathIgnorePatterns = ["contracts/lib/**"]

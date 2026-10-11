@@ -4,10 +4,20 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "dev": "bun run --hot src/index.ts",
     "typecheck": "tsc --noEmit"
   },
+  "dependencies": {
+    "@kite/contracts": "workspace:*",
+    "@kite/core": "workspace:*",
+    "hono": "^4.9.0",
+    "viem": "^2.37.0"
+  },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.3.0",
     "@kite/tsconfig": "workspace:*",
+    "@types/bun": "^1.2.0",
+    "drizzle-orm": "^0.44.0",
     "typescript": "^5.9.0"
   }
 }
