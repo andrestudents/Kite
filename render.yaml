@@ -1,0 +1,57 @@
+# Render Blueprint — both Kite backend services on the free tier.
+# (Fly went PAYG-only; Render free hosts both. EC2 stays documented as the
+# fallback — see DEPLOY.md at the repo root.)
+#
+# Render has NO native Bun runtime, so both services build from the existing
+# Dockerfiles; the Docker build context defaults to the repo root, which is
+# exactly what those Dockerfiles already assume (repo-root COPY paths).
+#
+# Create: Render dashboard → New → Blueprint → pick this repo → this file is
+# read → it prompts for every sync:false secret once, then dashboard-managed.
+# Full runbook incl. REQUIRED UptimeRobot keep-alive: DEPLOY.md (repo root).
+
+services:
+  # The long-running API behind kite-zeta.vercel.app (Vercel /api rewrite).
+  - type: web
+    name: kite-api
+    runtime: docker
+    dockerfilePath: ./apps/api/Dockerfile
+    region: singapore # closest to WIB judges
+    plan: free # 0.1 CPU / 512 MB — spins down after 15 min idle (UptimeRobot!)
+    healthCheckPath: /api/health
+    autoDeploy: true # deploys on push to main
+    envVars:
+      # --- prompted at Blueprint creation, then dashboard-managed ---
+      - key: DATABASE_URL # Neon — SAME database as kite-relayer (one db:push)
+        sync: false
+      - key: MITA_API_KEY # Mitra console demo integration (005). Demo Tool.
+        sync: false
+      - key: INTERNAL_API_KEY # shared secret for the API→relayer hop; SAME value as kite-relayer's
+        sync: false
+      # --- plain values, safe in git ---
+      - key: RELAYER_URL
+        value: https://kite-relayer.onrender.com
+      # Optional knobs (ALCHEMY_RPC_URL / RPC_URL, KITE_GETLOGS_CHUNK,
+      # KITE_GETLOGS_CONCURRENCY, CORS_ALLOW_ORIGIN) are added in the
+      # dashboard when wanted — see DEPLOY.md. NEVER define PORT here:
+      # Render injects it and the services bind 0.0.0.0:$PORT.
+
+  # Relayer: INTERNAL-keyed job queue + claim/send worker in one process.
+  # This is what makes verification real (bind_identity + drip ride it).
+  - type: web
+    name: kite-relayer
+    runtime: docker
+    dockerfilePath: ./apps/relayer/Dockerfile
+    region: singapore
+    plan: free
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: DATABASE_URL # same Neon as kite-api — relayer_jobs/drips are in the shared core schema
+        sync: false
+      - key: INTERNAL_API_KEY # same value as kite-api's
+        sync: false
+      - key: RELAYER_KEY # funded RELAYER_ROLE holder — SECRET ONLY: never a build arg, never in git
+        sync: false
+      # Optional: DRIP_MON_WEI, RELAYER_DAILY_CAP_MON_WEI, ALCHEMY_RPC_URL /
+      # RPC_URL — dashboard, see DEPLOY.md. NEVER define PORT here.

@@ -16,7 +16,9 @@ const env = relayerEnv();
 const db = makeNeonDb(env.databaseUrl);
 
 const app = createRelayerApp({ db, internalKey: env.internalKey });
-Bun.serve({ fetch: app.fetch, port: env.relayerPort });
+// 0.0.0.0 explicitly (Bun's default, but stated): hosts like Render only
+// route traffic to services bound to all interfaces — localhost binds die.
+Bun.serve({ fetch: app.fetch, hostname: "0.0.0.0", port: env.relayerPort });
 console.log(`@kite/relayer listening on :${env.relayerPort}`);
 
 const ctx: RelayerContext = {

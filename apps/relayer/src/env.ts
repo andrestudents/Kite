@@ -16,7 +16,8 @@ export function relayerEnv(): RelayerEnv {
     databaseUrl: requireEnv("DATABASE_URL"),
     internalKey: requireEnv("INTERNAL_API_KEY"),
     relayerKey: requireEnv("RELAYER_KEY"),
-    relayerPort: Number(optionalEnv("RELAYER_PORT") ?? 3001),
+    // RELAYER_PORT wins for local overrides; Render assigns PORT (never set both).
+    relayerPort: Number(optionalEnv("RELAYER_PORT") ?? optionalEnv("PORT") ?? 3001),
     dripMonWei: BigInt(optionalEnv("DRIP_MON_WEI") ?? "50000000000000000"),
     dailyCapMonWei: BigInt(optionalEnv("RELAYER_DAILY_CAP_MON_WEI") ?? "2000000000000000000"),
   };

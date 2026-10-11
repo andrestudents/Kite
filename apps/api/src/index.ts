@@ -1,4 +1,4 @@
-// @kite/api — boot: guard env, open Neon, build the app, serve (API_PORT).
+// @kite/api — boot: guard env, open Neon, build the app, serve (API_PORT/PORT).
 import { optionalEnv } from "@kite/core";
 import { makeNeonDb } from "@kite/core/db";
 import { createApp } from "./app.js";
@@ -17,5 +17,7 @@ const deps = {
   corsOrigin: optionalEnv("CORS_ALLOW_ORIGIN"),
 };
 const app = createApp(deps);
-const server = Bun.serve({ fetch: app.fetch, port: env.apiPort });
+// 0.0.0.0 explicitly (Bun's default, but stated): hosts like Render only
+// route traffic to services bound to all interfaces — localhost binds die.
+const server = Bun.serve({ fetch: app.fetch, hostname: "0.0.0.0", port: env.apiPort });
 console.log(`@kite/api listening on :${server.port}`);

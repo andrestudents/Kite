@@ -1,6 +1,6 @@
-# @kite/api on Fly.io — Bun runtime, workspace-aware.
-# BUILD CONTEXT IS THE REPO ROOT (fly.toml points here):
-#   fly deploy            (from the repo root, or `fly launch` picks this up)
+# @kite/api on Render — Bun runtime, workspace-aware.
+# BUILD CONTEXT IS THE REPO ROOT (render.yaml's dockerfilePath points here;
+# Render's Docker build context defaults to the repo root).
 # No build step: every workspace package exports TS source and Bun runs it.
 FROM oven/bun:1.4-slim AS runtime
 
@@ -22,5 +22,6 @@ COPY packages/contracts packages/contracts
 COPY apps/api apps/api
 
 EXPOSE 3000
-# API_PORT must match fly.toml's internal_port (default 3000).
+# Render assigns PORT at runtime (env.ts: API_PORT ?? PORT ?? 3000) — the
+# process binds 0.0.0.0 so the platform can route to it.
 CMD ["bun", "run", "apps/api/src/index.ts"]

@@ -16,6 +16,7 @@ export function apiEnv(): ApiEnv {
     mitaKey: requireEnv("MITA_API_KEY"),
     relayerUrl: requireEnv("RELAYER_URL"),
     internalKey: requireEnv("INTERNAL_API_KEY"),
-    apiPort: Number(optionalEnv("API_PORT") ?? 3000),
+    // API_PORT wins for local overrides; Render assigns PORT (never set both).
+    apiPort: Number(optionalEnv("API_PORT") ?? optionalEnv("PORT") ?? 3000),
   };
 }

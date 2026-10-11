@@ -1,6 +1,6 @@
-# @kite/relayer on Fly.io — Bun runtime, workspace-aware.
-# BUILD CONTEXT IS THE REPO ROOT (fly.toml points here):
-#   fly deploy            (from the repo root, or `fly launch` picks this up)
+# @kite/relayer on Render — Bun runtime, workspace-aware.
+# BUILD CONTEXT IS THE REPO ROOT (render.yaml's dockerfilePath points here;
+# Render's Docker build context defaults to the repo root).
 # No build step: every workspace package exports TS source and Bun runs it.
 # One process, two halves: the HTTP queue + the claim/send worker — one image.
 FROM oven/bun:1.4-slim AS runtime
@@ -23,5 +23,6 @@ COPY packages/contracts packages/contracts
 COPY apps/relayer apps/relayer
 
 EXPOSE 3001
-# RELAYER_PORT must match fly.toml's internal_port (default 3001).
+# Render assigns PORT at runtime (env.ts: RELAYER_PORT ?? PORT ?? 3001) — the
+# process binds 0.0.0.0 so the platform can route to it.
 CMD ["bun", "run", "apps/relayer/src/index.ts"]
