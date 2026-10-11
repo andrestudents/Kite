@@ -3,12 +3,14 @@ import { makeNeonDb } from "@kite/core/db";
 import { createApp } from "./app.js";
 import { apiEnv } from "./env.js";
 import { makeChainClient } from "./services/chain.js";
+import { makeRelayerClient } from "./services/relayer-client.js";
 
 const env = apiEnv();
 const deps = {
   db: makeNeonDb(env.databaseUrl),
   chain: makeChainClient(),
   mitaKey: env.mitaKey,
+  relayer: makeRelayerClient(env.relayerUrl, env.internalKey),
 };
 const app = createApp(deps);
 const server = Bun.serve({ fetch: app.fetch, port: env.apiPort });

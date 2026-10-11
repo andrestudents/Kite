@@ -10,20 +10,28 @@ import { meRoutes } from "./routes/me.js";
 import { profileRoutes } from "./routes/profile.js";
 import { purchasesRoutes } from "./routes/purchases.js";
 import { quoteRoutes } from "./routes/quote.js";
+import { verificationRoutes } from "./routes/verification.js";
 import type { ChainClient } from "./services/chain.js";
+import { makeUnreachableRelayerClient, type RelayerClient } from "./services/relayer-client.js";
 
 export interface ApiDeps {
   db: AnyDb;
   chain: ChainClient;
   mitaKey: string;
+  /** T014 client; absent (tests of 005 routes) → the trigger is honestly 503. */
+  relayer?: RelayerClient;
 }
 
-const STATUS_BY_CODE: Record<string, 400 | 401 | 404 | 409 | 422> = {
+const STATUS_BY_CODE: Record<string, 400 | 401 | 404 | 409 | 422 | 503> = {
   bad_request: 400,
   unknown_pair: 400,
   unknown_kind: 400,
   invalid_wallet: 400,
   unauthorized: 401,
+  session_invalid: 401,
+  session_expired: 401,
+  relayer_unreachable: 503,
+  identity_hash_invalid: 422,
   purchase_not_found: 404,
   profile_not_found: 404,
   job_not_found: 404,
@@ -61,4 +69,8 @@ function mountRoutes(app: Hono, deps: ApiDeps): void {
   app.route("/", quoteRoutes(deps));
   app.route("/", meRoutes(deps));
   app.route("/", profileRoutes(deps));
+  app.route(
+    "/",
+    verificationRoutes({ ...deps, relayer: deps.relayer ?? makeUnreachableRelayerClient() }),
+  );
 }
