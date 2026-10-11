@@ -102,3 +102,23 @@ export async function enterApp(deps: {
   }
   return { route: "signup", reason: "fresh" };
 }
+
+/**
+ * The MANUAL sign-in path (the "Masuk" button): for devices the fast path
+ * cannot serve — a demo-prepped phone holds a persona vault but no pinned
+ * credential, and a wiped-pin device lost its pin. ONE assertion ceremony
+ * with no pinned credential: the browser offers its passkey picker (the demo
+ * adapter unwraps the vault with the passkey pinned inside it). NEVER
+ * creates an account (FR-016); the proof is established exactly once.
+ */
+export async function signInExisting(deps: {
+  storage: StorageLike;
+  adapter: AuthAdapter;
+  rpId: string;
+  nowSec: number;
+}): Promise<{ route: "home"; wallet: string; session: AccountSession }> {
+  const { storage, adapter, rpId, nowSec } = deps;
+  const session = await adapter.signIn(rpId);
+  const blob = await establishSession(storage, session, nowSec);
+  return { route: "home", wallet: blob.wallet, session };
+}

@@ -1,4 +1,5 @@
 // @kite/api — boot: guard env, open Neon, build the app, serve (API_PORT).
+import { optionalEnv } from "@kite/core";
 import { makeNeonDb } from "@kite/core/db";
 import { createApp } from "./app.js";
 import { apiEnv } from "./env.js";
@@ -11,6 +12,9 @@ const deps = {
   chain: makeChainClient(),
   mitaKey: env.mitaKey,
   relayer: makeRelayerClient(env.relayerUrl, env.internalKey),
+  // Only for direct cross-origin setups; the Vercel /api rewrite keeps the
+  // browser same-origin and never needs this.
+  corsOrigin: optionalEnv("CORS_ALLOW_ORIGIN"),
 };
 const app = createApp(deps);
 const server = Bun.serve({ fetch: app.fetch, port: env.apiPort });

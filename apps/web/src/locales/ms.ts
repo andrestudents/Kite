@@ -16,6 +16,7 @@ export const ms: Locale = {
     subtitle: "Satu ketukan untuk mula. Tiada apa yang perlu dicatat.",
     cta: "Daftar",
     working: "Menyiapkan akaun anda…",
+    signingIn: "Membuka akaun…",
     cancelled: "Batal. Ketuk Daftar sekali lagi ya.",
     prfUnavailable: "Peranti ini belum menyokong cara masuk ini. Cuba peranti lain.",
   },

@@ -27,13 +27,36 @@ import {
 import { makeIdbKv } from "../src/lib/idb-kv.js";
 import { isPersonaId, PERSONAS, type PersonaId } from "../src/lib/persona.js";
 
-const RP_ID = window.location.hostname;
+// Import-safe under bun (the mixed-content test): the real value exists only
+// in a browser, where every ceremony below runs.
+const RP_ID = typeof window === "undefined" ? "" : window.location.hostname;
 const KEY_HEX_RE = /^0x[0-9a-fA-F]{64}$/;
 const DEFAULT_SERVER = "http://localhost:8787";
 
 const kv = makeIdbKv("kite-demo", "kv");
 
-const $root = document.getElementById("root");
+const $root = typeof document === "undefined" ? null : document.getElementById("root");
+
+/**
+ * Mixed-content guard — the exact trap that eats phone prep: an HTTPS page
+ * may not fetch an http:// URL (only http://localhost is exempt, and only on
+ * the SAME machine as the server). Returns the warning for the current
+ * page/server pair, or null when the pair is sound.
+ */
+export function mixedContentWarning(pageUrl: string, serverUrl: string): string | null {
+  if (!/^https:/i.test(pageUrl)) return null;
+  const server = serverUrl.trim();
+  if (!/^http:\/\//i.test(server)) return null;
+  if (/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?([/?#].*)?$/i.test(server)) {
+    return "http://localhost hanya bisa dijangkau dari browser yang berada di laptop yang sama dengan server kunci — dari ponsel ini tidak akan pernah sampai. Untuk ponsel: naikkan server ke HTTPS (lihat bawah), atau jalankan persiapan ini di browser laptop.";
+  }
+  return (
+    "Halaman ini HTTPS, jadi browser memblokir pengambilan dari URL http:// (mixed content) — " +
+    "penyebab paling umum persiapan ponsel gagal. Jalankan di laptop: " +
+    "cloudflared tunnel --url http://localhost:8787 " +
+    "lalu pakai URL https://…trycloudflare.com yang tercetak sebagai URL server kunci."
+  );
+}
 
 function el<K extends keyof HTMLElementTagNameMap>(
   tag: K,
@@ -160,7 +183,17 @@ async function render(): Promise<void> {
     value: DEFAULT_SERVER,
     style: "width:100%;padding:8px;border:1px solid #cbd5e1;border-radius:6px;margin:4px 0 16px",
   });
-  $root.append(serverLabel, serverInput);
+  const serverWarn = el("p", {
+    style: "color:#b91c1c;font-size:0.8rem;margin:-10px 0 14px;min-height:0;display:none",
+  });
+  const refreshWarning = (): void => {
+    const warning = mixedContentWarning(window.location.href, serverInput.value);
+    serverWarn.textContent = warning ?? "";
+    serverWarn.style.display = warning === null ? "none" : "block";
+  };
+  serverInput.addEventListener("input", refreshWarning);
+  $root.append(serverLabel, serverInput, serverWarn);
+  refreshWarning();
 
   if (carried !== null) {
     $root.append(

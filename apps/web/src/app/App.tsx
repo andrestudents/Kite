@@ -15,7 +15,7 @@ import { Home } from "../screens/Home.js";
 import { Phone } from "../screens/Phone.js";
 import { Signup } from "../screens/Signup.js";
 import { Verify } from "../screens/Verify.js";
-import { enterApp, establishSession, savePinnedCredential } from "./entry.js";
+import { enterApp, establishSession, savePinnedCredential, signInExisting } from "./entry.js";
 
 /** The rpId IS the production hostname — ceremonies are permanently bound to
  *  it (T004), so the app derives it from wherever it is actually served. */
@@ -81,6 +81,21 @@ export function App() {
     setRoute("phone");
   }
 
+  /** The Masuk button: manual sign-in (demo-prepped / wiped-pin devices). */
+  async function onSignIn(): Promise<void> {
+    if (adapter === null) return;
+    const result = await signInExisting({
+      storage: localStorage,
+      adapter,
+      rpId: RP_ID,
+      nowSec: nowSec(),
+    });
+    liveSession.current = result.session;
+    setWallet(result.wallet);
+    setBanner(undefined);
+    setRoute("home");
+  }
+
   function signOut(): void {
     // FR-009: wipe the session proof + end the in-memory key; the DEVICE
     // passkey (and its pin) stays — the next sign-in is one ceremony.
@@ -111,6 +126,7 @@ export function App() {
         adapter={adapter}
         banner={banner}
         onAccount={(r) => void onAccount(r)}
+        onSignIn={onSignIn}
       />
     );
   }

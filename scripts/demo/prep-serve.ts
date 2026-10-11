@@ -133,6 +133,12 @@ async function main(): Promise<void> {
       "persona, and complete the passkey ceremony. Each key answers 200",
       "exactly once, then 410 — the server exits after the last one.",
       "",
+      "PREPPING A PHONE (the page there is HTTPS — http:// LAN addresses are",
+      "blocked as mixed content; localhost only works from THIS laptop):",
+      "  cloudflared tunnel --url http://localhost:8787",
+      "→ paste the printed https://…trycloudflare.com URL into the phone's",
+      "  'URL server kunci' field, then wrap.",
+      "",
       "Keys in play (addresses only — values are never printed):",
     ].join("\n"),
   );

@@ -26,6 +26,7 @@ import {
   establishSession,
   loadPinnedCredential,
   savePinnedCredential,
+  signInExisting,
 } from "./entry.js";
 
 const RP_ID = "kite.example";
@@ -227,5 +228,31 @@ describe("establishSession (T021 seam)", () => {
     expect(buildSessionMessage(blob?.wallet ?? "", blob?.until ?? 0)).toContain(
       String(blob?.until),
     );
+  });
+});
+
+describe("signInExisting — the manual Masuk path (demo-prepped / wiped-pin devices)", () => {
+  it("ONE ceremony, no account creation, usable proof, the ceremony's address", async () => {
+    signCalls = 0;
+    const storage = new Mem();
+    const adapter = mockAdapter();
+    const result = await signInExisting({ storage, adapter, rpId: RP_ID, nowSec: NOW });
+    expect(result.route).toBe("home");
+    expect(result.wallet).toBe(ADDRESS);
+    expect(adapter.created).toBe(0); // never a duplicate account
+    expect(adapter.signedIn).toEqual([undefined]); // unpinned — picker / vault ceremony
+    expect(isSessionUsable(loadSessionBlob(storage), NOW)).toBe(true);
+    expect(signCalls).toBe(1); // exactly one proof signature
+  });
+
+  it("a failed ceremony propagates and stores NOTHING", async () => {
+    signCalls = 0;
+    const storage = new Mem();
+    const adapter = mockAdapter({ signInFails: true });
+    expect(signInExisting({ storage, adapter, rpId: RP_ID, nowSec: NOW })).rejects.toThrow(
+      /PRF_UNAVAILABLE/,
+    );
+    expect(loadSessionBlob(storage)).toBeNull();
+    expect(signCalls).toBe(0);
   });
 });

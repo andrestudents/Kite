@@ -5,6 +5,7 @@
 import { KiteError } from "@kite/core";
 import type { AnyDb } from "@kite/core/db";
 import { Hono } from "hono";
+import { cors } from "hono/cors";
 import { healthRoutes } from "./routes/health.js";
 import { meRoutes } from "./routes/me.js";
 import { profileRoutes } from "./routes/profile.js";
@@ -20,6 +21,9 @@ export interface ApiDeps {
   mitaKey: string;
   /** T014 client; absent (tests of 005 routes) → the trigger is honestly 503. */
   relayer?: RelayerClient;
+  /** Optional CORS origin (CORS_ALLOW_ORIGIN). Unset with the Vercel /api
+   *  rewrite — the browser then talks same-origin and CORS never applies. */
+  corsOrigin?: string;
 }
 
 const STATUS_BY_CODE: Record<string, 400 | 401 | 404 | 409 | 422 | 503> = {
@@ -46,6 +50,10 @@ const STATUS_BY_CODE: Record<string, 400 | 401 | 404 | 409 | 422 | 503> = {
 
 export function createApp(deps: ApiDeps): Hono {
   const app = new Hono();
+
+  if (deps.corsOrigin) {
+    app.use("*", cors({ origin: deps.corsOrigin }));
+  }
 
   app.onError((err, c) => {
     if (err instanceof KiteError) {

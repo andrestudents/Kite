@@ -17,6 +17,7 @@ export const id = {
     subtitle: "Satu ketukan untuk mulai. Tidak ada yang perlu dicatat.",
     cta: "Daftar",
     working: "Menyiapkan akunmu…",
+    signingIn: "Membuka akun…",
     cancelled: "Batal. Ketuk Daftar lagi ya.",
     prfUnavailable: "Perangkat ini belum mendukung cara masuk ini. Coba perangkat lain.",
   },

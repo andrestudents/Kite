@@ -1,0 +1,11 @@
+{
+  "installCommand": "npm i -g bun@1.4.2 && cd ../.. && bun install --frozen-lockfile",
+  "buildCommand": "cd ../.. && bunx turbo run build --filter=@kite/web",
+  "outputDirectory": "dist",
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "${API_ORIGIN}/api/:path*"
+    }
+  ]
+}
