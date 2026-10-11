@@ -50,6 +50,8 @@ export const ms: Locale = {
     emptyDeal: "Belum ada perjanjian aktif.",
     locked: "Selesaikan pengesahan dahulu untuk mula.",
     preparing: "Menyiapkan akaun…",
+    approx: "≈",
+    idrPrefix: "RM",
   },
   session: {
     signIn: "Masuk",

@@ -3,7 +3,9 @@
 import { beforeEach, describe, expect, it } from "bun:test";
 import { isas, purchases } from "@kite/core/db";
 import { makeTestDb, type TestDb } from "@kite/core/testing";
+import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
 import { createApp } from "../app.js";
+import { buildSessionMessage } from "../middleware/session.js";
 import { fakeChain } from "./fake-chain.js";
 import { getMe } from "./me-service.js";
 
@@ -139,22 +141,55 @@ describe("getMe (T029)", () => {
   });
 });
 
-describe("GET /api/me (http shapes)", () => {
-  it("missing or invalid header → 400; valid → the merged body", async () => {
+describe("GET /api/me (http shapes — T018: session identity)", () => {
+  /** Session header minted by a throwaway account (the T007 recipe). */
+  async function mintHeader(until: number): Promise<{ header: string; wallet: string }> {
+    const account = privateKeyToAccount(generatePrivateKey());
+    const hex = await account.signMessage({
+      message: buildSessionMessage(account.address, until),
+    });
+    const header = [
+      account.address,
+      String(until),
+      String(parseInt(hex.slice(130), 16)),
+      hex.slice(0, 66),
+      `0x${hex.slice(66, 130)}`,
+    ].join("|");
+    return { header, wallet: account.address };
+  }
+
+  it("no session → 401; a bare x-kite-wallet is NOT an identity here → 401", async () => {
     const db = await makeTestDb();
     const app = createApp({ db, chain: richChain(), mitaKey: "k" });
 
     const missing = await app.request("/api/me");
-    expect(missing.status).toBe(400);
+    expect(missing.status).toBe(401);
+    expect(((await missing.json()) as { error: { code: string } }).error.code).toBe(
+      "session_invalid",
+    );
 
-    const garbage = await app.request("/api/me", {
-      headers: { "x-kite-wallet": "not-an-address" },
-    });
-    expect(garbage.status).toBe(400);
+    // T018's rejection case: the 005 demo header is gone from this route.
+    const bare = await app.request("/api/me", { headers: { "x-kite-wallet": W } });
+    expect(bare.status).toBe(401);
+    expect(((await bare.json()) as { error: { code: string } }).error.code).toBe("session_invalid");
+  });
 
-    const ok = await app.request("/api/me", { headers: { "x-kite-wallet": W } });
+  it("a valid session header → 200 with the RECOVERED wallet (never the asserted one)", async () => {
+    const db = await makeTestDb();
+    const app = createApp({ db, chain: richChain(), mitaKey: "k" });
+    const { header, wallet } = await mintHeader(Math.floor(Date.now() / 1000) + 3_600);
+    const ok = await app.request("/api/me", { headers: { "x-kite-session": header } });
     expect(ok.status).toBe(200);
     const body = (await ok.json()) as { wallet: string };
-    expect(body.wallet).toBe(W);
+    expect(body.wallet.toLowerCase()).toBe(wallet.toLowerCase());
+  });
+
+  it("an expired session → 401 session_expired", async () => {
+    const db = await makeTestDb();
+    const app = createApp({ db, chain: richChain(), mitaKey: "k" });
+    const { header } = await mintHeader(Math.floor(Date.now() / 1000) - 10);
+    const res = await app.request("/api/me", { headers: { "x-kite-session": header } });
+    expect(res.status).toBe(401);
+    expect(((await res.json()) as { error: { code: string } }).error.code).toBe("session_expired");
   });
 });

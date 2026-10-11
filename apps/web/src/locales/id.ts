@@ -51,6 +51,8 @@ export const id = {
     emptyDeal: "Belum ada kesepakatan aktif.",
     locked: "Selesaikan verifikasi dulu untuk mulai.",
     preparing: "Menyiapkan akun…",
+    approx: "≈",
+    idrPrefix: "Rp",
   },
   session: {
     signIn: "Masuk",
