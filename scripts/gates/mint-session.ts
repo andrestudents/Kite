@@ -29,7 +29,8 @@ function argValue(flag: string): string | undefined {
 async function main(): Promise<void> {
   console.log("=== mint-session (Demo Tool) — frozen-message session header ===");
   const untilArg = argValue("--until");
-  const until = untilArg !== undefined ? Number(untilArg) : Math.floor(Date.now() / 1000) + SESSION_TTL_SEC;
+  const until =
+    untilArg !== undefined ? Number(untilArg) : Math.floor(Date.now() / 1000) + SESSION_TTL_SEC;
   if (!Number.isSafeInteger(until) || until <= 0) {
     throw new KiteError("bad_request", "--until must be a positive unix-seconds integer");
   }
