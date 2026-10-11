@@ -8,9 +8,9 @@ import {
   defaultUntil,
   isSessionUsable,
   loadSessionBlob,
-  saveSessionBlob,
   type SessionBlob,
   type StorageLike,
+  saveSessionBlob,
 } from "../auth/session.js";
 import type { AccountSession, AuthAdapter, CredentialRef } from "../auth/types.js";
 
@@ -65,7 +65,11 @@ export async function establishSession(
 }
 
 export type EntryResult =
-  | { route: "home"; wallet?: string; /** Live only when a ceremony just ran. */ session?: AccountSession }
+  | {
+      route: "home";
+      wallet?: string /** Live only when a ceremony just ran. */;
+      session?: AccountSession;
+    }
   | { route: "signup"; reason?: "fresh" | "signin-failed" };
 
 /**

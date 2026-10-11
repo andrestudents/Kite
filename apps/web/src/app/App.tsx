@@ -2,17 +2,19 @@
 // phone → verify → home, with the credential-pinned fast path short-circuiting
 // straight to home (T017). The 401 hook (FR-010) lands back on signup with
 // plain language — never an opaque error. All copy comes from the catalogs.
+// The adapter is resolved per device (T023): a device holding a wrapped demo
+// persona signs in through it; everyone else gets the pure Mera adapter.
 import { useEffect, useRef, useState } from "react";
 import { makeApiClient } from "../api/client.js";
-import { makeMeraAdapter } from "../auth/mera-adapter.js";
+import { makeAdapterForDevice } from "../auth/demo-adapter.js";
 import { clearSessionBlob, loadSessionBlob } from "../auth/session.js";
-import type { AccountSession } from "../auth/types.js";
+import type { AccountSession, AuthAdapter } from "../auth/types.js";
 import { id as locale } from "../locales/id.js";
 import { Home } from "../screens/Home.js";
 import { Phone } from "../screens/Phone.js";
 import { Signup } from "../screens/Signup.js";
 import { Verify } from "../screens/Verify.js";
-import { establishSession, enterApp, savePinnedCredential } from "./entry.js";
+import { enterApp, establishSession, savePinnedCredential } from "./entry.js";
 
 /** The rpId IS the production hostname — ceremonies are permanently bound to
  *  it (T004), so the app derives it from wherever it is actually served. */
@@ -28,8 +30,8 @@ export function App() {
   const [route, setRoute] = useState<Route>("entering");
   const [banner, setBanner] = useState<string | undefined>(undefined);
   const [wallet, setWallet] = useState<string>("");
+  const [adapter, setAdapter] = useState<AuthAdapter | null>(null);
   const liveSession = useRef<AccountSession | null>(null);
-  const adapter = useRef(makeMeraAdapter());
   const api = useRef(makeApiClient({ baseUrl: API_URL, onUnauthorized }));
 
   /** FR-010: any 401 routes to sign-in — never an opaque error. */
@@ -44,9 +46,11 @@ export function App() {
 
   useEffect(() => {
     void (async () => {
+      const deviceAdapter = await makeAdapterForDevice();
+      setAdapter(deviceAdapter);
       const result = await enterApp({
         storage: localStorage,
-        adapter: adapter.current,
+        adapter: deviceAdapter,
         rpId: RP_ID,
         nowSec: nowSec(),
       });
@@ -83,7 +87,7 @@ export function App() {
     setRoute("signup");
   }
 
-  if (route === "entering") {
+  if (adapter === null || route === "entering") {
     return (
       <main className="flex min-h-dvh items-center justify-center text-slate-500">
         {locale.common.loading}
@@ -95,7 +99,7 @@ export function App() {
       <Signup
         locale={locale}
         rp={RP}
-        adapter={adapter.current}
+        adapter={adapter}
         banner={banner}
         onAccount={(r) => void onAccount(r)}
       />
@@ -108,7 +112,12 @@ export function App() {
     // The wallet comes from the just-established blob — the proof is bound to it.
     const walletNow = wallet || loadSessionBlob(localStorage)?.wallet || "";
     return (
-      <Verify locale={locale} api={api.current} wallet={walletNow} onReady={() => setRoute("home")} />
+      <Verify
+        locale={locale}
+        api={api.current}
+        wallet={walletNow}
+        onReady={() => setRoute("home")}
+      />
     );
   }
   return (

@@ -22,7 +22,7 @@ import {
   getPasskeyPrfOutput,
 } from "@category-labs/mera";
 import { hashMessage } from "viem";
-import { getAddress, toBytes, toHex } from "viem/utils";
+import { getAddress, toBytes } from "viem/utils";
 import { derivePrivateKey, zeroBytes } from "./derive.js";
 import { splitCompactSignature } from "./session.js";
 import type {
@@ -36,31 +36,52 @@ import type {
 
 type MeraSession = ReturnType<typeof createSecp256k1SigningSession>;
 
-/** PRF bytes → a live signing session; every intermediate zeroed on the way. */
-function openSession(prfOutput: Uint8Array): AccountSession {
-  const prfCopy = Uint8Array.from(prfOutput);
-  let key: Uint8Array | null = null;
-  let meraSession: MeraSession | null = null;
-  try {
-    key = derivePrivateKey(prfCopy);
-    meraSession = createSecp256k1SigningSession({ privateKey: key });
-  } finally {
-    // Hand-off done (the session snapshots the key) or failed — zero anyway.
-    zeroBytes(key, prfCopy);
-  }
-  const session: MeraSession = meraSession;
-  const address = getAddress(String(getEvmAddress(session.publicKey))) as `0x${string}`;
+/**
+ * A live Mera session → the origin-agnostic AccountSession (address + intent
+ * signing + end). Shared by the PRF path below and the demo mode's
+ * wrapped-key path (demo-adapter.ts) — both are sanctioned mera importers.
+ */
+export function wrapMeraSession(meraSession: MeraSession, address: `0x${string}`): AccountSession {
   return {
     address,
     async signIntent(message: string): Promise<IntentSignature> {
       const digest = toBytes(hashMessage(message)); // the pinned §1.1 digest
-      const sig = await session.signDigest(digest);
+      const sig = await sessionSignDigest(meraSession, digest);
       return splitCompactSignature(sig.compact, sig.recovery);
     },
     end() {
-      session.end(); // zeroes the session-owned key copy; later signing throws
+      meraSession.end(); // zeroes the session-owned key copy; later signing throws
     },
   };
+}
+
+/** Raw 32-byte key → a live session over it (address asserted by the caller). */
+export function sessionFromKeyBytes(privateKey: Uint8Array): AccountSession {
+  const meraSession = createSecp256k1SigningSession({ privateKey });
+  const address = getAddress(String(getEvmAddress(meraSession.publicKey))) as `0x${string}`;
+  return wrapMeraSession(meraSession, address);
+}
+
+async function sessionSignDigest(
+  session: MeraSession,
+  digest: Uint8Array,
+): Promise<{ compact: Uint8Array; recovery: number }> {
+  return session.signDigest(digest);
+}
+
+/** PRF bytes → a live signing session; every intermediate zeroed on the way. */
+function openSession(prfOutput: Uint8Array): AccountSession {
+  const prfCopy = Uint8Array.from(prfOutput);
+  let key: Uint8Array | null = null;
+  let session: AccountSession | null = null;
+  try {
+    key = derivePrivateKey(prfCopy);
+    session = sessionFromKeyBytes(key);
+    return session;
+  } finally {
+    // Hand-off done (the session snapshots the key) or failed — zero anyway.
+    zeroBytes(key, prfCopy);
+  }
 }
 
 /** The Mera passkey adapter — the primary implementation of FR-012. */
@@ -91,8 +112,4 @@ export function makeMeraAdapter(): AuthAdapter {
       return openSession(out.prfOutput);
     },
   };
-}
-
-export function toHexForTest(x: Uint8Array): string {
-  return toHex(x);
 }

@@ -9,11 +9,6 @@ export function demoIdentityHash(
   selfieBytes: Uint8Array,
 ): `0x${string}` {
   return keccak256(
-    concat([
-      toBytes("kite-demo-v1"),
-      keccak256(ktpBytes),
-      keccak256(selfieBytes),
-      toBytes(wallet),
-    ]),
+    concat([toBytes("kite-demo-v1"), keccak256(ktpBytes), keccak256(selfieBytes), toBytes(wallet)]),
   );
 }

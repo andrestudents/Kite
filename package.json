@@ -17,6 +17,7 @@
     "dev:api": "cd apps/api && bun run dev",
     "dev:relayer": "cd apps/relayer && bun run dev",
     "dev:web": "cd apps/web && bun run dev",
+    "demo:prep": "bun scripts/demo/prep-serve.ts",
     "no-seed-paths": "bash scripts/gates/no-seed-paths.sh"
   },
   "devDependencies": {

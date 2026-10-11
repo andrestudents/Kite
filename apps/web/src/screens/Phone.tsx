@@ -17,10 +17,7 @@ export function loadDemoPhone(storage: Storage): string | null {
   }
 }
 
-export function Phone(props: {
-  locale: Locale;
-  onDone(phone: string): void;
-}) {
+export function Phone(props: { locale: Locale; onDone(phone: string): void }) {
   const { locale } = props;
   const [value, setValue] = useState(loadDemoPhone(localStorage) ?? "");
   const [touched, setTouched] = useState(false);
@@ -53,9 +50,7 @@ export function Phone(props: {
           className="rounded-xl border border-slate-300 px-4 py-3 text-lg tracking-wide focus:border-teal-600 focus:outline-none"
         />
         <p className="text-xs text-slate-500">{locale.phone.hint}</p>
-        {touched && !valid ? (
-          <p className="text-sm text-rose-600">{locale.phone.invalid}</p>
-        ) : null}
+        {touched && !valid ? <p className="text-sm text-rose-600">{locale.phone.invalid}</p> : null}
       </div>
       <button
         type="button"

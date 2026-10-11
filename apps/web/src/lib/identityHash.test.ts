@@ -18,9 +18,9 @@ describe("demoIdentityHash (T016, data-model §3)", () => {
     const base = demoIdentityHash(WALLET, KTP, SELFIE);
     expect(demoIdentityHash(WALLET, Uint8Array.from([1, 2, 4]), SELFIE)).not.toBe(base);
     expect(demoIdentityHash(WALLET, KTP, Uint8Array.from([9, 8, 6]))).not.toBe(base);
-    expect(
-      demoIdentityHash("0x127BD57eA26e6F5eee15efe8b5b495ae539d82Ea", KTP, SELFIE),
-    ).not.toBe(base);
+    expect(demoIdentityHash("0x127BD57eA26e6F5eee15efe8b5b495ae539d82Ea", KTP, SELFIE)).not.toBe(
+      base,
+    );
   });
 
   it("is insensitive to the SAME byte content via different references (pure function of bytes)", () => {

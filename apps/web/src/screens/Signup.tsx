@@ -2,8 +2,8 @@
 // silently — the user is NEVER shown key material. Screens depend only on the
 // AuthAdapter seam (FR-012), never on @category-labs/mera directly.
 import { useState } from "react";
-import type { Locale } from "../locales/id.js";
 import type { AccountSession, AuthAdapter, CredentialRef, RpConfig } from "../auth/types.js";
+import type { Locale } from "../locales/id.js";
 
 export function Signup(props: {
   locale: Locale;
@@ -46,7 +46,9 @@ export function Signup(props: {
         <h1 className="text-3xl font-bold text-teal-700">{locale.signup.title}</h1>
         <p className="mt-2 text-slate-600">{locale.signup.subtitle}</p>
       </div>
-      {banner ? <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-800">{banner}</p> : null}
+      {banner ? (
+        <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-800">{banner}</p>
+      ) : null}
       <button
         type="button"
         onClick={() => void signUp()}

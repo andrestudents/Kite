@@ -1,6 +1,6 @@
 {
   "$schema": "https://turbo.build/schema.json",
-  "globalPassThroughEnv": ["DATABASE_URL"],
+  "globalPassThroughEnv": ["DATABASE_URL", "BUDI_KEY", "PAKHAJI_KEY", "PREP_PORT"],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],

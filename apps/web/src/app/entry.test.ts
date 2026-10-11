@@ -7,9 +7,9 @@ import {
   buildSessionMessage,
   isSessionUsable,
   loadSessionBlob,
-  saveSessionBlob,
   type SessionBlob,
   type StorageLike,
+  saveSessionBlob,
 } from "../auth/session.js";
 import type {
   AccountSession,
@@ -20,8 +20,8 @@ import type {
   UserIdentity,
 } from "../auth/types.js";
 import {
-  clearPinnedCredential,
   CREDENTIAL_KEY,
+  clearPinnedCredential,
   enterApp,
   establishSession,
   loadPinnedCredential,
@@ -181,7 +181,9 @@ describe("enterApp — the two entry paths (T017)", () => {
     await enterApp({ storage, adapter, rpId: RP_ID, nowSec: NOW });
     const liveSession = blobFor(storage);
     if (!liveSession) throw new Error("expected a session after sign-in");
-    savePinnedCredential(storage, loadPinnedCredential(storage)!); // pin survives
+    const pin = loadPinnedCredential(storage);
+    if (!pin) throw new Error("expected a pinned credential before sign-out");
+    savePinnedCredential(storage, pin); // pin survives
     storage.removeItem("kite.session.v1"); // the App's signOut: clearSessionBlob
     expect(blobFor(storage)).toBeNull();
     expect(loadPinnedCredential(storage)).toEqual({ credentialId: "cred-same" });
@@ -222,6 +224,8 @@ describe("establishSession (T021 seam)", () => {
     expect(signCalls).toBe(before + 1);
     const blob = loadSessionBlob(storage);
     expect(blob?.until).toBe(NOW + 7 * 24 * 60 * 60);
-    expect(buildSessionMessage(blob?.wallet ?? "", blob?.until ?? 0)).toContain(String(blob?.until));
+    expect(buildSessionMessage(blob?.wallet ?? "", blob?.until ?? 0)).toContain(
+      String(blob?.until),
+    );
   });
 });
