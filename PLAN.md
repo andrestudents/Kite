@@ -275,7 +275,7 @@ Score 0–100 = **History (40) + Consistency (20) + Volume (40)**. Integer maths
 ```
 users(id, wallet UNIQUE, phone, kyc_status, identity_hash, locale, created_at)
 isas(isa_id PK, seeker, backer, principal, share_bps, cap_mult, remaining, status, term_end)  -- chain cache
-purchases(id PK, channel_id, isa_id, purchase_ref UNIQUE, gross_ausd, status, mill_sig, tx_hash, created_at)
+purchases(id PK, channel_id, isa_id, purchase_ref, gross_ausd, status, mill_sig, tx_hash, created_at)  -- UNIQUE(channel_id, purchase_ref): refs are channel-scoped, not globally unique (§7.2 rule 1)
 channels(id PK, name, pubkey, active)
 fx_quotes(id, pair, rate, expires_at)
 relayer_jobs(id, kind, payload_json, status[pending→sent→confirmed], tx_hash, nonce, attempts)
