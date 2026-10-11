@@ -23,11 +23,32 @@ export interface RelayerContext {
 }
 
 export type JobHandler = (ctx: RelayerContext, job: RelayerJob) => Promise<JobOutcome>;
+/** Payload guard run at the ENQUEUE edge — a malformed payload is refused with
+ *  bad_request before any row exists; the handler-side parse remains as
+ *  defense in depth. */
+export type PayloadValidator = (payload: unknown) => void;
 
 const handlers: Partial<Record<JobKind, JobHandler>> = {};
+const validators: Partial<Record<JobKind, PayloadValidator>> = {};
 
-export function registerHandler(kind: JobKind, handler: JobHandler): void {
+export function registerHandler(
+  kind: JobKind,
+  handler: JobHandler,
+  validate?: PayloadValidator,
+): void {
   handlers[kind] = handler;
+  if (validate) {
+    validators[kind] = validate;
+  }
+}
+
+/** The HTTP edge: refuse a payload the handler could never execute. */
+export function validateJobPayload(kind: string, payload: unknown): void {
+  const validator = validators[kind as JobKind];
+  if (!validator) {
+    return; // unknown kinds are rejected by enqueue's kind check
+  }
+  validator(payload);
 }
 
 export async function dispatchJob(ctx: RelayerContext, job: RelayerJob): Promise<JobOutcome> {

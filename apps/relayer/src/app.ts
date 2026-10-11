@@ -5,6 +5,7 @@
 import { KiteError, verifyApiKey } from "@kite/core";
 import type { AnyDb } from "@kite/core/db";
 import { Hono } from "hono";
+import { validateJobPayload } from "./dispatch.js";
 import { enqueue, getJob, toJobDto } from "./queue.js";
 
 export interface RelayerDeps {
@@ -56,6 +57,12 @@ export function createRelayerApp(deps: RelayerDeps): Hono {
     if (body.clientRef !== undefined && typeof body.clientRef !== "string") {
       throw new KiteError("bad_request", "clientRef must be a string");
     }
+    // Parse/validate at the edge: a payload the handler could never execute is
+    // refused here — no row, no retries, 400 before anything is stored.
+    if (!body.payload || typeof body.payload !== "object" || Array.isArray(body.payload)) {
+      throw new KiteError("bad_request", "payload must be an object");
+    }
+    validateJobPayload(body.kind, body.payload);
     const { job, created } = await enqueue(deps.db, {
       kind: body.kind,
       payload: body.payload,

@@ -9,6 +9,7 @@
         "@kite/contracts": "workspace:*",
         "@kite/core": "workspace:*",
         "@neondatabase/serverless": "^1.0.0",
+        "drizzle-kit": "^0.31.11",
         "drizzle-orm": "^0.44.0",
         "turbo": "^2.5.34",
         "viem": "^2.37.0",

@@ -19,6 +19,19 @@ export const CORE_ABI = abis.kitecore as unknown as Abi;
 const AUSD_ABI = abis.mockausd as unknown as Abi;
 const INCOME_SETTLED = getAbiItem({ abi: CORE_ABI, name: "IncomeSettled" });
 const CHANNEL_REGISTERED = getAbiItem({ abi: CORE_ABI, name: "ChannelRegistered" });
+// eth_getLogs block-range caps differ per provider (public Monad RPC: 100
+// blocks; Alchemy free tier: 10) and a recon day spans tens of thousands of
+// blocks — settlement scans chunk the range. Default matches the strictest
+// common cap; raise KITE_GETLOGS_CHUNK on a paid tier. Chunks fetch with
+// bounded concurrency (KITE_GETLOGS_CONCURRENCY, default 16): serially, a
+// day-wide scan costs ~180 round trips. The public RPC throttles ~25 req/s,
+// so a throttled chunk retries — briefly, then lets the error surface.
+const rawChunk = Number(process.env.KITE_GETLOGS_CHUNK ?? 100);
+const GETLOGS_CHUNK = BigInt(Number.isInteger(rawChunk) && rawChunk > 0 ? rawChunk : 100);
+const rawConc = Number(process.env.KITE_GETLOGS_CONCURRENCY ?? 16);
+const GETLOGS_CONCURRENCY = Number.isInteger(rawConc) && rawConc > 0 ? rawConc : 16;
+const isThrottleError = (err: unknown): boolean =>
+  err instanceof Error && /limited|rate|429|too many/i.test(err.message);
 // Any isa lifecycle event reveals its isaId; isaOf() then states the truth.
 const ISA_EVENT_NAMES = [
   "ISADrafted",
@@ -212,12 +225,9 @@ export function makeChainClient(): ChainClient {
     },
     async settlementLogs(fromBlock, toBlock) {
       // JSON-imported ABI keeps viem's log typing broad — decode explicitly.
-      const logs = (await client.getLogs({
-        address: PROXY,
-        event: INCOME_SETTLED as never,
-        fromBlock,
-        toBlock,
-      })) as unknown as Array<{
+      // The range is scanned in bounded chunks (GETLOGS_CHUNK): one call for
+      // a whole day is rejected by every provider cap we have seen.
+      type RawSettlementLog = {
         args: {
           isaId: bigint;
           channelId: bigint;
@@ -231,7 +241,47 @@ export function makeChainClient(): ChainClient {
         blockNumber: bigint;
         logIndex: number;
         transactionHash: string;
-      }>;
+      };
+      const chunks: Array<{ fromBlock: bigint; toBlock: bigint }> = [];
+      for (let lo = fromBlock; lo <= toBlock; ) {
+        const hi = lo + GETLOGS_CHUNK - 1n > toBlock ? toBlock : lo + GETLOGS_CHUNK - 1n;
+        chunks.push({ fromBlock: lo, toBlock: hi });
+        lo = hi + 1n;
+      }
+      // Bounded worker pool — indexed results keep the logs in block order.
+      const parts: RawSettlementLog[][] = new Array(chunks.length);
+      let next = 0;
+      const fetchChunk = async (i: number): Promise<void> => {
+        const chunk = chunks[i];
+        if (chunk === undefined) {
+          return;
+        }
+        for (let attempt = 0; ; attempt++) {
+          try {
+            parts[i] = (await client.getLogs({
+              address: PROXY,
+              event: INCOME_SETTLED as never,
+              fromBlock: chunk.fromBlock,
+              toBlock: chunk.toBlock,
+            })) as unknown as RawSettlementLog[];
+            return;
+          } catch (err) {
+            if (attempt < 2 && isThrottleError(err)) {
+              await new Promise((r) => setTimeout(r, 1_000 * (attempt + 1)));
+              continue;
+            }
+            throw err;
+          }
+        }
+      };
+      await Promise.all(
+        Array.from({ length: Math.min(GETLOGS_CONCURRENCY, chunks.length) }, async () => {
+          while (next < chunks.length) {
+            await fetchChunk(next++);
+          }
+        }),
+      );
+      const logs = parts.flat();
       return logs.map((log) => ({
         isaId: Number(log.args.isaId),
         channelId: Number(log.args.channelId),

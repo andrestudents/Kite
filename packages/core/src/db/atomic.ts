@@ -12,8 +12,17 @@ import type { PgDatabase } from "drizzle-orm/pg-core";
 // biome-ignore lint/suspicious/noExplicitAny: driver-agnostic executor holder
 export type AnyDb = PgDatabase<any, any, any>;
 
+// drizzle tags its classes with a static SYMBOL, not a string property
+// (drizzle-orm/entity.js: `Symbol.for("drizzle:entityKind")`) — reading a
+// plain `.entityKind` always yields undefined, which pushed neon-http into
+// the transaction branch it cannot run. Registry symbol: same key drizzle
+// uses, no deep import, no drift.
+const DRIZZLE_ENTITY_KIND = Symbol.for("drizzle:entityKind");
+
 export async function execute<T>(db: AnyDb, fn: (executor: AnyDb) => Promise<T>): Promise<T> {
-  const kind = (Object.getPrototypeOf(db).constructor as { entityKind?: string }).entityKind;
+  const kind = (Object.getPrototypeOf(db).constructor as Record<symbol, string | undefined>)[
+    DRIZZLE_ENTITY_KIND
+  ];
   if (kind === "NeonHttpDatabase") {
     return fn(db);
   }

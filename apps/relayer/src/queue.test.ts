@@ -137,7 +137,8 @@ describe("relayer routes (http-api shapes)", () => {
   });
 
   it("POST → 202 {jobId}; duplicate clientRef → 200 same jobId", async () => {
-    const body = { kind: "drip", payload: { wallet: "0xa" }, clientRef: "wf-9" };
+    // A real address — the enqueue edge now validates payloads per kind.
+    const body = { kind: "drip", payload: { wallet: `0x${"aa".repeat(20)}` }, clientRef: "wf-9" };
     const first = await post(body);
     expect(first.status).toBe(202);
     const a = (await first.json()) as { jobId: number };

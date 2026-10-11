@@ -16,6 +16,22 @@ import { registerHandler } from "../dispatch.js";
 import { type MinedReceipt, resendGated } from "../send.js";
 import { asPayload, requireAddress, requireBytes32, requireSig, requireUint } from "./parse.js";
 
+/** One parser for BOTH edges: the enqueue validator and the handler itself. */
+function parseTransfer(raw: unknown) {
+  const p = asPayload(raw);
+  return {
+    from: requireAddress(p, "from"),
+    to: requireAddress(p, "to"),
+    // Money rule: value arrives in integer AUSD base units (constitution VI) —
+    // an exact BigInt from the wire edge (parse.ts).
+    valueAusd: requireUint(p, "valueAusd"),
+    validAfter: requireUint(p, "validAfter"),
+    validBefore: requireUint(p, "validBefore"),
+    nonce: requireBytes32(p, "nonce"),
+    ...requireSig(p),
+  };
+}
+
 function transferLanded(
   receipt: MinedReceipt,
   from: string,
@@ -34,30 +50,28 @@ function transferLanded(
   });
 }
 
-registerHandler("transfer_with_authorization", async (ctx, job) => {
-  const p = asPayload(job.payloadJson);
-  const from = requireAddress(p, "from");
-  const to = requireAddress(p, "to");
-  // Money rule: value arrives in integer AUSD base units (constitution VI).
-  const valueAusd = BigInt(requireUint(p, "valueAusd"));
-  const validAfter = BigInt(requireUint(p, "validAfter"));
-  const validBefore = BigInt(requireUint(p, "validBefore"));
-  const nonce = requireBytes32(p, "nonce");
-  const { v, r, s } = requireSig(p);
+registerHandler(
+  "transfer_with_authorization",
+  async (ctx, job) => {
+    const { from, to, valueAusd, validAfter, validBefore, nonce, v, r, s } = parseTransfer(
+      job.payloadJson,
+    );
 
-  const proof = (receipt: MinedReceipt) =>
-    Promise.resolve(transferLanded(receipt, from, to, valueAusd));
-  return resendGated(
-    ctx.db,
-    ctx.wallet,
-    job,
-    {
-      address: AUSD,
-      abi: AUSD_ABI,
-      functionName: "transferWithAuthorization",
-      args: [from, to, valueAusd, validAfter, validBefore, nonce, v, r, s],
-      gasFixedLimit: TRANSFER_WITH_AUTH_GAS,
-    },
-    proof,
-  );
-});
+    const proof = (receipt: MinedReceipt) =>
+      Promise.resolve(transferLanded(receipt, from, to, valueAusd));
+    return resendGated(
+      ctx.db,
+      ctx.wallet,
+      job,
+      {
+        address: AUSD,
+        abi: AUSD_ABI,
+        functionName: "transferWithAuthorization",
+        args: [from, to, valueAusd, validAfter, validBefore, nonce, v, r, s],
+        gasFixedLimit: TRANSFER_WITH_AUTH_GAS,
+      },
+      proof,
+    );
+  },
+  parseTransfer,
+);

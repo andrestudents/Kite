@@ -11,7 +11,7 @@
 // Exit 0 = PASS, 1 = FAIL. Every step prints its evidence.
 import { createHash, randomBytes } from "node:crypto";
 import { KiteError, requireEnv } from "@kite/core";
-import { isas, type Purchase, purchases } from "@kite/core/db";
+import { isas, makeNeonDb, type Purchase, purchases } from "@kite/core/db";
 import { eq } from "drizzle-orm";
 import { sign } from "viem/accounts";
 import { apiEnv } from "../../apps/api/src/env.js";
@@ -21,7 +21,6 @@ import { incomeDigest } from "../../apps/api/src/services/income-sig.js";
 import { entriesFor } from "../../apps/api/src/services/ledger.js";
 import { createPurchase, markPurchasePaid } from "../../apps/api/src/services/purchase-service.js";
 
-const ISA_ID = Number(process.argv[2] ?? 1);
 const GROSS_AUSD = Number(process.argv[3] ?? 1_000_000); // 1 AUSD in base units
 
 let failed = false;
@@ -43,6 +42,11 @@ const STATUS_NAMES: Record<number, string> = {
 
 async function main(): Promise<void> {
   console.log("=== SC-002 gate: purchase settles, DB agrees with the contract ===");
+  // The watcher pass below scans a block RANGE: pin the gate's reads to
+  // RPC_URL / the default public RPC — Alchemy's free tier caps eth_getLogs
+  // at 10 blocks. Empty, not unset: bun re-loads .env and would restore an
+  // unset name (optionalEnv treats "" as unset).
+  process.env.ALCHEMY_RPC_URL = "";
   requireEnv("DATABASE_URL");
   requireEnv("MITA_API_KEY");
   requireEnv("MILL_KEY");
@@ -52,7 +56,34 @@ async function main(): Promise<void> {
   const db = makeNeonDb(env.databaseUrl);
   const chain = makeChainClient();
 
-  // 0. The deal must be live before anything signs.
+  // 0. The deal must be live before anything signs. An explicit argv wins;
+  //    otherwise discover the first ACTIVE deal — the seeded demo deals cap
+  //    out as gates spend them (deal 1 did), so a fixed default would rot.
+  const argId = Number(process.argv[2] ?? 0);
+  if (Number.isNaN(argId)) {
+    throw new KiteError("bad_request", "isaId argument must be a number");
+  }
+  let ISA_ID = argId;
+  if (!ISA_ID) {
+    for (let i = 1; i <= 8; i++) {
+      try {
+        const probe: IsaOnchain = await chain.isaOf(i);
+        if (probe.status === 2 && probe.remaining > 0) {
+          ISA_ID = i;
+          break;
+        }
+      } catch {
+        // unseeded slot — keep scanning
+      }
+    }
+  }
+  if (!ISA_ID) {
+    throw new KiteError(
+      "not_found",
+      "no active deal onchain — seed one first: bash contracts/script/seed-demo.sh (Demo Tool)",
+    );
+  }
+
   const before: IsaOnchain = await chain.isaOf(ISA_ID);
   step(
     "deal is active",
@@ -123,11 +154,15 @@ async function main(): Promise<void> {
     `rows=${entries.length} in=${inSum} out=${outSum} (gross=${GROSS_AUSD})`,
   );
 
-  // The settlement paid gross against the cap — remaining must have moved by exactly that.
+  // The cap is consumed by the settlement's BACKER SLICE, not the whole
+  // gross — KiteScoring.divert: toBacker = min(gross × shareBps / 10000,
+  // remaining); toSeeker = gross − toBacker. shareBps comes from the
+  // contract read above (constitution IV: the contract states the terms).
+  const expectedDrop = Math.floor((GROSS_AUSD * before.shareBps) / 10000);
   step(
-    "deal remaining moved by gross",
-    after.remaining === before.remaining - GROSS_AUSD,
-    `remaining ${before.remaining} → ${after.remaining} (expected ${before.remaining - GROSS_AUSD}) status=${STATUS_NAMES[after.status]}`,
+    "deal remaining moved by the settlement's backer slice",
+    after.remaining === before.remaining - expectedDrop,
+    `remaining ${before.remaining} → ${after.remaining} (expected ${before.remaining - expectedDrop}; toBacker = gross ${GROSS_AUSD} × shareBps ${before.shareBps} / 10000) status=${STATUS_NAMES[after.status]}`,
   );
 
   // The cached copy must equal the contract read (constitution IV).

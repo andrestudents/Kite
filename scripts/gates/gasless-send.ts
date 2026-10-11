@@ -134,14 +134,18 @@ async function main(): Promise<void> {
     },
   });
   const { v, r, s } = hexToSignature(signature);
+  // Wire contract (http-api.md): uint256 payload fields travel as DECIMAL
+  // STRINGS — JSON numbers cannot hold a uint256; the relayer parses at the
+  // edge. v is uint8, JSON-safe as a plain number (hexToSignature returns a
+  // bigint, which JSON.stringify refuses).
   const payload = {
     from: sender.address,
     to: recipient.address,
-    valueAusd: VALUE,
-    validAfter,
-    validBefore,
+    valueAusd: String(VALUE),
+    validAfter: String(validAfter),
+    validBefore: String(validBefore),
     nonce,
-    v,
+    v: Number(v),
     r,
     s,
   };

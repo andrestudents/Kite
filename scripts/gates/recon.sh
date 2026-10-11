@@ -15,12 +15,28 @@
 
 set -euo pipefail
 
+cd "$(dirname "$0")/../.." # repo root — every path below is repo-relative
+
 DAY="${1:-$(date -u -d yesterday +%F)}"
 DEAD_DAY="2001-01-01" # pre-baseline and empty — must never receive a verdict
 REF="sc003-$(date -u +%s)"
 GROSS=500000000
 AT="${DAY}T12:00:00Z"
+
+# bash does not auto-load .env the way bun does — load it ourselves, WITHOUT
+# executing it (CRLF-safe; see load-env.sh).
+# shellcheck disable=SC1091
+if [ -f scripts/gates/load-env.sh ]; then . scripts/gates/load-env.sh; fi
 : "${DATABASE_URL:?$DATABASE_URL must be set — source your env first}"
+
+# Provider getLogs caps vs a day-wide scan: Alchemy's free tier allows only
+# 10 blocks per call — the scan would take thousands of calls. The gate pins
+# the scan to RPC_URL (or the default public RPC), whose 100-block cap the
+# chunked scan in chain.ts handles. Point reads elsewhere keep D10 priority.
+# Export it EMPTY, not unset: bun re-loads .env for its own process, so an
+# unset name would come straight back; an empty value counts as unset
+# (optionalEnv) and survives.
+export ALCHEMY_RPC_URL=""
 export SC003_REF="$REF" SC003_GROSS="$GROSS" SC003_AT="$AT" SC003_DEAD="$DEAD_DAY" SC003_DAY="$DAY"
 
 TMP="$(mktemp -d)"

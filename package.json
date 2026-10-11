@@ -13,7 +13,7 @@
     "typecheck": "turbo run typecheck",
     "health": "bun scripts/healthcheck.ts",
     "test": "bun test packages apps scripts",
-    "db:push": "drizzle-kit push --dialect postgresql --schema ./packages/core/src/db/schema.ts --out ./packages/core/drizzle --url \"$DATABASE_URL\" && bun scripts/stamp-recon-baseline.ts",
+    "db:push": "bun scripts/db-push.ts",
     "dev:api": "cd apps/api && bun run dev",
     "dev:relayer": "cd apps/relayer && bun run dev"
   },
@@ -22,6 +22,7 @@
     "@kite/contracts": "workspace:*",
     "@kite/core": "workspace:*",
     "@neondatabase/serverless": "^1.0.0",
+    "drizzle-kit": "^0.31.11",
     "drizzle-orm": "^0.44.0",
     "turbo": "^2.5.34",
     "viem": "^2.37.0"
