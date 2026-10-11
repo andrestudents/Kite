@@ -36,6 +36,10 @@ export function createRelayerApp(deps: RelayerDeps): Hono {
 
   app.notFound((c) => c.json({ error: { code: "not_found", message: "no such route" } }, 404));
 
+  // Liveness only — proves the process is up (the Fly health check probes
+  // this). Tells nothing else: no key echo, no queue depth, no db state.
+  app.get("/health", (c) => c.json({ status: "ok" }));
+
   app.use("/api/jobs*", async (c, next) => {
     if (!verifyApiKey(c.req.header("x-api-key"), deps.internalKey)) {
       throw new KiteError("unauthorized", "missing or invalid key");

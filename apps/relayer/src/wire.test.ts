@@ -156,3 +156,14 @@ describe("uint256 wire contract over HTTP (T036 rework)", () => {
     expect(await db.select().from(relayerJobs)).toEqual([]);
   });
 });
+
+describe("GET /health (Fly liveness probe)", () => {
+  it("answers 200 ok with NO key and tells nothing else", async () => {
+    const db = await makeTestDb();
+    const { createRelayerApp } = await import("./app.js");
+    const app = createRelayerApp({ db: db as unknown as AnyDb, internalKey: "k" });
+    const res = await app.request("/health");
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ status: "ok" });
+  });
+});

@@ -48,12 +48,11 @@ DATABASE_URL='postgresql://…' bun run db:push
 
 `POST /api/me/verification` enqueues `bind_identity` + `drip` through
 `RELAYER_URL` — without a hosted relayer the trigger is an honest `503
-relayer_unreachable`. The relayer is a second small Fly app of the same shape
-(`apps/relayer/src/env.ts`): `DATABASE_URL`, `INTERNAL_API_KEY` (same value),
-`RELAYER_KEY` (the RELAYER_ROLE holder — **secret, funded, env-only, never in
-git**), optional `RELAYER_PORT` / `DRIP_MON_WEI` / `RELAYER_DAILY_CAP_MON_WEI`.
-Say the word and this repo grows `apps/relayer/Dockerfile` + `fly.toml` the
-same way.
+relayer_unreachable`. The relayer has its own scaffold of this exact shape:
+[`apps/relayer/Dockerfile`](../relayer/Dockerfile) + `fly.toml` +
+[`apps/relayer/DEPLOY.md`](../relayer/DEPLOY.md) (shared Neon DB, same
+`INTERNAL_API_KEY`, plus the funded `RELAYER_KEY` secret). Deploy it FIRST,
+then point this app's `RELAYER_URL` at `https://kite-relayer.fly.dev`.
 
 ## Smoke checks after deploy
 

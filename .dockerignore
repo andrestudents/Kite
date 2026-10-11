@@ -1,6 +1,6 @@
 # Keep the Fly build context tiny — the repo root is the context (see
-# apps/api/Dockerfile), and contracts/lib alone is ~200 MB of Foundry trees
-# the API image never needs.
+# apps/api/Dockerfile + apps/relayer/Dockerfile), and contracts/lib alone is
+# ~200 MB of Foundry trees neither image ever needs.
 .git
 node_modules
 **/node_modules
@@ -9,7 +9,6 @@ contracts
 !contracts/script/DEMO-ACCOUNTS.md
 specs
 apps/web
-apps/relayer
 packages/envio
 .specify
 .claude
