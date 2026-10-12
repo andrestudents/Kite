@@ -145,8 +145,8 @@ export function App() {
     const p = pendingDukung.current;
     if (p === null) return;
     pendingDukung.current = null;
-    void ensureSession(adapterOverride).then((live) => {
-      if (live !== null) setOverlay({ kind: "dukung-new", seeker: p.id, purpose: p.purpose });
+    void requireVerified(adapterOverride).then((ok) => {
+      if (ok) setOverlay({ kind: "dukung-new", seeker: p.id, purpose: p.purpose });
     });
   }
 
@@ -177,6 +177,24 @@ export function App() {
       setBanner(idLocale.common.errorGeneric);
       return null;
     }
+  }
+
+  /** A signing tap needs MORE than a live key — it needs a bound identity
+   *  (the fast-path revisit that never finished Verify). The tap is never
+   *  silently ignored: an amber toast says WHY in the catalog's words and
+   *  the app routes straight back into the verification flow. */
+  async function requireVerified(adapterOverride?: AuthAdapter): Promise<boolean> {
+    const live = await ensureSession(adapterOverride);
+    if (live === null) return false;
+    try {
+      const me = await api.current.me();
+      if (me.identityBound) return true;
+    } catch {
+      return true; // a failed read is not proof of unbound — let the surface proceed
+    }
+    setToasts((prev) => [...prev, { id: `verify-required-${String(Date.now())}`, kind: "verify" }]);
+    setRoute("verify");
+    return false;
   }
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: entry runs ONCE per mount — re-running on identity change would re-run the onboarding decision itself
@@ -350,7 +368,9 @@ export function App() {
           onDukung={(seeker) => {
             if (session !== null) {
               setPublicView(null);
-              setOverlay({ kind: "dukung-new", seeker, purpose: publicView.purpose });
+              void requireVerified().then((ok) => {
+                if (ok) setOverlay({ kind: "dukung-new", seeker, purpose: publicView.purpose });
+              });
               return;
             }
             pendingDukung.current = { id: seeker, purpose: publicView.purpose };
@@ -479,8 +499,8 @@ export function App() {
           onSignOut={signOut}
           onNeedVerification={() => setRoute("verify")}
           onAjukan={() => {
-            void ensureSession().then((live) => {
-              if (live !== null) setOverlay({ kind: "ajukan" });
+            void requireVerified().then((ok) => {
+              if (ok) setOverlay({ kind: "ajukan" });
             });
           }}
         />
@@ -493,8 +513,8 @@ export function App() {
           lang={lang}
           storage={localStorage}
           onDukung={(seeker) => {
-            void ensureSession().then((live) => {
-              if (live !== null) setOverlay({ kind: "dukung-new", seeker });
+            void requireVerified().then((ok) => {
+              if (ok) setOverlay({ kind: "dukung-new", seeker });
             });
           }}
         />
@@ -542,8 +562,8 @@ export function App() {
           // Kirim signs the transfer — borrow the passkey first when the
           // fast path landed without a live key. Cancel = stay on Beranda.
           if (t === "kirim" && liveSession.current === null) {
-            void ensureSession().then((live) => {
-              if (live !== null) setTab("kirim");
+            void requireVerified().then((ok) => {
+              if (ok) setTab("kirim");
             });
             return;
           }

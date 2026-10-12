@@ -13,7 +13,7 @@ import type { WatchEvent } from "../../watcher/watcher.js";
 export interface Toast {
   /** Derived from the event — the same event can never stack twice. */
   id: string;
-  kind: "income" | "capped" | "term";
+  kind: "income" | "capped" | "term" | "verify";
   /** The wallet delta (income only; bigint base units). */
   deltaAusd?: bigint;
   /** The progress jump when the isaOf read landed in the same pass. */
@@ -65,7 +65,9 @@ export function ToastStack(props: {
               ? "rounded-2xl bg-slate-900/95 p-4 text-left shadow-lg"
               : t.kind === "capped"
                 ? "rounded-2xl bg-teal-600 p-4 text-left text-white shadow-lg"
-                : "rounded-2xl bg-slate-200 p-4 text-left text-slate-700 shadow-lg"
+                : t.kind === "verify"
+                  ? "rounded-2xl bg-amber-100 p-4 text-left text-amber-900 shadow-lg"
+                  : "rounded-2xl bg-slate-200 p-4 text-left text-slate-700 shadow-lg"
           }
         >
           {t.kind === "income" ? (
@@ -88,6 +90,8 @@ export function ToastStack(props: {
                 ) : null}
               </div>
             </>
+          ) : t.kind === "verify" ? (
+            <p className="text-sm font-semibold">{locale.verifyRequired.toast}</p>
           ) : (
             <p className="text-sm font-semibold">
               {t.kind === "capped" ? locale.dukung.toastCompleted : locale.moments.forgiveBanner}

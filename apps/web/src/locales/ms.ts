@@ -39,6 +39,7 @@ export const ms: Locale = {
     retryHint: "Masih diproses. Cuba lagi sebentar lagi.",
     ready: "Akaun sedia!",
     captured: "Gambar diambil",
+    stalled: "Pengesahan belum selesai. Cuba lagi ya — prosesnya berjalan sendiri.",
   },
   home: {
     greeting: "Hai!",
@@ -66,6 +67,9 @@ export const ms: Locale = {
     signIn: "Masuk",
     signOut: "Keluar",
     expired: "Sesi telah tamat. Masuk sekali lagi ya.",
+  },
+  verifyRequired: {
+    toast: "Selesaikan pengesahan dulu ya.",
   },
   desktop: {
     title: "Sambung di telefon anda",

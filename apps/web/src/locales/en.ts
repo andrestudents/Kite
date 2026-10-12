@@ -39,6 +39,8 @@ export const en: Locale = {
     retryHint: "Still processing. Please try again shortly.",
     ready: "Your account is ready!",
     captured: "Photo captured",
+    stalled:
+      "The check did not finish in time. Please try again — it keeps working in the background.",
   },
   home: {
     greeting: "Hi!",
@@ -66,6 +68,9 @@ export const en: Locale = {
     signIn: "Sign in",
     signOut: "Sign out",
     expired: "Your session ended. Please sign in again.",
+  },
+  verifyRequired: {
+    toast: "Please finish the identity check first.",
   },
   desktop: {
     title: "Continue on your phone",

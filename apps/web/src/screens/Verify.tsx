@@ -2,13 +2,19 @@
 // on its face. It auto-approves; the ONLY thing that leaves the device is the
 // client-computed identity hash (data-model §3) — the photos themselves never
 // do. Submit → poll the read-backs at a gentle interval with plain-language
-// retry, never a dead end (US1-AC5).
+// retry, never a dead end (US1-AC5) — and the poll itself owes an answer:
+// past the deadline the waiting face becomes a localized stalled face with a
+// retry (loading is a phase, never a destination — the relayer confirms
+// out-of-band, so a retried read-back lands the moment it does).
 import { useRef, useState } from "react";
 import type { ApiClient } from "../data/bootstrap.js";
 import { demoIdentityHash } from "../lib/identityHash.js";
 import type { Locale } from "../locales/id.js";
 
 const POLL_MS = 2_500;
+/** How long "Mengecek…" may stand before the stalled face owes the user a
+ *  retry — covers a cold relayer wake (free-tier spin-up ~30 s) with room. */
+export const VERIFY_DEADLINE_MS = 120_000;
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -25,7 +31,9 @@ export function Verify(props: {
   onReady(): void;
 }) {
   const { locale, api, wallet } = props;
-  const [phase, setPhase] = useState<"idle" | "submitting" | "checking" | "ready">("idle");
+  const [phase, setPhase] = useState<"idle" | "submitting" | "checking" | "ready" | "stalled">(
+    "idle",
+  );
   const [captured, setCaptured] = useState(0);
   const [hint, setHint] = useState<string | null>(null);
   const ktpRef = useRef<File | null>(null);
@@ -49,6 +57,7 @@ export function Verify(props: {
       await readBytes(selfieRef.current),
     );
     setPhase("checking");
+    const startedAt = Date.now();
     for (;;) {
       try {
         await api.verificationPost(hash);
@@ -64,6 +73,10 @@ export function Verify(props: {
       }
       if (done) {
         setPhase("ready");
+        return;
+      }
+      if (Date.now() - startedAt > VERIFY_DEADLINE_MS) {
+        setPhase("stalled"); // the answer is owed NOW — retry re-reads the truth
         return;
       }
       await sleep(POLL_MS);
@@ -113,6 +126,17 @@ export function Verify(props: {
             className="rounded-xl bg-teal-600 px-6 py-4 text-lg font-semibold text-white shadow"
           >
             {locale.common.continue}
+          </button>
+        </>
+      ) : phase === "stalled" ? (
+        <>
+          <p className="text-center text-sm text-slate-600">{locale.verify.stalled}</p>
+          <button
+            type="button"
+            onClick={() => void run()}
+            className="rounded-xl bg-teal-600 px-6 py-4 text-lg font-semibold text-white shadow"
+          >
+            {locale.common.retry}
           </button>
         </>
       ) : (

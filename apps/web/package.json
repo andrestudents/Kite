@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build && bash ../../scripts/gates/no-dev-base.sh",
+    "build": "vite build && bash ../../scripts/gates/no-dev-base.sh && bash ../../scripts/gates/spa-fallback.sh",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit"
   },

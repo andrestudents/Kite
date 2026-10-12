@@ -40,6 +40,7 @@ export const id = {
     retryHint: "Masih diproses. Coba lagi sebentar lagi.",
     ready: "Akun siap!",
     captured: "Foto terambil",
+    stalled: "Verifikasi belum selesai. Coba lagi ya — prosesnya lanjut sendiri.",
   },
   home: {
     greeting: "Halo!",
@@ -67,6 +68,9 @@ export const id = {
     signIn: "Masuk",
     signOut: "Keluar",
     expired: "Sesi berakhir. Masuk sekali lagi ya.",
+  },
+  verifyRequired: {
+    toast: "Selesaikan verifikasi dulu ya.",
   },
   desktop: {
     title: "Lanjut di ponselmu",
