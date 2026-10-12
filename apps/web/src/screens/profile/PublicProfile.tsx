@@ -8,9 +8,9 @@
 // documents — the record IS the identity. No session required to view.
 import { useEffect, useState } from "react";
 import type { StorageLike } from "../../auth/session.js";
-import { profileFromDto } from "../../data/assemble.js";
 import type { ApiClient } from "../../data/bootstrap.js";
 import type { DealCardModel, ProfileModel } from "../../data/models.js";
+import { loadProfileModel } from "../../data/profile-load.js";
 import { makeDefaultQrPort, type QRPort, receiveCodeDataUrl } from "../../data/qr.js";
 import { formatAusdDetail, type MoneyLocale } from "../../lib/money.js";
 import type { Locale } from "../../locales/id.js";
@@ -176,9 +176,9 @@ export function PublicProfile(props: {
     let alive = true;
     (async () => {
       try {
-        const dto = await api.profile(profileId);
+        const loaded = await loadProfileModel(api, profileId);
         if (!alive) return;
-        setModel(profileFromDto(dto, Date.now()));
+        setModel(loaded);
       } catch {
         if (alive) setFailed(true);
       }
@@ -210,7 +210,7 @@ export function PublicProfile(props: {
     setFailed(false);
     setModel(null);
     try {
-      setModel(profileFromDto(await api.profile(profileId), Date.now()));
+      setModel(await loadProfileModel(api, profileId));
     } catch {
       setFailed(true);
     }

@@ -17,16 +17,24 @@ import {
   makeDemoAdapter,
   sessionForWrappedSecret,
 } from "./demo-adapter.js";
-import type { AccountSession, AuthAdapter, RpConfig, UserIdentity } from "./types.js";
+import type {
+  AccountSession,
+  AuthAdapter,
+  CredentialRef,
+  RpConfig,
+  UserIdentity,
+} from "./types.js";
 
 const RP_ID = "kite.example";
 const BUDI = PERSONAS.budi;
 const PAKHAJI = PERSONAS.pakhaji;
 
-/** A primary that records whether a fresh account was ever requested. */
-function primarySpy(): AuthAdapter & { created: number } {
+/** A primary that records whether a fresh account was ever requested, and
+ *  which pinned credentials the demo adapter forwards to it. */
+function primarySpy(): AuthAdapter & { created: number; pinned: Array<CredentialRef | undefined> } {
   const self = {
     created: 0,
+    pinned: [] as Array<CredentialRef | undefined>,
     async createAccount(_rp: RpConfig, _user: UserIdentity) {
       self.created += 1;
       const session: AccountSession = {
@@ -41,8 +49,24 @@ function primarySpy(): AuthAdapter & { created: number } {
       };
       return { session, credential: { credentialId: "cred-primary" } };
     },
-    async signIn(): Promise<AccountSession> {
-      throw new Error("primary must never be asked to sign in by the demo adapter");
+    async signIn(_rpId: string, credential?: CredentialRef): Promise<AccountSession> {
+      // The unpinned ceremony belongs to the vault alone — if the demo
+      // adapter forwards it here, that is the bug this spy exists to catch.
+      if (credential === undefined) {
+        throw new Error("primary must never serve the unpinned demo ceremony");
+      }
+      self.pinned.push(credential);
+      const session: AccountSession = {
+        address: BUDI.address,
+        async signIntent(): Promise<{ v: number; r: `0x${string}`; s: `0x${string}` }> {
+          throw new Error("unused");
+        },
+        async signDigest(): Promise<{ compact: Uint8Array; recovery: number }> {
+          throw new Error("unused");
+        },
+        end(): void {},
+      };
+      return session;
     },
   };
   return self;
@@ -66,8 +90,21 @@ describe("demo adapter boundary (T023)", () => {
   });
 
   it("signIn with nothing stored refuses before any crypto", async () => {
-    const adapter = makeDemoAdapter(primarySpy(), makeMemoryKv());
+    const primary = primarySpy();
+    const adapter = makeDemoAdapter(primary, makeMemoryKv());
     expect(adapter.signIn(RP_ID)).rejects.toThrow(/no demo persona/);
+    expect(primary.pinned).toHaveLength(0); // the vault path, never the primary
+  });
+
+  it("a PINNED credential rides the primary path — a fresh signup on a demo-prepped device stays reachable", async () => {
+    const kv = makeMemoryKv();
+    storeRecord({ persona: "budi", displayName: BUDI.displayName, vault: { nope: 1 } }, kv);
+    const primary = primarySpy();
+    const adapter = makeDemoAdapter(primary, kv);
+    const pin: CredentialRef = { credentialId: "cred-fresh", transports: ["internal"] };
+    const session = await adapter.signIn(RP_ID, pin);
+    expect(primary.pinned).toEqual([pin]); // the pin, forwarded verbatim
+    expect(session.address).toBe(BUDI.address);
   });
 
   it("signIn with corrupt JSON refuses at the parse boundary", async () => {

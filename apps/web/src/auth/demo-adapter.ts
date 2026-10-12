@@ -83,7 +83,12 @@ export function makeDemoAdapter(primary: AuthAdapter, store: KvStore): AuthAdapt
       return primary.createAccount(rp, user);
     },
 
-    async signIn(rpId: string, _credential?: CredentialRef): Promise<AccountSession> {
+    async signIn(rpId: string, credential?: CredentialRef): Promise<AccountSession> {
+      // A PINNED credential names a concrete account created ON this device —
+      // a fresh signup on a demo-prepped phone must stay reachable, so the
+      // pin rides the PRIMARY Mera path. The persona vault serves only the
+      // UNPINNED Masuk ceremony (signInExisting passes no credential).
+      if (credential !== undefined) return primary.signIn(rpId, credential);
       const raw = await store.get(DEMO_VAULT_KEY);
       if (raw === null) {
         throw new Error("no demo persona is stored on this device");

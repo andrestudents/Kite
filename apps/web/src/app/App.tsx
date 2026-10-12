@@ -2,11 +2,15 @@
 // FR-016) flows into a four-tab shell — Beranda · Dukung · Kirim · Riwayat
 // (FR-001) — and the shell answers two public paths directly: /mitra (the
 // operator console, desktop-first, the MITA demo key read by NAME — never
-// the INTERNAL key) and /p/:id deep links (no session). The watcher (T020)
-// rides the session: a seeker split fills the full-screen moment (T021),
-// quiet moments land as toasts (T022). Offline wraps the shell in T009's
-// read-only stale-labeled state; the toggle cycles id ⇄ ms ⇄ en in place —
-// in-flow state survives (FR-002).
+// the INTERNAL key) and /p/:id deep links, which render BEFORE any session
+// gate — the share link's audience has no account yet (FR-019). The blob
+// fast path (FR-008) lands on Home with NO live key: reads need none, and a
+// signing surface (ajukan · dukung · kirim) borrows the passkey for ONE
+// assertion at the tap that signals intent — loading is never a destination.
+// The watcher (T020) rides the wallet: a seeker split fills the full-screen
+// moment (T021), quiet moments land as toasts (T022). Offline wraps the
+// shell in T009's read-only stale-labeled state; the toggle cycles id ⇄ ms ⇄
+// en in place — in-flow state survives (FR-002).
 import { useCallback, useEffect, useRef, useState } from "react";
 import { makeAdapterForDevice } from "../auth/demo-adapter.js";
 import { clearSessionBlob, loadSessionBlob } from "../auth/session.js";
@@ -134,15 +138,48 @@ export function App() {
     setRoute("signup");
   }
 
-  /** A completed dukung intent stashed before sign-in opens right after. */
-  function applyPendingDukung(): void {
+  /** A completed dukung intent stashed before sign-in opens as soon as a
+   *  live key exists — borrowing the passkey for ONE assertion if the blob
+   *  fast path landed without one. */
+  function applyPendingDukung(adapterOverride?: AuthAdapter): void {
     const p = pendingDukung.current;
-    if (p !== null) {
-      pendingDukung.current = null;
-      setOverlay({ kind: "dukung-new", seeker: p.id, purpose: p.purpose });
+    if (p === null) return;
+    pendingDukung.current = null;
+    void ensureSession(adapterOverride).then((live) => {
+      if (live !== null) setOverlay({ kind: "dukung-new", seeker: p.id, purpose: p.purpose });
+    });
+  }
+
+  /** ONE assertion ceremony on demand (FR-016): the blob fast path lands on
+   *  Home without a live key — reads need none; a signing surface borrows
+   *  the passkey exactly when the user's tap signals intent. NEVER creates
+   *  an account. Null = the ceremony did not complete: the surface simply
+   *  does not open, and the banner carries the "why" to the next sign-in
+   *  face. `adapterOverride` serves the boot effect (state not yet committed). */
+  async function ensureSession(adapterOverride?: AuthAdapter): Promise<AccountSession | null> {
+    const live = liveSession.current;
+    if (live !== null) return live;
+    const a = adapterOverride ?? adapter;
+    if (a === null) return null;
+    try {
+      const result = await signInExisting({
+        storage: localStorage,
+        adapter: a,
+        rpId: RP_ID,
+        nowSec: nowSec(),
+      });
+      liveSession.current = result.session;
+      setSession(result.session);
+      setWallet(result.wallet);
+      setBanner(undefined);
+      return result.session;
+    } catch {
+      setBanner(idLocale.common.errorGeneric);
+      return null;
     }
   }
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: entry runs ONCE per mount — re-running on identity change would re-run the onboarding decision itself
   useEffect(() => {
     void (async () => {
       const deviceAdapter = await makeAdapterForDevice();
@@ -160,11 +197,7 @@ export function App() {
         }
         if (result.wallet) setWallet(result.wallet);
         setRoute("home");
-        const p = pendingDukung.current;
-        if (p !== null) {
-          pendingDukung.current = null;
-          setOverlay({ kind: "dukung-new", seeker: p.id, purpose: p.purpose });
-        }
+        applyPendingDukung(deviceAdapter);
       } else {
         setBanner(result.reason === "signin-failed" ? idLocale.session.expired : undefined);
         setRoute("signup");
@@ -266,17 +299,8 @@ export function App() {
 
   /** The Masuk button: manual sign-in (demo-prepped / wiped-pin devices). */
   async function onSignIn(): Promise<void> {
-    if (adapter === null) return;
-    const result = await signInExisting({
-      storage: localStorage,
-      adapter,
-      rpId: RP_ID,
-      nowSec: nowSec(),
-    });
-    liveSession.current = result.session;
-    setSession(result.session);
-    setWallet(result.wallet);
-    setBanner(undefined);
+    const live = await ensureSession();
+    if (live === null) return; // the banner already says why
     setRoute("home");
     applyPendingDukung();
   }
@@ -306,6 +330,44 @@ export function App() {
 
   if (path.kind === "mitra") {
     return <MitraShell row={mitraRow} onRow={setMitraRow} />;
+  }
+
+  // FR-019: the share link answers EVERYONE — before the adapter, the
+  // onboarding machine, and any session gate. Dukung from here stashes the
+  // intent and opens onboarding; applyPendingDukung brings it back after a
+  // live key exists. With a key it opens straight into the shell's overlay.
+  if (publicView !== null) {
+    return (
+      <>
+        <PublicProfile
+          locale={locale}
+          lang={lang}
+          api={api.current}
+          storage={localStorage}
+          profileId={publicView.id}
+          ajukan={publicView.purpose}
+          origin={ORIGIN}
+          onDukung={(seeker) => {
+            if (session !== null) {
+              setPublicView(null);
+              setOverlay({ kind: "dukung-new", seeker, purpose: publicView.purpose });
+              return;
+            }
+            pendingDukung.current = { id: seeker, purpose: publicView.purpose };
+            setPublicView(null);
+            setRoute("signup");
+          }}
+          onBack={() => setPublicView(null)}
+        />
+        <button
+          type="button"
+          onClick={toggleLang}
+          className="fixed top-3 right-3 z-30 rounded-full border border-slate-200 bg-white/90 px-3 py-1 text-xs font-semibold text-slate-600 shadow"
+        >
+          {nextLang(lang).toUpperCase()}
+        </button>
+      </>
+    );
   }
 
   if (adapter === null || route === "entering") {
@@ -343,23 +405,22 @@ export function App() {
         locale={locale}
         api={api.current}
         wallet={walletNow}
-        onReady={() => setRoute("home")}
+        onReady={() => {
+          setRoute("home");
+          applyPendingDukung();
+        }}
       />
     );
   }
 
-  // ── the tabbed shell (route "home") ─────────────────────────────────────
-
-  if (session === null) {
-    return (
-      <main className="flex min-h-dvh items-center justify-center text-slate-500">
-        {locale.common.loading}
-      </main>
-    );
-  }
+  // ── the tabbed shell (route "home") — renders with OR without a live key;
+  // the blob fast path lands here sessionless and every read surface works.
 
   const overlayView = (() => {
     if (overlay === null) return null;
+    // Overlays are only set after ensureSession resolves, so a live key
+    // exists here; the guard keeps the renderer honest if that ever drifts.
+    if (session === null) return null;
     if (overlay.kind === "ajukan") {
       return (
         <PhoneFrame locale={locale}>
@@ -417,7 +478,11 @@ export function App() {
           api={api.current}
           onSignOut={signOut}
           onNeedVerification={() => setRoute("verify")}
-          onAjukan={() => setOverlay({ kind: "ajukan" })}
+          onAjukan={() => {
+            void ensureSession().then((live) => {
+              if (live !== null) setOverlay({ kind: "ajukan" });
+            });
+          }}
         />
       );
     }
@@ -427,11 +492,18 @@ export function App() {
           locale={locale}
           lang={lang}
           storage={localStorage}
-          onDukung={(seeker) => setOverlay({ kind: "dukung-new", seeker })}
+          onDukung={(seeker) => {
+            void ensureSession().then((live) => {
+              if (live !== null) setOverlay({ kind: "dukung-new", seeker });
+            });
+          }}
         />
       );
     }
     if (tab === "kirim") {
+      // Reachable only through onNavigate's ceremony gate; the guard is for
+      // the type, not a state the shell can be in.
+      if (session === null) return null;
       return (
         <PhoneFrame locale={locale}>
           <Kirim
@@ -459,40 +531,27 @@ export function App() {
     );
   })();
 
-  const body =
-    publicView !== null && overlay === null ? (
-      <PublicProfile
+  const body = (
+    <>
+      <div className="pb-24">{overlayView !== null ? overlayView : tabView}</div>
+      <TabBar
         locale={locale}
-        lang={lang}
-        api={api.current}
-        storage={localStorage}
-        profileId={publicView.id}
-        ajukan={publicView.purpose}
-        origin={ORIGIN}
-        onDukung={(seeker) => {
-          if (session !== null) {
-            setOverlay({ kind: "dukung-new", seeker, purpose: publicView.purpose });
+        active={tab}
+        onNavigate={(t) => {
+          setOverlay(null);
+          // Kirim signs the transfer — borrow the passkey first when the
+          // fast path landed without a live key. Cancel = stay on Beranda.
+          if (t === "kirim" && liveSession.current === null) {
+            void ensureSession().then((live) => {
+              if (live !== null) setTab("kirim");
+            });
             return;
           }
-          pendingDukung.current = { id: seeker, purpose: publicView.purpose };
-          setPublicView(null);
-          setRoute("signup");
+          setTab(t);
         }}
-        onBack={() => setPublicView(null)}
       />
-    ) : (
-      <>
-        <div className="pb-24">{overlayView !== null ? overlayView : tabView}</div>
-        <TabBar
-          locale={locale}
-          active={tab}
-          onNavigate={(t) => {
-            setOverlay(null);
-            setTab(t);
-          }}
-        />
-      </>
-    );
+    </>
+  );
 
   const shell = (
     <>
