@@ -1,0 +1,309 @@
+// T016 — Dukung Baru (FR-007/FR-008): exactly three steps + one confirmation.
+// (1) who — receive-code link/QR or manual entry → the public profile loads
+// and the open request must exist; (2) the amount (the request's own
+// principal — the permit never exceeds what the deal needs) + the purpose;
+// (3) the one-paragraph agreement in plain Bahasa; then ONE passkey
+// confirmation signs the ERC-2612 permit over the AUSD domain and submits
+// `activate_with_permit` — gaslessly, the backer is never asked for a fee
+// balance and never sees crypto vocabulary. FR-008's live check runs at
+// step-2 entry, step-3 entry, AND immediately before the signature — over
+// limit is inline Bahasa with the current limit stated, never a
+// submitted-then-failed state. The confirm button latches after the first
+// tap; the deterministic clientRef makes a retry safe. No wire imports —
+// data/ only.
+import { useCallback, useState } from "react";
+import type { StorageLike } from "../../auth/session.js";
+import type { AccountSession } from "../../auth/types.js";
+import { profileFromDto } from "../../data/assemble.js";
+import { derivedLabel, saveBackedRecord } from "../../data/backed.js";
+import type { ApiClient } from "../../data/bootstrap.js";
+import { type ChainReader, chainReader, parseBackerInput } from "../../data/draft.js";
+import type { ActivationWire, CheckResult, PermitSigner } from "../../data/dukung.js";
+import {
+  buildActivationWire,
+  checkDraftable,
+  DEFAULTS,
+  makeDefaultPermitSigner,
+  PERMIT_TTL_SEC,
+  permitDomain,
+  pollActive,
+} from "../../data/dukung.js";
+import { formatAusdDetail, type MoneyLocale } from "../../lib/money.js";
+import type { Locale } from "../../locales/id.js";
+import { pctLabel } from "../beranda/Ajukan.js";
+
+type Step = "who" | "amount" | "agree" | "signing" | "activating" | "done";
+
+export function DukungBaru(props: {
+  locale: Locale;
+  lang?: MoneyLocale;
+  session: AccountSession;
+  api: ApiClient;
+  storage: StorageLike;
+  /** test seams — the real screen uses the module reader/signer/client */
+  reader?: ChainReader;
+  signer?: PermitSigner;
+  postActivation?: (body: ActivationWire) => Promise<{ jobId: string; clientRef: string }>;
+  /** the share link's context — the seeker + their purpose, when present */
+  initialSeeker?: string;
+  initialPurpose?: string;
+  onDone(): void;
+  onCancel(): void;
+}) {
+  const { locale, session, api, storage } = props;
+  const lang: MoneyLocale = props.lang ?? "id";
+  const reader = props.reader ?? chainReader;
+  const [step, setStep] = useState<Step>("who");
+  const [seekerRaw, setSeekerRaw] = useState(props.initialSeeker ?? "");
+  const [isaId, setIsaId] = useState<number | null>(null);
+  const [principal, setPrincipal] = useState<bigint | null>(null);
+  const [capAusd, setCapAusd] = useState<bigint | null>(null);
+  const [shareBps, setShareBps] = useState(0);
+  const [seeker, setSeeker] = useState("");
+  const [purpose, setPurpose] = useState(props.initialPurpose ?? "");
+  const [nickname, setNickname] = useState("");
+  const [check, setCheck] = useState<CheckResult | null>(null);
+  const [whoError, setWhoError] = useState(false);
+  const [latched, setLatched] = useState(false);
+
+  const liveCheck = useCallback(async (): Promise<CheckResult | null> => {
+    if (isaId === null || principal === null) return null;
+    setCheck(null);
+    try {
+      const result = await checkDraftable(reader, isaId, principal);
+      setCheck(result);
+      return result;
+    } catch {
+      return null;
+    }
+  }, [reader, isaId, principal]);
+
+  /** Step 1 → 2: the profile must carry an open (Drafted) request. */
+  async function openSeeker(): Promise<void> {
+    const who = parseBackerInput(seekerRaw);
+    if (who === null) return;
+    setWhoError(false);
+    try {
+      const dto = await api.profile(who);
+      const model = profileFromDto(dto, Date.now());
+      const request = model.openRequest;
+      if (request === null) {
+        setWhoError(true);
+        return;
+      }
+      setSeeker(request.seeker);
+      setIsaId(request.isaId);
+      setPrincipal(request.principalAusd);
+      setCapAusd(request.capAusd);
+      setShareBps(request.shareBps);
+      if (purpose.trim() === "") setPurpose(props.initialPurpose ?? "");
+      setNickname(derivedLabel(request.seeker, props.initialPurpose));
+      setStep("amount");
+    } catch {
+      setWhoError(true);
+    }
+  }
+
+  async function confirm(): Promise<void> {
+    if (latched || isaId === null || principal === null) return;
+    setLatched(true); // the button never fires twice — retry rides the clientRef
+    try {
+      // FR-008, checkpoint 3: immediately before any signature.
+      const final = await liveCheck();
+      if (final === null || final.state !== "ok") {
+        setLatched(false);
+        setStep("amount");
+        return;
+      }
+      setStep("signing");
+      const signer = props.signer ?? makeDefaultPermitSigner(session, DEFAULTS.chainId);
+      const deadline = BigInt(Math.floor(Date.now() / 1000) + PERMIT_TTL_SEC);
+      const nonce = await reader.ausdNonces(session.address);
+      const sig = await signer.sign(permitDomain(DEFAULTS.ausd, DEFAULTS.chainId), {
+        owner: session.address,
+        spender: DEFAULTS.core,
+        value: principal,
+        nonce,
+        deadline,
+      });
+      const wire = buildActivationWire(isaId, deadline, sig);
+      setStep("activating");
+      const post = props.postActivation ?? ((body: ActivationWire) => api.postJob(body));
+      await post(wire);
+      // The receipt proves the QUEUE took the job; the CHAIN proves the deal.
+      const active = await pollActive(reader, isaId, 30_000);
+      if (!active) {
+        setLatched(false);
+        setStep("agree");
+        return;
+      }
+      saveBackedRecord(storage, {
+        seeker,
+        isaId,
+        nickname: nickname.trim().slice(0, 40) || undefined,
+        purpose: purpose.trim() || undefined,
+        activatedAt: Date.now(),
+      });
+      setStep("done");
+    } catch {
+      setLatched(false);
+      setStep("agree");
+    }
+  }
+
+  // ── render ────────────────────────────────────────────────────────────────
+  if (step === "done") {
+    return (
+      <main className="mx-auto flex min-h-dvh max-w-md flex-col items-center justify-center gap-4 px-6 text-center">
+        <p className="text-2xl font-bold text-teal-700">{locale.dukung.doneTitle}</p>
+        <p className="text-slate-600">{locale.dukung.doneBody}</p>
+        <button
+          type="button"
+          onClick={props.onDone}
+          className="rounded-xl bg-teal-600 px-6 py-3 font-semibold text-white shadow"
+        >
+          {locale.common.continue}
+        </button>
+      </main>
+    );
+  }
+
+  if (step === "who") {
+    return (
+      <main className="mx-auto flex min-h-dvh max-w-md flex-col gap-4 px-6 py-10">
+        <h1 className="text-2xl font-bold text-teal-700">{locale.dukung.step1Title}</h1>
+        <label className="flex flex-col gap-1 text-sm text-slate-600" htmlFor="dukung-who">
+          {locale.kirim.recipientLabel}
+          <input
+            id="dukung-who"
+            value={seekerRaw}
+            onChange={(e) => setSeekerRaw(e.target.value)}
+            className="w-full rounded-xl border border-slate-300 px-3 py-2 text-base text-slate-800"
+          />
+          <span className="text-xs text-slate-500">{locale.kirim.recipientCode}</span>
+          {whoError ? (
+            <span className="text-xs text-red-600">{locale.dukung.notDraftable}</span>
+          ) : null}
+        </label>
+        <button
+          type="button"
+          disabled={parseBackerInput(seekerRaw) === null}
+          onClick={() => void openSeeker()}
+          className="rounded-xl bg-teal-600 px-6 py-4 text-lg font-semibold text-white shadow disabled:bg-slate-300"
+        >
+          {locale.common.continue}
+        </button>
+        <button type="button" onClick={props.onCancel} className="text-sm text-slate-500">
+          {locale.edge.back}
+        </button>
+      </main>
+    );
+  }
+
+  if (step === "amount") {
+    return (
+      <main className="mx-auto flex min-h-dvh max-w-md flex-col gap-4 px-6 py-10">
+        <h1 className="text-2xl font-bold text-teal-700">{locale.dukung.step2Title}</h1>
+        <p className="text-sm text-slate-500">{derivedLabel(seeker, purpose)}</p>
+        <section className="rounded-2xl border border-slate-200 p-4">
+          <div className="flex items-baseline justify-between">
+            <span className="text-sm text-slate-500">{locale.dukung.amountLabel}</span>
+            <span className="text-2xl font-bold text-slate-900">
+              {principal !== null ? formatAusdDetail(principal, lang) : ""}
+            </span>
+          </div>
+          {purpose.trim() !== "" ? (
+            <p className="mt-2 text-sm text-slate-600">
+              {locale.dealCard.purposeLabel}: {purpose}
+            </p>
+          ) : null}
+        </section>
+        {check !== null && check.state === "over-limit" ? (
+          <p className="text-sm text-red-600">
+            {locale.dukung.overLimitPrefix}: {formatAusdDetail(check.offerAusd, lang)}
+          </p>
+        ) : null}
+        {check !== null && check.state === "not-draftable" ? (
+          <p className="text-sm text-red-600">{locale.dukung.notDraftable}</p>
+        ) : null}
+        {check === null ? <p className="text-sm text-slate-500">{locale.dukung.checking}</p> : null}
+        <button
+          type="button"
+          disabled={check?.state !== "ok"}
+          onClick={() => {
+            void (async () => {
+              // FR-008, checkpoint 2: entering the agreement step re-checks.
+              const result = await liveCheck();
+              if (result?.state === "ok") setStep("agree");
+            })();
+          }}
+          className="rounded-xl bg-teal-600 px-6 py-4 text-lg font-semibold text-white shadow disabled:bg-slate-300"
+        >
+          {locale.common.continue}
+        </button>
+        <button type="button" onClick={props.onCancel} className="text-sm text-slate-500">
+          {locale.edge.back}
+        </button>
+      </main>
+    );
+  }
+
+  // step === "agree" | "signing" | "activating"
+  return (
+    <main className="mx-auto flex min-h-dvh max-w-md flex-col gap-4 px-6 py-10">
+      <h1 className="text-2xl font-bold text-teal-700">{locale.dukung.step3Title}</h1>
+      <section className="rounded-2xl border border-slate-200 p-4 text-sm text-slate-600">
+        <div className="flex items-baseline justify-between">
+          <span>{locale.dealCard.shareLabel}</span>
+          <span className="font-semibold text-slate-800">{pctLabel(shareBps, lang)}</span>
+        </div>
+        <div className="mt-1 flex items-baseline justify-between">
+          <span>{locale.dealCard.capLabel}</span>
+          <span className="font-semibold text-slate-800">
+            {capAusd !== null ? formatAusdDetail(capAusd, lang) : ""}
+          </span>
+        </div>
+        <div className="mt-1 flex items-baseline justify-between">
+          <span>{locale.dukung.amountLabel}</span>
+          <span className="font-semibold text-slate-800">
+            {principal !== null ? formatAusdDetail(principal, lang) : ""}
+          </span>
+        </div>
+        <p className="mt-2">
+          {locale.dealCard.endLabel} {locale.dealCard.endByCap}
+        </p>
+        <p className="mt-1 text-slate-800">{locale.dealCard.failedHarvest}</p>
+        {purpose.trim() !== "" ? (
+          <p className="mt-2">
+            {locale.dealCard.purposeLabel}: {purpose}
+          </p>
+        ) : null}
+      </section>
+      <label className="flex flex-col gap-1 text-sm text-slate-600" htmlFor="dukung-nickname">
+        {locale.dukung.nicknameLabel}
+        <input
+          id="dukung-nickname"
+          value={nickname}
+          maxLength={40}
+          onChange={(e) => setNickname(e.target.value)}
+          className="w-full rounded-xl border border-slate-300 px-3 py-2 text-base text-slate-800"
+        />
+      </label>
+      <button
+        type="button"
+        disabled={latched}
+        onClick={() => void confirm()}
+        className="rounded-xl bg-teal-600 px-6 py-4 text-lg font-semibold text-white shadow disabled:bg-slate-300"
+      >
+        {step === "signing"
+          ? locale.dukung.signCta
+          : step === "activating"
+            ? locale.dukung.activating
+            : locale.dukung.confirmCta}
+      </button>
+      <button type="button" onClick={props.onCancel} className="text-sm text-slate-500">
+        {locale.edge.back}
+      </button>
+    </main>
+  );
+}

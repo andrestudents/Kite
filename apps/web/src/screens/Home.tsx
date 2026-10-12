@@ -1,37 +1,42 @@
-// T019 — Home (FR-003/FR-006): one merged /api/me render + the locked quote's
-// IDR/MYR approximation (constitution VI — integer base units on the wire,
-// display-only conversion here via lib/money). Actions are enabled only when
-// BOTH verification read-backs are green — /api/me carries identityBound, the
-// drips lock comes from the verification read-back (FR-006). Zero crypto
-// vocabulary in any rendered string.
+// T028 — Beranda (FR-013): everything from /api/me through homeFromMe (the
+// T008 assembler) — saldo with the FR-003 money rules (rupiah headline "≈"
+// at the locked quote, exact AUSD as the detail row), the active deal card
+// (T018), the reputation row's why (T027), and honest empty states. The
+// quote LOCKS per fetch (display-only, never stored as money) and re-locks
+// when it goes stale or the AUSD balance changes under it.
 import { useCallback, useEffect, useState } from "react";
-import type { ApiClient, MeDto } from "../api/client.js";
-import { formatAusd, formatGrouped, toDisplayUnits } from "../lib/money.js";
+import { homeFromMe } from "../data/assemble.js";
+import type { ApiClient, MeDto } from "../data/bootstrap.js";
+import { formatAusdDetail, formatGrouped, type MoneyLocale, toDisplayUnits } from "../lib/money.js";
 import type { Locale } from "../locales/id.js";
+import { DealCard } from "./beranda/DealCard.js";
+import { ReputationWhy } from "./beranda/ReputationWhy.js";
 
 type Quote = { pair: string; rate: number; scale: number };
 
+const QUOTE_TTL_MS = 5 * 60 * 1_000;
+
 export function Home(props: {
   locale: Locale;
+  lang?: MoneyLocale;
   api: ApiClient;
   onSignOut(): void;
   onNeedVerification(): void;
+  onAjukan?(): void;
 }) {
   const { locale, api } = props;
+  const lang: MoneyLocale = props.lang ?? "id";
   const [me, setMe] = useState<MeDto | null>(null);
   const [quote, setQuote] = useState<Quote | null>(null);
+  const [quoteAt, setQuoteAt] = useState(0);
+  const [quotedFor, setQuotedFor] = useState<number | null>(null);
   const [dripped, setDripped] = useState<boolean | null>(null);
   const [failed, setFailed] = useState(false);
 
   const load = useCallback(async () => {
     try {
-      const [meDto, q, verification] = await Promise.all([
-        api.me(),
-        api.quote("USD_IDR"),
-        api.verificationGet(),
-      ]);
+      const [meDto, verification] = await Promise.all([api.me(), api.verificationGet()]);
       setMe(meDto);
-      setQuote(q);
       setDripped(verification.dripped);
       setFailed(false);
     } catch {
@@ -42,6 +47,29 @@ export function Home(props: {
   useEffect(() => {
     void load();
   }, [load]);
+
+  // The quote lock: fetched once per load window, re-locked when stale or
+  // when the balance it was computed against no longer matches (re-confirm).
+  const balance = me?.balanceAusd ?? null;
+  useEffect(() => {
+    if (balance === null) return;
+    const fresh = quote !== null && Date.now() - quoteAt < QUOTE_TTL_MS;
+    if (fresh && quotedFor === balance) return;
+    let alive = true;
+    api
+      .quote("USD_IDR")
+      .then((q) => {
+        if (alive) {
+          setQuote(q);
+          setQuoteAt(Date.now());
+          setQuotedFor(balance);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [api, balance, quote, quoteAt, quotedFor]);
 
   if (failed) {
     return (
@@ -70,9 +98,10 @@ export function Home(props: {
     );
   }
 
+  const model = homeFromMe(me, Date.now());
   const ready = me.identityBound && dripped;
-  const displayIdr = (base: number) =>
-    `${locale.home.idrPrefix} ${formatGrouped(toDisplayUnits(base, quote))}`;
+  const displayIdr = (base: bigint) =>
+    `${locale.home.idrPrefix} ${formatGrouped(toDisplayUnits(Number(base), quote))}`;
 
   return (
     <main className="mx-auto flex min-h-dvh max-w-md flex-col gap-5 px-6 py-10">
@@ -90,41 +119,27 @@ export function Home(props: {
       <section className="rounded-2xl bg-teal-50 p-5">
         <p className="text-sm text-teal-800">{locale.home.balanceTitle}</p>
         <p className="mt-1 text-4xl font-bold text-teal-900">
-          {locale.home.approx} {displayIdr(me.balanceAusd)}
+          {locale.home.approx} {displayIdr(model.saldoAusd)}
         </p>
-        <p className="mt-1 text-xs text-teal-700">{formatAusd(me.balanceAusd)} AUSD</p>
+        <p className="mt-1 text-xs text-teal-700">{formatAusdDetail(model.saldoAusd, lang)} AUSD</p>
       </section>
 
-      <section className="rounded-2xl border border-slate-200 p-5">
-        <p className="text-sm text-slate-500">{locale.home.scoreTitle}</p>
-        <div className="mt-2 flex items-baseline justify-between">
-          <span className="text-3xl font-bold text-slate-800">{me.profile.score}</span>
-          <span className="text-sm text-slate-500">
-            {locale.home.maxSupportLabel} {locale.home.approx}{" "}
-            {displayIdr(me.profile.maxSupportAusd)}
-          </span>
-        </div>
-      </section>
+      <ReputationWhy reputation={model.reputation} locale={locale} />
 
-      {me.activeIsa ? (
-        <section className="rounded-2xl border border-slate-200 p-5">
-          <p className="text-sm text-slate-500">{locale.home.activeDealTitle}</p>
-          <div className="mt-2 flex items-baseline justify-between">
-            <span className="text-lg font-semibold text-slate-800">
-              {locale.home.remainingLabel} {displayIdr(me.activeIsa.remainingAusd)}
-            </span>
-            <span className="text-sm text-slate-500">{me.activeIsa.progressBps / 100}%</span>
-          </div>
-          <div className="mt-3 h-2 rounded-full bg-slate-100">
-            <div
-              className="h-2 rounded-full bg-teal-600"
-              style={{ width: `${Math.min(100, me.activeIsa.progressBps / 100)}%` }}
-            />
-          </div>
-        </section>
+      {model.deal !== null ? (
+        <DealCard card={model.deal} locale={locale} />
       ) : (
         <section className="rounded-2xl border border-dashed border-slate-300 p-5 text-center text-sm text-slate-500">
           {locale.home.emptyDeal}
+          {props.onAjukan ? (
+            <button
+              type="button"
+              onClick={props.onAjukan}
+              className="mt-3 w-full rounded-xl bg-teal-600 px-6 py-3 text-base font-semibold text-white shadow"
+            >
+              {locale.home.ajukanCta}
+            </button>
+          ) : null}
         </section>
       )}
 

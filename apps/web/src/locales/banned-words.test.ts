@@ -1,8 +1,10 @@
-// T008 (constitution I): EVERY string in both locale catalogs is free of the
+// T008 (constitution I): EVERY string in the locale catalogs is free of the
 // banned words — the catalogs hold the complete set of user-visible strings,
 // so this walk is exhaustive at source level (research D9). The scan grows
 // with every screen task: new copy lands in the catalogs or the test fails.
+// 007 T004: en joins id + ms — judges' strings obey the same vocabulary rule.
 import { describe, expect, it } from "bun:test";
+import { en } from "./en.js";
 import { id } from "./id.js";
 import { ms } from "./ms.js";
 
@@ -40,10 +42,15 @@ describe("banned words in locale catalogs (constitution I)", () => {
     expect(violations(ms, "ms")).toEqual([]);
   });
 
-  it("both catalogs keep the same shape (no locale drops a string)", () => {
+  it("the English catalog carries none (007 T004 — judges obey the same rule)", () => {
+    expect(violations(en, "en")).toEqual([]);
+  });
+
+  it("all three catalogs keep the same shape (no locale drops a string)", () => {
     const pathsOf = (catalog: object, name: string) =>
       [...stringLeaves(catalog, name)].map(([path]) => path.replace(/^[a-z]+\./, ""));
     expect(pathsOf(ms, "ms")).toEqual(pathsOf(id, "id"));
+    expect(pathsOf(en, "en")).toEqual(pathsOf(id, "id"));
   });
 
   it("the scanner itself catches banned copy (a guard against a vacuous test)", () => {

@@ -4,7 +4,7 @@
 // do. Submit → poll the read-backs at a gentle interval with plain-language
 // retry, never a dead end (US1-AC5).
 import { useRef, useState } from "react";
-import type { ApiClient } from "../api/client.js";
+import type { ApiClient } from "../data/bootstrap.js";
 import { demoIdentityHash } from "../lib/identityHash.js";
 import type { Locale } from "../locales/id.js";
 

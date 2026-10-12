@@ -28,7 +28,7 @@ export default defineConfig({
         short_name: "Kite",
         description: "Buat akun, mulai usaha, terima pendapatan — tanpa ribet.",
         lang: "id",
-        theme_color: "#0f766e",
+        theme_color: "#1B4332",
         background_color: "#f8fafc",
         display: "standalone",
         start_url: "/",

@@ -3,6 +3,7 @@
 // no duplicate account); a fresh device starts onboarding; the session proof
 // is established exactly once per ceremony.
 import { describe, expect, it } from "bun:test";
+import { toBytes } from "viem/utils";
 import {
   buildSessionMessage,
   isSessionUsable,
@@ -86,6 +87,9 @@ function fakeSession(): AccountSession {
         r: `0x${"11".repeat(32)}`,
         s: `0x${"22".repeat(32)}`,
       };
+    },
+    async signDigest(_digest: Uint8Array) {
+      return { compact: toBytes(`0x${"11".repeat(64)}`), recovery: 0 };
     },
     end(): void {
       /* mock */

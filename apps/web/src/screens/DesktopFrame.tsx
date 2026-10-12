@@ -26,7 +26,7 @@ function stepLabel(locale: Locale, step: OnboardingStep): string {
   return locale.desktop.stepVerify;
 }
 
-export function DesktopHandoff({ locale, step }: { locale: Locale; step: OnboardingStep }) {
+export function DesktopHandoff({ locale, step }: { locale: Locale; step?: OnboardingStep }) {
   const [qr, setQr] = useState<string | null>(null);
   const [url, setUrl] = useState<string>("");
 
@@ -51,9 +51,11 @@ export function DesktopHandoff({ locale, step }: { locale: Locale; step: Onboard
       <section className="flex h-[844px] w-[390px] flex-col items-center justify-center gap-3 rounded-[2rem] border-8 border-slate-800 bg-white p-6 text-center shadow-xl">
         <p className="text-lg font-semibold text-slate-800">{locale.desktop.title}</p>
         <p className="text-sm text-slate-500">{locale.desktop.body}</p>
-        <p className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
-          {stepLabel(locale, step)}
-        </p>
+        {step !== undefined ? (
+          <p className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
+            {stepLabel(locale, step)}
+          </p>
+        ) : null}
         {qr !== null ? (
           <img
             src={qr}

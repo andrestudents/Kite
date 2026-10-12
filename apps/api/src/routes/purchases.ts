@@ -6,7 +6,12 @@
 import { KiteError, verifyApiKey } from "@kite/core";
 import { Hono } from "hono";
 import type { ApiDeps } from "../app.js";
-import { createPurchase, getPurchase, markPurchasePaid } from "../services/purchase-service.js";
+import {
+  createPurchase,
+  getPurchase,
+  listPurchases,
+  markPurchasePaid,
+} from "../services/purchase-service.js";
 
 const MITA_ID = "mita";
 
@@ -19,6 +24,10 @@ export function purchasesRoutes(deps: ApiDeps): Hono {
     }
     await next();
   });
+
+  // GET /api/channel/purchases — the console's registry read (T033), latest
+  // first, Kite and non-Kite channels alike
+  routes.get("/api/channel/purchases", async (c) => c.json(await listPurchases(deps.db)));
 
   // POST /api/channel/purchases — create intent (idempotent per §7.2 rule 1)
   routes.post("/api/channel/purchases", async (c) => {

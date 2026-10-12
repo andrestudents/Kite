@@ -26,6 +26,43 @@ export function jobClientRef(kind: "bind" | "drip", wallet: string): string {
   return `${kind}-${wallet.toLowerCase()}`;
 }
 
+// T012 payload shapes — the two whitelisted kinds (contracts/jobs-route.md
+// §2). TYPES ONLY: both kinds already exist in 005's relayer (activate-
+// with-permit.ts, transfer-with-authorization.ts); nothing here adds a kind
+// or changes the queue. uint256 fields ride as decimal strings (the wire
+// rule, parsed back to BigInt at the relayer's parse.ts edge).
+
+export interface ActivateWithPermitPayload {
+  isaId: string;
+  deadline: string;
+  v: number;
+  r: string;
+  s: string;
+}
+
+export interface TransferWithAuthorizationPayload {
+  from: string;
+  to: string;
+  valueAusd: string;
+  validAfter: string;
+  validBefore: string;
+  nonce: string;
+  v: number;
+  r: string;
+  s: string;
+}
+
+/** T012 deterministic clientRefs (jobs-route.md §3.5): `activate-<isaId>` /
+ *  `transfer-<from>-<nonce>` — replays dedupe to one job. from/nonce are
+ *  lowercased so mixed-case hex can never fork the ref. */
+export function activateJobClientRef(isaId: string): string {
+  return `activate-${isaId}`;
+}
+
+export function transferJobClientRef(from: string, nonce: string): string {
+  return `transfer-${from.toLowerCase()}-${nonce.toLowerCase()}`;
+}
+
 const TIMEOUT_MS = 5_000;
 
 export function makeRelayerClient(

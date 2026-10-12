@@ -61,11 +61,81 @@ export interface QuoteDto {
   scale: number;
 }
 
+/** GET /api/p/:id — 005's frozen public shape (structurally PII-free). */
+export interface ProfileEventDto {
+  grossAusd: number;
+  toBackerAusd: number;
+  toSeekerAusd: number;
+  remainingAusd: number;
+  txHash: string;
+  blockTime: string;
+}
+
+export interface ProfileDealDto {
+  isaId: number;
+  principalAusd: number;
+  shareBps: number;
+  capAusd: number;
+  totalDivertedAusd: number;
+  /** The WIRE spells it as a name (005's ISA_STATUS_BY_CODE: "drafted",
+   *  "active", …) — the machine value is restored in data/assemble.ts. */
+  status: string;
+  events: ProfileEventDto[];
+}
+
+export interface ProfileDto {
+  id: string;
+  wallet: string;
+  reputation: {
+    score: number;
+    completedDeals: number;
+    qualEvents: number;
+  };
+  deals: ProfileDealDto[];
+  explorerBaseUrl: string;
+}
+
+/** POST /api/me/jobs — 202's receipt (jobs-route.md: jobId as a string). */
+export interface JobReceiptDto {
+  jobId: string;
+  clientRef: string;
+}
+
+/** The activation branch's wire shape — uint256 fields are DECIMAL STRINGS
+ *  (jobs-route.md §2); v is the plain 27|28 integer; r/s are 0x-hex 32-byte. */
+export interface ActivationJobBody {
+  kind: "activate_with_permit";
+  isaId: string;
+  deadline: string;
+  v: number;
+  r: string;
+  s: string;
+}
+
+/** The gasless-send branch (T031): EIP-3009 TransferWithAuthorization, same
+ *  decimal-string + EIP-55 + 0x-hex-32 discipline as the activation body. */
+export interface TransferJobBody {
+  kind: "transfer_with_authorization";
+  from: string;
+  to: string;
+  valueAusd: string;
+  validAfter: string;
+  validBefore: string;
+  nonce: string;
+  v: number;
+  r: string;
+  s: string;
+}
+
 export interface ApiClient {
   me(): Promise<MeDto>;
   verificationGet(): Promise<VerificationStatusDto>;
   verificationPost(identityHash: string): Promise<VerificationTriggerDto>;
   quote(pair: "USD_IDR" | "USD_MYR"): Promise<QuoteDto>;
+  /** Public profile (no session needed — never auth-gated, FR-019). */
+  profile(id: string): Promise<ProfileDto>;
+  /** The ONE 007 surface — a whitelisted relayer job (jobs-route.md). */
+  postJob(body: ActivationJobBody | TransferJobBody): Promise<JobReceiptDto>;
 }
 
 export interface ApiClientOptions {
@@ -87,10 +157,14 @@ export function makeApiClient(options: ApiClientOptions): ApiClient {
   const doFetch = options.fetchImpl ?? fetch;
   const storage = options.storage ?? defaultStorage();
 
-  async function apiFetch(path: string, init: RequestInit = {}): Promise<unknown> {
+  async function apiFetch(
+    path: string,
+    init: RequestInit = {},
+    withSession = true,
+  ): Promise<unknown> {
     const headers = new Headers(init.headers);
     headers.set("accept", "application/json");
-    const blob = storage ? loadSessionBlob(storage) : null;
+    const blob = withSession && storage ? loadSessionBlob(storage) : null;
     if (blob) {
       headers.set("x-kite-session", headerFromBlob(blob));
     }
@@ -132,5 +206,12 @@ export function makeApiClient(options: ApiClientOptions): ApiClient {
         body: JSON.stringify({ identityHash }),
       }) as Promise<VerificationTriggerDto>,
     quote: (pair) => apiFetch(`/api/quote?pair=${encodeURIComponent(pair)}`) as Promise<QuoteDto>,
+    profile: (id) => apiFetch(`/api/p/${encodeURIComponent(id)}`, {}, false) as Promise<ProfileDto>,
+    postJob: (body) =>
+      apiFetch("/api/me/jobs", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(body),
+      }) as Promise<JobReceiptDto>,
   };
 }

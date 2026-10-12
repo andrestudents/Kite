@@ -158,3 +158,29 @@ describe("api client (T013)", () => {
     }
   });
 });
+
+describe("profile() — 007 T010, the public surface", () => {
+  it("GETs /api/p/:id WITHOUT a session header (public, FR-019)", async () => {
+    const captured: Captured[] = [];
+    const client = clientWith(captured, 200, {
+      id: "kite-demo-hash",
+      wallet: BLOB.wallet,
+      reputation: { score: 58, completedDeals: 2, qualEvents: 11 },
+      deals: [],
+      explorerBaseUrl: "https://testnet.monadscan.com",
+    });
+    const dto = await client.profile("kite-demo-hash");
+    const call = only(captured);
+    expect(call.url).toBe("https://api.example.test/api/p/kite-demo-hash");
+    expect((call.init.headers as Headers).get("x-kite-session")).toBeNull();
+    expect(dto.reputation.score).toBe(58);
+    expect(dto.explorerBaseUrl).toBe("https://testnet.monadscan.com");
+  });
+
+  it("the id is URL-encoded (any caller-supplied identifier is safe)", async () => {
+    const captured: Captured[] = [];
+    const client = clientWith(captured, 200, { deals: [] });
+    await client.profile("a b/c");
+    expect(only(captured).url).toBe("https://api.example.test/api/p/a%20b%2Fc");
+  });
+});

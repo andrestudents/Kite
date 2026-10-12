@@ -47,3 +47,7 @@ phone. No desktop path attempts the biometric ceremony.
 - Onchain state is the only authority for scores, limits, and deal state. The
   API and the app are projections you can re-derive from the contract addresses
   above.
+- Labels are device-local: if you back someone (Dukung), the nickname and
+  purpose you save live only in your device's storage — switch devices and the
+  labels are gone, while the support itself, its balances, and its history stay
+  on-chain and re-derive from the addresses above.

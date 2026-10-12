@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@category-labs/mera": "0.2.0",
+    "@kite/contracts": "workspace:*",
     "@scure/bip32": "2.4.0",
     "@scure/bip39": "2.4.0",
     "qrcode": "1.5.4",

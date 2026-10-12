@@ -49,6 +49,11 @@ export function wrapMeraSession(meraSession: MeraSession, address: `0x${string}`
       const sig = await sessionSignDigest(meraSession, digest);
       return splitCompactSignature(sig.compact, sig.recovery);
     },
+    async signDigest(digest: Uint8Array) {
+      // The raw primitive beneath signIntent — tx (T013) and typed-data
+      // (T016 permit) digests sign with the SAME in-session call, no prompt.
+      return sessionSignDigest(meraSession, digest);
+    },
     end() {
       meraSession.end(); // zeroes the session-owned key copy; later signing throws
     },

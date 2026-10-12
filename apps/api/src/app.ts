@@ -7,6 +7,7 @@ import type { AnyDb } from "@kite/core/db";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { healthRoutes } from "./routes/health.js";
+import { jobsMeRoutes } from "./routes/jobs-me.js";
 import { meRoutes } from "./routes/me.js";
 import { profileRoutes } from "./routes/profile.js";
 import { purchasesRoutes } from "./routes/purchases.js";
@@ -36,6 +37,13 @@ const STATUS_BY_CODE: Record<string, 400 | 401 | 404 | 409 | 422 | 503> = {
   session_expired: 401,
   relayer_unreachable: 503,
   identity_hash_invalid: 422,
+  // T012 — jobs-route.md §4 codes.
+  job_kind_invalid: 422,
+  job_payload_invalid: 422,
+  sender_mismatch: 422,
+  cap_exceeded: 422,
+  isa_not_draftable: 409,
+  offer_below_principal: 409,
   purchase_not_found: 404,
   profile_not_found: 404,
   job_not_found: 404,
@@ -80,5 +88,10 @@ function mountRoutes(app: Hono, deps: ApiDeps): void {
   app.route(
     "/",
     verificationRoutes({ ...deps, relayer: deps.relayer ?? makeUnreachableRelayerClient() }),
+  );
+  // T012 — the ONE 007 surface, same INTERNAL-keyed relayer client as 006.
+  app.route(
+    "/",
+    jobsMeRoutes({ ...deps, relayer: deps.relayer ?? makeUnreachableRelayerClient() }),
   );
 }

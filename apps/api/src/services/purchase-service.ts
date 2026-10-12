@@ -296,4 +296,12 @@ export async function transitionsOf(db: AnyDb, id: string) {
     .orderBy(desc(purchaseTransitions.id));
 }
 
+/** T033 — the console's registry read (MITA-keyed route): the latest rows,
+ *  Kite and non-Kite channels alike, newest first. Read-only — the registry
+ *  stays forward-only. */
+export async function listPurchases(db: AnyDb, limit = 50): Promise<PurchaseDto[]> {
+  const rows = await db.select().from(purchases).orderBy(desc(purchases.createdAt)).limit(limit);
+  return rows.map(toPurchaseDto);
+}
+
 export type { NewPurchase };

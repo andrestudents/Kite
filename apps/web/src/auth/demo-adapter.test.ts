@@ -34,6 +34,9 @@ function primarySpy(): AuthAdapter & { created: number } {
         async signIntent(): Promise<{ v: number; r: `0x${string}`; s: `0x${string}` }> {
           throw new Error("unused");
         },
+        async signDigest(): Promise<{ compact: Uint8Array; recovery: number }> {
+          throw new Error("unused");
+        },
         end(): void {},
       };
       return { session, credential: { credentialId: "cred-primary" } };
