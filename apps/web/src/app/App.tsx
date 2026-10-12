@@ -12,7 +12,7 @@ import { makeAdapterForDevice } from "../auth/demo-adapter.js";
 import { clearSessionBlob, loadSessionBlob } from "../auth/session.js";
 import type { AccountSession, AuthAdapter } from "../auth/types.js";
 import { momentFromProfile } from "../data/assemble.js";
-import { makeApiClient } from "../data/bootstrap.js";
+import { makeApiClient, resolveApiBase } from "../data/bootstrap.js";
 import { chainReader, type HexAddress } from "../data/draft.js";
 import { type MitraPurchaseRow, makeMitraClient } from "../data/mitra.js";
 import type { MomentModel } from "../data/models.js";
@@ -47,7 +47,9 @@ import { LANG_KEY, loadLang, nextLang, parseAppPath } from "./shell.js";
  *  it (T004), so the app derives it from wherever it is actually served. */
 const RP_ID = window.location.hostname;
 const RP = { id: RP_ID, name: idLocale.appName };
-const API_URL = import.meta.env.VITE_API_URL ?? "";
+/** Relative /api/* in production (same-origin rewrite); an absolute base —
+ *  a local .env, a stale dashboard var — is honored in dev builds ONLY. */
+const API_URL = resolveApiBase(import.meta.env.VITE_API_URL, import.meta.env.DEV);
 const ORIGIN = window.location.origin;
 /** The MITA DEMO key by NAME (research D8): operator env only, never the
  *  INTERNAL key, never logged, never echoed. Empty = honest registry 401s. */

@@ -20,6 +20,7 @@ import {
   profileFromDto,
   statusFromName,
 } from "./assemble.js";
+import { resolveApiBase } from "./bootstrap.js";
 import { loadSnapshot, saveSnapshot } from "./snapshots.js";
 
 // ── 1. the structural seam ─────────────────────────────────────────────────
@@ -245,5 +246,18 @@ describe("snapshots (T008, D5)", () => {
     storage.setItem("kite.v1.snapshots.detail", JSON.stringify({ fetchedAt: 1 }));
     expect(loadSnapshot(storage, "detail")).toBeNull();
     expect(loadSnapshot(storage, "missing")).toBeNull();
+  });
+});
+
+describe("resolveApiBase (dev-only absolute bases)", () => {
+  it("production builds NEVER get an absolute base — configured or not", () => {
+    expect(resolveApiBase("http://localhost:3000", false)).toBe("");
+    expect(resolveApiBase("https://kite-api.example.com", false)).toBe("");
+    expect(resolveApiBase(undefined, false)).toBe("");
+  });
+  it("dev builds may aim at the configured base, else stay relative", () => {
+    expect(resolveApiBase("http://localhost:3000", true)).toBe("http://localhost:3000");
+    expect(resolveApiBase(undefined, true)).toBe("");
+    expect(resolveApiBase("", true)).toBe("");
   });
 });
