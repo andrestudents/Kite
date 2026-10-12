@@ -296,7 +296,7 @@ recon_daily(day PK, backend_total, chain_total, status[ok|mismatch])
 
 ---
 
-## 8. Frontend (Next.js, mobile-first PWA)
+## 8. Frontend (mobile-first PWA)
 
 | Screen | Contents |
 |---|---|
@@ -313,7 +313,7 @@ recon_daily(day PK, backend_total, chain_total, status[ok|mismatch])
 | `/mitra` (desktop, labeled "Demo Tool") | Today's purchases (Kite + non-Kite rows), [Bayar] → split preview → posts to WF-1 |
 | Desktop fallback | Phone-frame preview + QR ("best on mobile") for judges on laptops |
 
-Stack: Next.js (App Router), `@category-labs/mera`, wagmi/viem, Tailwind. Deployed on Vercel.
+Stack: Vite + React PWA, `@category-labs/mera`, viem, Tailwind. Deployed on Vercel (static build). *(Amended F1, 2026-10-11: supersedes the original "Next.js (App Router)" line — decided in 006's plan phase: pure client-side auth/crypto, no SSR needs, apps/api owns all server surfaces. Monorepo layout otherwise per §10.)*
 
 ---
 
@@ -340,7 +340,7 @@ Bun + Turborepo workspaces, Biome at the root. Foundry for contracts. Agents wor
 
 ```
 apps/
-  web/           Next.js PWA: all screens, /p/:id, /mitra, desktop fallback
+  web/           Vite + React PWA: all screens, /p/:id, /mitra, desktop fallback (stack per §8, F1)
   api/           HTTP API, one answer per screen (indexer + contract + DB) — fx lives here until it needs its own process
   relayer/       tx queue: activate, sends, bindIdentity, drip
   indexer/       Envio: config.yaml, schema.graphql, handlers, health script
