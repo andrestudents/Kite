@@ -522,8 +522,27 @@ export function App() {
     }
     if (tab === "kirim") {
       // Reachable only through onNavigate's ceremony gate; the guard is for
-      // the type, not a state the shell can be in.
-      if (session === null) return null;
+      // the type, not a state the shell can be in. Even so, NO cell renders
+      // nothing — a sessionless kirim shows the honest sign-in face (device
+      // gate: a tab that renders null is a dead end in primary navigation).
+      if (session === null) {
+        return (
+          <main className="mx-auto flex min-h-dvh max-w-md flex-col items-center justify-center gap-4 px-6 text-center">
+            <p className="text-slate-600">{locale.session.expired}</p>
+            <button
+              type="button"
+              onClick={() => {
+                void requireVerified().then((ok) => {
+                  if (ok) setTab("kirim");
+                });
+              }}
+              className="rounded-xl bg-teal-600 px-6 py-3 font-semibold text-white shadow"
+            >
+              {locale.session.signIn}
+            </button>
+          </main>
+        );
+      }
       return (
         <PhoneFrame locale={locale}>
           <Kirim

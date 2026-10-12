@@ -158,7 +158,11 @@ export const ms: Locale = {
   dukung: {
     title: "Dukung",
     listTitle: "Orang yang Anda Dukung",
-    listEmpty: "Belum ada yang anda dukung. Imbas kod terima seseorang untuk bermula.",
+    listEmpty: "Belum ada yang anda dukung. Mulai daripada alamat atau pautan kod terima mereka.",
+    entryTitle: "Dukung seseorang",
+    entryHint: "Tampal alamat atau pautan kod terima (contoh: /p/0x…)",
+    checkError: "Semakan gagal. Cuba lagi ya.",
+    activationFailed: "Pengaktifan belum masuk. Cuba lagi ya.",
     totalReceived: "Jumlah diterima",
     cta: "Dukung",
     lagi: "Musim barunya siap. Dukung lagi?",

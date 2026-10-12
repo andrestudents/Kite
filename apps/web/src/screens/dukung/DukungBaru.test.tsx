@@ -21,6 +21,7 @@ import type { ApiClient } from "../../data/bootstrap.js";
 import type { ChainReader } from "../../data/draft.js";
 import {
   buildActivationWire,
+  CHECK_TIMEOUT_MS,
   checkDraftable,
   DEFAULTS,
   makeDefaultPermitSigner,
@@ -30,6 +31,7 @@ import {
   permitDigest,
   permitDomain,
   pollActive,
+  runLiveCheck,
   splitSig65,
 } from "../../data/dukung.js";
 import { id } from "../../locales/id.js";
@@ -178,6 +180,43 @@ describe("checkDraftable (T016, FR-008)", () => {
   });
 });
 
+// Finding A's invariant: EVERY check resolves within its bound — ok,
+// over-limit, not-draftable, or the honest `error` verdict. A hung or failed
+// read can never hold "Memeriksa…" open.
+describe("runLiveCheck — the resolution bound (Finding A)", () => {
+  it("the bound is the 5-second invariant", () => {
+    expect(CHECK_TIMEOUT_MS).toBe(5_000);
+  });
+
+  it("a hung read resolves `error` within the bound — never an infinite check", async () => {
+    const hung = makeReader({ status: 1 });
+    hung.isaOf = () => new Promise<never>(() => {}); // the RPC black hole
+    const t0 = Date.now();
+    const result = await runLiveCheck(hung, 9, PRINCIPAL, 25);
+    expect(result.state).toBe("error");
+    expect(Date.now() - t0).toBeLessThan(1_000);
+  });
+
+  it("a rejecting read resolves `error` — the runner never throws", async () => {
+    const broken = makeReader({ status: 1 });
+    broken.isaOf = async () => {
+      throw new Error("rpc down");
+    };
+    const result = await runLiveCheck(broken, 9, PRINCIPAL, 25);
+    expect(result.state).toBe("error");
+  });
+
+  it("a live ok passes straight through under the bound", async () => {
+    const result = await runLiveCheck(
+      makeReader({ status: 1, offer: PRINCIPAL }),
+      9,
+      PRINCIPAL,
+      1_000,
+    );
+    expect(result.state).toBe("ok");
+  });
+});
+
 describe("the read-back poll (T016)", () => {
   it("settles on the contract's Active; times out honestly otherwise", async () => {
     let calls = 0;
@@ -261,5 +300,25 @@ describe("the Dukung Baru screen (T016)", () => {
       />,
     );
     expect(html).toContain("Siapa yang ingin didukung?");
+  });
+
+  it("the share-link resume pre-fills the seeker on first paint (Finding A's path)", () => {
+    const seeker = privateKeyToAccount(generatePrivateKey()).address;
+    const html = renderToString(
+      <DukungBaru
+        locale={id}
+        session={sessionFor(generatePrivateKey())}
+        api={{} as unknown as ApiClient}
+        storage={new MemStorage()}
+        initialSeeker={seeker}
+        initialPurpose="bibit padi"
+        onDone={() => {}}
+        onCancel={() => {}}
+      />,
+    );
+    expect(html).toContain("Siapa yang ingin didukung?");
+    expect(html).toContain(`value="${seeker}"`);
+    // the purpose rides state from step 2 onward — it never leads step 1
+    expect(html).not.toContain("bibit padi");
   });
 });

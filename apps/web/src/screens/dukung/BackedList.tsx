@@ -19,6 +19,7 @@ import { formatAusdDetail, type MoneyLocale } from "../../lib/money.js";
 import type { Locale } from "../../locales/id.js";
 import { pctLabel } from "../beranda/Ajukan.js";
 import { starsLabel, statusLabel } from "../profile/PublicProfile.js";
+import { DukungEntry } from "./DukungEntry.js";
 
 /** One reconciled card: chain state + the device's warmth overlay. */
 export interface BackedCard {
@@ -262,9 +263,12 @@ export function BackedList(props: {
   }
 
   if (cards.length === 0) {
+    // The entry face (FR-007 step 1): an empty tab is a way IN, never a dead
+    // end — the form takes the address or the pasted receive-code link.
     return (
-      <main className="mx-auto flex min-h-dvh max-w-md items-center justify-center px-6">
-        <p className="text-slate-500">{locale.dukung.listEmpty}</p>
+      <main className="mx-auto flex min-h-dvh max-w-md flex-col gap-4 px-6 py-10">
+        <h1 className="text-2xl font-bold text-teal-700">{locale.dukung.listTitle}</h1>
+        <DukungEntry locale={locale} onDukung={props.onDukung} />
       </main>
     );
   }

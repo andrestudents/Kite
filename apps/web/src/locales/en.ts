@@ -159,7 +159,11 @@ export const en: Locale = {
   dukung: {
     title: "Support",
     listTitle: "People you support",
-    listEmpty: "Nobody yet. Scan someone's receive code to start.",
+    listEmpty: "Nobody yet. Start from their address or receive-code link.",
+    entryTitle: "Support someone",
+    entryHint: "Paste an address or receive-code link (e.g. /p/0x…)",
+    checkError: "The check failed — please try again.",
+    activationFailed: "Activation hasn't landed yet — please try again.",
     totalReceived: "Total received",
     cta: "Support",
     lagi: "A new season is ready. Support again?",

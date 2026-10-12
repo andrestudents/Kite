@@ -165,7 +165,11 @@ export const id = {
   dukung: {
     title: "Dukung",
     listTitle: "Orang yang Kamu Dukung",
-    listEmpty: "Belum ada yang kamu dukung. Pindai kode terima seseorang untuk mulai.",
+    listEmpty: "Belum ada yang kamu dukung. Mulai dari alamat atau tautan kode terima mereka.",
+    entryTitle: "Dukung seseorang",
+    entryHint: "Tempel alamat atau tautan kode terima (contoh: /p/0x…)",
+    checkError: "Pemeriksaan gagal. Coba lagi ya.",
+    activationFailed: "Aktivasi belum masuk. Coba lagi ya.",
     totalReceived: "Total diterima",
     cta: "Dukung",
     lagi: "Musim barunya siap. Dukung lagi?",

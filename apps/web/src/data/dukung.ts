@@ -110,13 +110,45 @@ export function buildActivationWire(
 }
 
 // ── FR-008's live check — at step-2 entry, step-3 entry, AND pre-signature ─
+//
+// Every check RESOLVES within CHECK_TIMEOUT_MS (device-gate rule: a check
+// stuck on "Memeriksa…" with zero reads dispatched is the bug class — the
+// runner never rejects and never hangs; a failed or slow read is the honest
+// "error" verdict with a retry, never an infinite spinner).
 
-export type DraftState = "ok" | "over-limit" | "not-draftable";
+export type DraftState = "ok" | "over-limit" | "not-draftable" | "error";
 
 export interface CheckResult {
   state: DraftState;
   /** The live offer behind an over-limit verdict — the inline copy states it. */
   offerAusd: bigint;
+}
+
+export const CHECK_TIMEOUT_MS = 5_000;
+
+/** checkDraftable under the resolution bound. Never throws, never hangs: a
+ *  timeout or a failed read resolves `error` (offer 0 — there is no live
+ *  offer to state). Callers treat `error` as UX sugar, never a submission
+ *  block — the contract and the relayer's 409s are the enforcement. */
+export async function runLiveCheck(
+  reader: ChainReader,
+  isaId: number,
+  principalAusd: bigint,
+  timeoutMs: number = CHECK_TIMEOUT_MS,
+): Promise<CheckResult> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      checkDraftable(reader, isaId, principalAusd),
+      new Promise<CheckResult>((resolve) => {
+        timer = setTimeout(() => resolve({ state: "error", offerAusd: 0n }), timeoutMs);
+      }),
+    ]);
+  } catch {
+    return { state: "error", offerAusd: 0n };
+  } finally {
+    if (timer !== undefined) clearTimeout(timer);
+  }
 }
 
 export async function checkDraftable(

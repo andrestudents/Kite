@@ -11,7 +11,7 @@
 // submitted-then-failed state. The confirm button latches after the first
 // tap; the deterministic clientRef makes a retry safe. No wire imports —
 // data/ only.
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { StorageLike } from "../../auth/session.js";
 import type { AccountSession } from "../../auth/types.js";
 import { profileFromDto } from "../../data/assemble.js";
@@ -21,12 +21,12 @@ import { type ChainReader, chainReader, parseBackerInput } from "../../data/draf
 import type { ActivationWire, CheckResult, PermitSigner } from "../../data/dukung.js";
 import {
   buildActivationWire,
-  checkDraftable,
   DEFAULTS,
   makeDefaultPermitSigner,
   PERMIT_TTL_SEC,
   permitDomain,
   pollActive,
+  runLiveCheck,
 } from "../../data/dukung.js";
 import { formatAusdDetail, type MoneyLocale } from "../../lib/money.js";
 import type { Locale } from "../../locales/id.js";
@@ -65,18 +65,30 @@ export function DukungBaru(props: {
   const [check, setCheck] = useState<CheckResult | null>(null);
   const [whoError, setWhoError] = useState(false);
   const [latched, setLatched] = useState(false);
+  const [actFailed, setActFailed] = useState(false);
 
+  /** The live check RESOLVES on every path within CHECK_TIMEOUT_MS — ok,
+   *  over-limit, not-draftable, or the honest `error` verdict with a retry.
+   *  A check that never resolves (or never dispatches) is the bug class this
+   *  was rebuilt against: "Memeriksa…" must always be a moment, never a
+   *  destination. */
   const liveCheck = useCallback(async (): Promise<CheckResult | null> => {
     if (isaId === null || principal === null) return null;
     setCheck(null);
-    try {
-      const result = await checkDraftable(reader, isaId, principal);
-      setCheck(result);
-      return result;
-    } catch {
-      return null;
-    }
+    const result = await runLiveCheck(reader, isaId, principal);
+    setCheck(result);
+    return result;
   }, [reader, isaId, principal]);
+
+  // FR-008, checkpoint 1 — step-2 ENTRY dispatches the check. The dispatch
+  // is unconditional: the step's continue button reads `check` to decide
+  // whether it may advance, so a check that only that button could start is
+  // a deadlock (button disabled ⇒ no read ⇒ "Memeriksa…" forever). Re-entering
+  // the step (a bounce from the confirmation) re-checks live — never cached.
+  useEffect(() => {
+    if (step !== "amount") return;
+    void liveCheck();
+  }, [step, liveCheck]);
 
   /** Step 1 → 2: the profile must carry an open (Drafted) request. */
   async function openSeeker(): Promise<void> {
@@ -108,9 +120,12 @@ export function DukungBaru(props: {
     if (latched || isaId === null || principal === null) return;
     setLatched(true); // the button never fires twice — retry rides the clientRef
     try {
-      // FR-008, checkpoint 3: immediately before any signature.
+      // FR-008, checkpoint 3: immediately before any signature. A real chain
+      // verdict (over-limit / not-draftable) bounces with its inline reason;
+      // a FAILED READ never blocks the submission — the client check is UX
+      // sugar and the contract + the relayer's 409s are the enforcement.
       const final = await liveCheck();
-      if (final === null || final.state !== "ok") {
+      if (final !== null && (final.state === "over-limit" || final.state === "not-draftable")) {
         setLatched(false);
         setStep("amount");
         return;
@@ -134,6 +149,7 @@ export function DukungBaru(props: {
       const active = await pollActive(reader, isaId, 30_000);
       if (!active) {
         setLatched(false);
+        setActFailed(true);
         setStep("agree");
         return;
       }
@@ -147,6 +163,7 @@ export function DukungBaru(props: {
       setStep("done");
     } catch {
       setLatched(false);
+      setActFailed(true);
       setStep("agree");
     }
   }
@@ -226,6 +243,18 @@ export function DukungBaru(props: {
         {check !== null && check.state === "not-draftable" ? (
           <p className="text-sm text-red-600">{locale.dukung.notDraftable}</p>
         ) : null}
+        {check !== null && check.state === "error" ? (
+          <>
+            <p className="text-sm text-red-600">{locale.dukung.checkError}</p>
+            <button
+              type="button"
+              onClick={() => void liveCheck()}
+              className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700"
+            >
+              {locale.common.retry}
+            </button>
+          </>
+        ) : null}
         {check === null ? <p className="text-sm text-slate-500">{locale.dukung.checking}</p> : null}
         <button
           type="button"
@@ -273,6 +302,11 @@ export function DukungBaru(props: {
           {locale.dealCard.endLabel} {locale.dealCard.endByCap}
         </p>
         <p className="mt-1 text-slate-800">{locale.dealCard.failedHarvest}</p>
+        {actFailed ? (
+          <p className="mt-2 text-sm font-semibold text-red-600">
+            {locale.dukung.activationFailed}
+          </p>
+        ) : null}
         {purpose.trim() !== "" ? (
           <p className="mt-2">
             {locale.dealCard.purposeLabel}: {purpose}
