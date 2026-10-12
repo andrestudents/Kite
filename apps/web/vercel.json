@@ -1,6 +1,6 @@
 {
   "installCommand": "npm i -g bun@1.4.2 && cd ../.. && bun install --frozen-lockfile",
-  "buildCommand": "cd ../.. && bunx turbo run build --filter=@kite/web && bash ../../scripts/gates/spa-fallback.sh",
+  "buildCommand": "cd ../.. && bunx turbo run build --filter=@kite/web && bash scripts/gates/spa-fallback.sh",
   "outputDirectory": "dist",
   "rewrites": [
     {
