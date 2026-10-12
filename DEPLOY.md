@@ -5,6 +5,12 @@ defined by [`render.yaml`](render.yaml) at the repo root. Nothing routes through
 a laptop tunnel; the Vercel web app proxies `/api/*` to `kite-api` (same-origin —
 no CORS, no `VITE_API_URL`).
 
+**Live URLs (2026-10-12)**: `https://kite-api-ghoi.onrender.com` and
+`https://kite-relayer.onrender.com`. Render suffixes a subdomain when the bare
+name is already taken on onrender.com — `kite-api` was, hence `-ghoi`; the
+relayer kept its bare name. Use the `-ghoi` host everywhere `kite-api` appears
+below (`API_ORIGIN`, UptimeRobot, smoke curls).
+
 Primary: **Render free** (below). Fallback: **EC2** (end of this file) — only
 if the free tier misbehaves during judging week.
 
@@ -66,7 +72,7 @@ and a cold boot takes ~a minute — dead air mid-demo. Render's own
 `healthCheckPath` does NOT count as traffic. Two monitors, before judging week:
 
 1. <https://uptimerobot.com> → Add New Monitor → **HTTPS**,
-   URL `https://kite-api.onrender.com/api/health`, interval **5 minutes**.
+   URL `https://kite-api-ghoi.onrender.com/api/health`, interval **5 minutes**.
 2. Same for `https://kite-relayer.onrender.com/health`.
 
 If a monitor ever reports "down" while the service is merely spun down, that's
@@ -75,7 +81,7 @@ expected on the first ping after a gap — the request still wakes it.
 ## Vercel side (web)
 
 `apps/web/vercel.json` rewrites `/api/:path*` to `${API_ORIGIN}/api/:path*`.
-Set the project env var `API_ORIGIN=https://kite-api.onrender.com` **BEFORE the
+Set the project env var `API_ORIGIN=https://kite-api-ghoi.onrender.com` **BEFORE the
 next Vercel deploy** (unset, the rewrite destination collapses and `/api`
 breaks). Leave `VITE_API_URL` unset — the rewrite keeps the browser
 same-origin.
@@ -86,7 +92,7 @@ same-origin.
 curl https://kite-relayer.onrender.com/health      # {"status":"ok"} — liveness only (first hit may take ~1 min: cold boot)
 curl -s https://kite-relayer.onrender.com/api/jobs -X POST \
   -H 'content-type: application/json' -d '{}'       # 401 — the key wall is up
-curl https://kite-api.onrender.com/api/health       # probes db + chain
+curl https://kite-api-ghoi.onrender.com/api/health  # probes db + chain
 curl https://kite-zeta.vercel.app/api/health        # same JSON through the Vercel rewrite
 ```
 
