@@ -133,4 +133,21 @@ describe("processNewRegistryLogs (T019)", () => {
     const rows = await db.select().from(channels).where(eq(channels.id, 1));
     expect(rows[0]).toMatchObject({ name: "koperasi", active: true });
   });
+
+  it("an expired boot deadline walks NOTHING — the port must never be held hostage", async () => {
+    let isaOfCalls = 0;
+    const result = await processNewRegistryLogs(
+      db,
+      chainWithDraft(async () => {
+        isaOfCalls++;
+        return isaOnchain(1);
+      }),
+      { deadlineMs: Date.now() - 1 }, // already spent
+    );
+    expect(result.isas).toBe(0);
+    expect(isaOfCalls).toBe(0);
+    // The checkpoint stayed at its seed — the next pass resumes from there.
+    const cp = await db.select().from(jobState).where(eq(jobState.key, REGISTRY_BLOCK_KEY));
+    expect(cp[0]?.value).toBe("10");
+  });
 });

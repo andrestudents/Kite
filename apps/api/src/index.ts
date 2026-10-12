@@ -21,10 +21,15 @@ const deps = {
 // T019 — registry catch-up BEFORE serving: a cold boot (Render spin-up) must
 // answer the share link correctly on its FIRST request — a drafted ISA that
 // landed while asleep has to be in the isas cache by then, or /api/p answers
-// deals:[] and the [Dukung] CTA has nothing to render (FR-019). A failed pass
-// logs and serves anyway; the interval below keeps retrying.
+// deals:[] and the [Dukung] CTA has nothing to render (FR-019). BOUNDED at
+// 30s: a checkpoint far behind head on a small-chunk RPC (the public RPC caps
+// eth_getLogs at 100 blocks) must never hold the port hostage — the pass
+// stops, the interval below grinds the rest while serving. A failed pass
+// logs and serves anyway.
 try {
-  const boot = await processNewRegistryLogs(deps.db, deps.chain);
+  const boot = await processNewRegistryLogs(deps.db, deps.chain, {
+    deadlineMs: Date.now() + 30_000,
+  });
   console.log(
     `[watch-registry] boot catch-up: channels=${boot.channels} isas=${boot.isas} ` +
       `blocks=${boot.fromBlock}-${boot.toBlock}`,

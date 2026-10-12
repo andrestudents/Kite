@@ -60,10 +60,15 @@ async function checkpointOf(db: AnyDb, chain: ChainClient): Promise<bigint> {
   return seeded;
 }
 
-/** One observation pass: checkpoint → head. Idempotent end to end. */
+/** One observation pass: checkpoint → head. Idempotent end to end. An
+ *  optional `deadlineMs` bounds the walk (the BOOT pass uses it): a
+ *  checkpoint stuck far behind head on a small-chunk RPC must never hold the
+ *  server's port hostage — the pass stops, the committed checkpoint says how
+ *  far it got, and the next interval pass resumes. */
 export async function processNewRegistryLogs(
   db: AnyDb,
   chain: ChainClient,
+  opts: { deadlineMs?: number } = {},
 ): Promise<RegistryPassResult> {
   let checkpoint = await checkpointOf(db, chain);
   const passStart = checkpoint;
@@ -76,6 +81,9 @@ export async function processNewRegistryLogs(
   let isaCount = 0;
 
   while (checkpoint < head) {
+    if (opts.deadlineMs !== undefined && Date.now() > opts.deadlineMs) {
+      break; // out of budget — resume from the committed checkpoint next pass
+    }
     const end = checkpoint + range > head ? head : checkpoint + range;
 
     // Chain reads happen BEFORE the write transaction — no RPC inside a tx.
