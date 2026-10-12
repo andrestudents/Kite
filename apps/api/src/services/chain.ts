@@ -7,7 +7,7 @@
 
 import { abis, KITE_DEPLOYMENT } from "@kite/contracts";
 import { rpcUrl } from "@kite/core";
-import { type Abi, createPublicClient, getAbiItem, http, type PublicClient } from "viem";
+import { type Abi, createPublicClient, fallback, getAbiItem, http, type PublicClient } from "viem";
 import { monadTestnet } from "viem/chains";
 
 export const PROXY = KITE_DEPLOYMENT.kiteCore;
@@ -19,19 +19,63 @@ export const CORE_ABI = abis.kitecore as unknown as Abi;
 const AUSD_ABI = abis.mockausd as unknown as Abi;
 const INCOME_SETTLED = getAbiItem({ abi: CORE_ABI, name: "IncomeSettled" });
 const CHANNEL_REGISTERED = getAbiItem({ abi: CORE_ABI, name: "ChannelRegistered" });
-// eth_getLogs block-range caps differ per provider (public Monad RPC: 100
-// blocks; Alchemy free tier: 10) and a recon day spans tens of thousands of
-// blocks — settlement scans chunk the range. Default matches the strictest
-// common cap; raise KITE_GETLOGS_CHUNK on a paid tier. Chunks fetch with
-// bounded concurrency (KITE_GETLOGS_CONCURRENCY, default 16): serially, a
-// day-wide scan costs ~180 round trips. The public RPC throttles ~25 req/s,
+
+/** The getLogs block-range cap per call (KITE_GETLOGS_CHUNK). Default 100 —
+ *  the PUBLIC Monad RPC's hard cap; operators on a provider with a real cap
+ *  (Alchemy: 9000) raise it via env. Read per call so a running process picks
+ *  up the operator's change on its next pass. */
+export function getLogsChunk(): bigint {
+  const raw = Number(process.env.KITE_GETLOGS_CHUNK ?? 100);
+  return BigInt(Number.isInteger(raw) && raw > 0 ? raw : 100);
+}
+
+// Bounded getLogs worker pool for day-wide settlement scans
+// (KITE_GETLOGS_CONCURRENCY, default 16). The public RPC throttles ~25 req/s,
 // so a throttled chunk retries — briefly, then lets the error surface.
-const rawChunk = Number(process.env.KITE_GETLOGS_CHUNK ?? 100);
-const GETLOGS_CHUNK = BigInt(Number.isInteger(rawChunk) && rawChunk > 0 ? rawChunk : 100);
 const rawConc = Number(process.env.KITE_GETLOGS_CONCURRENCY ?? 16);
 const GETLOGS_CONCURRENCY = Number.isInteger(rawConc) && rawConc > 0 ? rawConc : 16;
 const isThrottleError = (err: unknown): boolean =>
   err instanceof Error && /limited|rate|429|too many/i.test(err.message);
+/** Provider block-range caps AND result-set caps both surface as getLogs
+ *  rejections — halving the chunk answers both. Deliberately narrower than
+ *  isThrottleError (checked first, it owns "too many"). */
+export const isRangeLimitError = (err: unknown): boolean =>
+  err instanceof Error &&
+  /block range|too large|more than \d+ results|query returned more|exceeds/i.test(err.message);
+
+/** One adaptive getLogs walk over [from, to]: fetch in pieces, HALVE the
+ *  working chunk on a range-cap rejection (down to a single block), log every
+ *  adaptation. Callers that pre-size spans to getLogsChunk() never see it
+ *  fire — it exists so a wrong/unknown provider cap degrades to slow-but-
+ *  correct instead of failing the whole pass (the 50k-block watcher ranges
+ *  the public RPC rejects outright are exactly this wall). */
+export async function scanLogsAdaptive<T>(opts: {
+  from: bigint;
+  to: bigint;
+  label: string;
+  fetch: (fromBlock: bigint, toBlock: bigint) => Promise<T[]>;
+}): Promise<T[]> {
+  const out: T[] = [];
+  let lo = opts.from;
+  let chunk = opts.to - lo + 1n;
+  while (lo <= opts.to) {
+    const hi = lo + chunk - 1n > opts.to ? opts.to : lo + chunk - 1n;
+    try {
+      out.push(...(await opts.fetch(lo, hi)));
+      lo = hi + 1n;
+    } catch (err) {
+      if (chunk > 1n && isRangeLimitError(err)) {
+        chunk /= 2n;
+        console.warn(
+          `[${opts.label}] eth_getLogs range cap hit — halving chunk to ${chunk} blocks`,
+        );
+        continue;
+      }
+      throw err;
+    }
+  }
+  return out;
+}
 // Any isa lifecycle event reveals its isaId; isaOf() then states the truth.
 const ISA_EVENT_NAMES = [
   "ISADrafted",
@@ -113,9 +157,18 @@ export function makeChainClient(): ChainClient {
   if (KITE_DEPLOYMENT.chainId !== 10143) {
     throw new Error(`unexpected deployment chain ${KITE_DEPLOYMENT.chainId}`);
   }
+  // D10: ALCHEMY_RPC_URL first, the public RPC as TRANSPORT-level fallback —
+  // viem retries each request down the list, so a flaky paid endpoint
+  // degrades to the free one instead of failing the read.
+  const primary = rpcUrl();
+  const publicRpc = KITE_DEPLOYMENT.rpcUrl;
+  const transport =
+    primary === publicRpc
+      ? http(primary, { timeout: 15_000 })
+      : fallback([http(primary, { timeout: 15_000 }), http(publicRpc, { timeout: 15_000 })]);
   const client: PublicClient = createPublicClient({
     chain: monadTestnet,
-    transport: http(rpcUrl(), { timeout: 15_000 }),
+    transport,
   });
 
   const read = (functionName: string, args: unknown[] = []): Promise<unknown> =>
@@ -244,7 +297,7 @@ export function makeChainClient(): ChainClient {
       };
       const chunks: Array<{ fromBlock: bigint; toBlock: bigint }> = [];
       for (let lo = fromBlock; lo <= toBlock; ) {
-        const hi = lo + GETLOGS_CHUNK - 1n > toBlock ? toBlock : lo + GETLOGS_CHUNK - 1n;
+        const hi = lo + getLogsChunk() - 1n > toBlock ? toBlock : lo + getLogsChunk() - 1n;
         chunks.push({ fromBlock: lo, toBlock: hi });
         lo = hi + 1n;
       }
@@ -258,12 +311,18 @@ export function makeChainClient(): ChainClient {
         }
         for (let attempt = 0; ; attempt++) {
           try {
-            parts[i] = (await client.getLogs({
-              address: PROXY,
-              event: INCOME_SETTLED as never,
-              fromBlock: chunk.fromBlock,
-              toBlock: chunk.toBlock,
-            })) as unknown as RawSettlementLog[];
+            parts[i] = await scanLogsAdaptive<RawSettlementLog>({
+              from: chunk.fromBlock,
+              to: chunk.toBlock,
+              label: "chain.settlementLogs",
+              fetch: (fromBlock, toBlock) =>
+                client.getLogs({
+                  address: PROXY,
+                  event: INCOME_SETTLED as never,
+                  fromBlock,
+                  toBlock,
+                }) as unknown as Promise<RawSettlementLog[]>,
+            });
             return;
           } catch (err) {
             if (attempt < 2 && isThrottleError(err)) {
@@ -297,23 +356,35 @@ export function makeChainClient(): ChainClient {
       }));
     },
     async channelRegisteredIds(fromBlock, toBlock) {
-      const logs = (await client.getLogs({
-        address: PROXY,
-        event: CHANNEL_REGISTERED as never,
-        fromBlock,
-        toBlock,
-      })) as unknown as Array<{ args: { id: bigint } }>;
+      const logs = await scanLogsAdaptive({
+        from: fromBlock,
+        to: toBlock,
+        label: "chain.channelRegisteredIds",
+        fetch: (f, t) =>
+          client.getLogs({
+            address: PROXY,
+            event: CHANNEL_REGISTERED as never,
+            fromBlock: f,
+            toBlock: t,
+          }) as unknown as Promise<Array<{ args: { id: bigint } }>>,
+      });
       return [...new Set(logs.map((log) => Number(log.args.id)))];
     },
     async isaEventIds(fromBlock, toBlock) {
       const ids = new Set<number>();
       for (const event of ISA_EVENTS) {
-        const logs = (await client.getLogs({
-          address: PROXY,
-          event: event as never,
-          fromBlock,
-          toBlock,
-        })) as unknown as Array<{ args: { isaId: bigint } }>;
+        const logs = await scanLogsAdaptive({
+          from: fromBlock,
+          to: toBlock,
+          label: "chain.isaEventIds",
+          fetch: (f, t) =>
+            client.getLogs({
+              address: PROXY,
+              event: event as never,
+              fromBlock: f,
+              toBlock: t,
+            }) as unknown as Promise<Array<{ args: { isaId: bigint } }>>,
+        });
         for (const log of logs) {
           ids.add(Number(log.args.isaId));
         }

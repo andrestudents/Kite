@@ -5,11 +5,9 @@
 // watcher, /api/me and /api/p/:id all read this cache; chain is corrected
 // INTO the DB here, never the reverse.
 import { KITE_DEPLOYMENT } from "@kite/contracts";
-import { type AnyDb, channels, ISA_STATUS_BY_CODE, isas } from "@kite/core/db";
-import type { ChainClient } from "../services/chain.js";
-
-// Bounded getLogs ranges — topic-filtered, so generous chunks stay RPC-friendly.
-const RANGE = 50_000n;
+import { type AnyDb, channels, isas } from "@kite/core/db";
+import { type ChainClient, getLogsChunk } from "../services/chain.js";
+import { isaCacheRow } from "./watch-registry.js";
 
 export interface SyncResult {
   channels: number;
@@ -21,11 +19,15 @@ export interface SyncResult {
 export async function syncRegistry(db: AnyDb, chain: ChainClient): Promise<SyncResult> {
   const fromBlock = await chain.blockAtOrAfter(KITE_DEPLOYMENT.deployedAt);
   const toBlock = await chain.blockNumber();
+  // Bounded getLogs ranges sized from KITE_GETLOGS_CHUNK — the public Monad
+  // RPC caps one call at 100 blocks; a 50k literal here is what made the
+  // bootstrap unrunnable there (see watch-registry).
+  const range = getLogsChunk();
 
   const channelIds = new Set<number>();
   const isaIds = new Set<number>();
-  for (let start = fromBlock; start <= toBlock; start += RANGE) {
-    const end = start + RANGE - 1n > toBlock ? toBlock : start + RANGE - 1n;
+  for (let start = fromBlock; start <= toBlock; start += range) {
+    const end = start + range - 1n > toBlock ? toBlock : start + range - 1n;
     for (const id of await chain.channelRegisteredIds(start, end)) {
       channelIds.add(id);
     }
@@ -51,16 +53,7 @@ export async function syncRegistry(db: AnyDb, chain: ChainClient): Promise<SyncR
     if (isa.status === 0) {
       continue; // status None — not a real deal row
     }
-    const row = {
-      seeker: isa.seeker,
-      backer: isa.backer,
-      principal: isa.principal,
-      shareBps: isa.shareBps,
-      capMult: isa.capMult,
-      remaining: isa.remaining,
-      status: ISA_STATUS_BY_CODE[isa.status] ?? `unknown:${isa.status}`,
-      termEnd: isa.termEnd,
-    };
+    const row = isaCacheRow(isa);
     await db
       .insert(isas)
       .values({ isaId: id, ...row })

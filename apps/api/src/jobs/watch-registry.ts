@@ -15,11 +15,25 @@
 import { KITE_DEPLOYMENT } from "@kite/contracts";
 import { type AnyDb, channels, execute, ISA_STATUS_BY_CODE, isas, jobState } from "@kite/core/db";
 import { eq } from "drizzle-orm";
-import type { ChainClient } from "../services/chain.js";
+import { type ChainClient, getLogsChunk, type IsaOnchain } from "../services/chain.js";
 
 export const REGISTRY_BLOCK_KEY = "registry_block";
-// Topic-filtered getLogs — generous chunks stay RPC-friendly (sync-registry).
-const RANGE = 50_000n;
+
+/** The cache row a non-None ISA projects to — shared with the backfill so
+ *  both writers are byte-identical (constitution IV: chain corrected INTO
+ *  the DB, never the reverse). */
+export function isaCacheRow(isa: IsaOnchain) {
+  return {
+    seeker: isa.seeker,
+    backer: isa.backer,
+    principal: isa.principal,
+    shareBps: isa.shareBps,
+    capMult: isa.capMult,
+    remaining: isa.remaining,
+    status: ISA_STATUS_BY_CODE[isa.status] ?? `unknown:${isa.status}`,
+    termEnd: isa.termEnd,
+  };
+}
 
 export interface RegistryPassResult {
   channels: number;
@@ -54,11 +68,15 @@ export async function processNewRegistryLogs(
   let checkpoint = await checkpointOf(db, chain);
   const passStart = checkpoint;
   const head = await chain.blockNumber();
+  // The chunk IS the pass range: one getLogs call per event per range. Sized
+  // from KITE_GETLOGS_CHUNK (public RPC: 100; Alchemy: 9000) — a 50k literal
+  // here is what made the checkpoint uncatchable on the public RPC.
+  const range = getLogsChunk();
   let channelCount = 0;
   let isaCount = 0;
 
   while (checkpoint < head) {
-    const end = checkpoint + RANGE > head ? head : checkpoint + RANGE;
+    const end = checkpoint + range > head ? head : checkpoint + range;
 
     // Chain reads happen BEFORE the write transaction — no RPC inside a tx.
     const channelIdSet = new Set(await chain.channelRegisteredIds(checkpoint + 1n, end));
@@ -85,16 +103,7 @@ export async function processNewRegistryLogs(
         if (isa.status === 0) {
           continue; // status None — not a real deal row
         }
-        const row = {
-          seeker: isa.seeker,
-          backer: isa.backer,
-          principal: isa.principal,
-          shareBps: isa.shareBps,
-          capMult: isa.capMult,
-          remaining: isa.remaining,
-          status: ISA_STATUS_BY_CODE[isa.status] ?? `unknown:${isa.status}`,
-          termEnd: isa.termEnd,
-        };
+        const row = isaCacheRow(isa);
         await tx
           .insert(isas)
           .values({ isaId: id, ...row })

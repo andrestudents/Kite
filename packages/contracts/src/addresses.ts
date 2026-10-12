@@ -17,6 +17,10 @@ export const KITE_DEPLOYMENT = {
   ausdIsMock: true,
   channelId: 1n,
   minEventGapSec: 60,
+  // Epoch seconds of THIS proxy's deployment — the registry/settlement
+  // watchers seed their job_state checkpoints from it (blockAtOrAfter), so a
+  // RE-DEPLOYMENT must re-record it from the new broadcast manifest or the
+  // catch-up scans the wrong window.
   deployedAt: 1791580848,
 } as const;
 

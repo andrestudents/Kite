@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "bun run --hot src/index.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "registry:backfill": "bun run src/jobs/backfill-registry.ts"
   },
   "dependencies": {
     "@kite/contracts": "workspace:*",

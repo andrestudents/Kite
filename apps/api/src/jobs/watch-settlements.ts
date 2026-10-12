@@ -25,12 +25,16 @@ import {
   webhookEvents,
 } from "@kite/core/db";
 import { and, eq } from "drizzle-orm";
-import type { ChainClient, IsaOnchain, SettlementLog } from "../services/chain.js";
+import {
+  type ChainClient,
+  getLogsChunk,
+  type IsaOnchain,
+  type SettlementLog,
+} from "../services/chain.js";
 import { writeSettlement } from "../services/ledger.js";
 
 export const SETTLEMENTS_BLOCK_KEY = "settlements_block";
 export const UNMATCHED_KEY = "unmatched_settlement_events";
-const RANGE = 2_000n; // default eth_getLogs span per call
 const CHAIN_ID = KITE_DEPLOYMENT.chainId;
 
 export interface ProcessResult {
@@ -77,11 +81,16 @@ export async function processNewLogs(db: AnyDb, chain: ChainClient): Promise<Pro
   let checkpoint = await checkpointOf(db, chain);
   const passStart = checkpoint;
   const head = await chain.blockNumber();
+  // The pass range reads KITE_GETLOGS_CHUNK like every getLogs caller (the
+  // public RPC caps calls at 100 blocks; settlementLogs re-chunks inside, so
+  // a range above the cap degrades to more calls — not to a failure — but
+  // sizing it honestly keeps the claim txs to one per span).
+  const range = getLogsChunk();
   let settled = 0;
   let unmatched = 0;
 
   while (checkpoint < head) {
-    const end = checkpoint + RANGE > head ? head : checkpoint + RANGE;
+    const end = checkpoint + range > head ? head : checkpoint + range;
 
     // Chain reads happen BEFORE the write transaction — no RPC inside a tx.
     const logs: SettlementLog[] = await chain.settlementLogs(checkpoint + 1n, end);
