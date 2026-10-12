@@ -14,6 +14,7 @@ import { id } from "../../locales/id.js";
 import {
   AjukanContext,
   explorerTxUrl,
+  OpenRequest,
   PublicProfile,
   readAjukanParam,
   starsLabel,
@@ -152,5 +153,51 @@ describe("the PublicProfile screen (T015)", () => {
       />,
     );
     expect(html).toContain("Sebentar ya…");
+  });
+});
+
+// T019 — the share link's whole subject: a DRAFTED deal is the open request,
+// rendered for ANY visitor (incognito included). The screen is sessionless —
+// "unauthenticated view-model" is exactly this shape.
+const OPEN_REQUEST_FIXTURE: ProfileDto = {
+  id: "draft-hash",
+  wallet: `0x${"5c".repeat(20)}`,
+  reputation: { score: 0, completedDeals: 0, qualEvents: 0 },
+  deals: [
+    {
+      isaId: 4,
+      principalAusd: 500_000_000,
+      shareBps: 2_000,
+      capAusd: 650_000_000,
+      totalDivertedAusd: 0,
+      status: "drafted",
+      events: [],
+    },
+  ],
+  explorerBaseUrl: "https://testnet.monadscan.com",
+};
+
+describe("the open request (T019)", () => {
+  it("REGRESSION: a drafted deal becomes the open request — never filtered out", () => {
+    const model = profileFromDto(OPEN_REQUEST_FIXTURE, 1_795_000_000_000);
+    expect(model.openRequest).not.toBeNull();
+    expect(model.openRequest?.isaId).toBe(4);
+    expect(model.openRequest?.seeker).toBe(OPEN_REQUEST_FIXTURE.wallet);
+    expect(model.openRequest?.status).toBe(1);
+    expect(model.deals.map((d) => d.isaId)).toContain(4);
+  });
+
+  it("REGRESSION: the visitor sees the open-request card with the [Dukung] CTA", () => {
+    const model = profileFromDto(OPEN_REQUEST_FIXTURE, 1_795_000_000_000);
+    if (model.openRequest === null) throw new Error("fixture lost its open request");
+    // renderToString never fires effects or clicks — the tap contract is the
+    // real button + the seeker the App handler receives (the publicView
+    // onDukung stashes it and routes to onboarding; composition is App's).
+    const html = renderToString(
+      <OpenRequest locale={id} lang="id" card={model.openRequest} onDukung={() => {}} />,
+    );
+    expect(html).toContain(id.profile.openRequestTitle);
+    expect(html).toContain(`>${id.profile.dukungCta}</button>`);
+    expect(html).toContain("650,00 AUSD"); // the cap is the stated ceiling
   });
 });

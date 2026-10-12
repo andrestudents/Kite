@@ -37,6 +37,23 @@ const isaOnchain = (status: number) => ({
   status,
 });
 
+// A DRAFTED deal (T019): no activations, no settlements — remaining 0, and
+// the cap is the only ceiling the public surface can state.
+const draftIsaOnchain = {
+  principal: 500_000_000,
+  shareBps: 2_000,
+  capMult: 130,
+  termEnd: 1_794_270_000,
+  channelId: 1,
+  seeker: W,
+  backer: BACKER,
+  remaining: 0,
+  activatedAt: 0,
+  lastEventAt: 0,
+  eventCount: 0,
+  status: 1,
+};
+
 /** The chain read surface the route may use — the log scan MUST NOT run. */
 const chainWithHistory = () => {
   const mustNotScan = async (): Promise<never> => {
@@ -51,6 +68,9 @@ const chainWithHistory = () => {
         ? { totalIsas: 3, completed: 3, qualEvents: 7, distinctBackers: 2 }
         : { totalIsas: 0, completed: 0, qualEvents: 0, distinctBackers: 0 },
     isaOf: async (isaId: number) => {
+      if (isaId === 4) {
+        return draftIsaOnchain; // the open request (T019)
+      }
       if (isaId !== 3) {
         throw new Error(`unexpected isa ${isaId}`);
       }
@@ -168,6 +188,32 @@ describe("getProfile (T030 — DB projection events)", () => {
     const p = await getProfile(db, chainWithHistory(), W);
     expect(p.wallet).toBe(W);
     expect(p.id).toBe(W);
+  });
+
+  it("REGRESSION: a DRAFTED ISA is the open request — deals[] includes it (T019, the 0x5c920 share link)", async () => {
+    // What watch-registry caches when createISADraft lands: a full cache row
+    // at status drafted. The profile must carry it — the open request is the
+    // share link's entire purpose (FR-019), not something to filter out.
+    await db.insert(isas).values({
+      isaId: 4,
+      seeker: W,
+      backer: BACKER,
+      principal: 500_000_000,
+      shareBps: 2_000,
+      capMult: 130,
+      remaining: 0,
+      status: "drafted",
+      termEnd: 1_794_270_000,
+    });
+    const p = await getProfile(db, chainWithHistory(), W);
+
+    const drafted = p.deals.find((d) => d.isaId === 4);
+    expect(drafted).toBeTruthy();
+    expect(drafted?.status).toBe("drafted");
+    expect(drafted?.principalAusd).toBe(500_000_000);
+    expect(drafted?.capAusd).toBe(650_000_000); // 500M × 130%
+    expect(drafted?.totalDivertedAusd).toBe(0);
+    expect(drafted?.events).toEqual([]); // nothing settled — no invented rows
   });
 
   it("REGRESSION: a bound wallet with no deals is a VALID empty 200, never an error (the 0xe494 device case)", async () => {
