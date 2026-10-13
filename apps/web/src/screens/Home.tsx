@@ -11,6 +11,7 @@ import { formatAusdDetail, formatGrouped, type MoneyLocale, toDisplayUnits } fro
 import type { Locale } from "../locales/id.js";
 import { DealCard } from "./beranda/DealCard.js";
 import { ReputationWhy } from "./beranda/ReputationWhy.js";
+import { Mark } from "./shell/Mark.js";
 
 type Quote = { pair: string; rate: number; scale: number };
 
@@ -74,7 +75,7 @@ export function Home(props: {
   if (failed) {
     return (
       <main className="mx-auto flex min-h-dvh max-w-md flex-col items-center justify-center gap-4 px-6 text-center">
-        <p className="text-slate-600">{locale.common.errorGeneric}</p>
+        <p className="text-muted">{locale.common.errorGeneric}</p>
         <button
           type="button"
           onClick={() => {
@@ -82,7 +83,7 @@ export function Home(props: {
             setMe(null);
             void load();
           }}
-          className="rounded-xl bg-teal-600 px-6 py-3 font-semibold text-white shadow"
+          className="rounded-xl bg-leaf px-6 py-3 font-semibold text-white shadow"
         >
           {locale.common.retry}
         </button>
@@ -92,7 +93,7 @@ export function Home(props: {
 
   if (!me || !quote || dripped === null) {
     return (
-      <main className="flex min-h-dvh items-center justify-center text-slate-500">
+      <main className="flex min-h-dvh items-center justify-center text-muted">
         {locale.home.preparing}
       </main>
     );
@@ -105,37 +106,46 @@ export function Home(props: {
 
   return (
     <main className="mx-auto flex min-h-dvh max-w-md flex-col gap-5 px-6 py-10">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-teal-700">{locale.home.greeting}</h1>
+      <header className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Mark className="h-7 w-6" />
+          <span className="text-lg font-extrabold tracking-tight">{locale.appName}</span>
+        </div>
         <button
           type="button"
           onClick={props.onSignOut}
-          className="rounded-lg border border-slate-300 px-3 py-1 text-sm text-slate-600"
+          className="px-1 py-1.5 text-sm font-semibold text-muted"
         >
           {locale.session.signOut}
         </button>
-      </div>
+      </header>
+      <h1 className="-mt-3 text-2xl font-extrabold tracking-tight">{locale.home.greeting}</h1>
 
-      <section className="rounded-2xl bg-teal-50 p-5">
-        <p className="text-sm text-teal-800">{locale.home.balanceTitle}</p>
-        <p className="mt-1 text-4xl font-bold text-teal-900">
+      <section className="rounded-2xl bg-deep p-5">
+        <div className="flex items-start justify-between">
+          <p className="text-sm text-white/75">{locale.home.balanceTitle}</p>
+          <Mark variant="gold" className="h-5 w-4" />
+        </div>
+        <p className="mt-2 text-3xl font-extrabold tracking-tight text-white">
           {locale.home.approx} {displayIdr(model.saldoAusd)}
         </p>
-        <p className="mt-1 text-xs text-teal-700">{formatAusdDetail(model.saldoAusd, lang)} AUSD</p>
+        <p className="mt-1 text-xs font-bold text-goldhi">
+          {formatAusdDetail(model.saldoAusd, lang)} AUSD
+        </p>
       </section>
 
-      <ReputationWhy reputation={model.reputation} locale={locale} />
+      <ReputationWhy reputation={model.reputation} locale={locale} lang={lang} />
 
       {model.deal !== null ? (
-        <DealCard card={model.deal} locale={locale} />
+        <DealCard card={model.deal} locale={locale} lang={lang} />
       ) : (
-        <section className="rounded-2xl border border-dashed border-slate-300 p-5 text-center text-sm text-slate-500">
+        <section className="rounded-2xl border border-dashed border-line2 bg-white p-5 text-center text-sm text-muted">
           {locale.home.emptyDeal}
           {props.onAjukan ? (
             <button
               type="button"
               onClick={props.onAjukan}
-              className="mt-3 w-full rounded-xl bg-teal-600 px-6 py-3 text-base font-semibold text-white shadow"
+              className="mt-3 w-full rounded-xl bg-leaf px-6 py-3 text-base font-semibold text-white shadow"
             >
               {locale.home.ajukanCta}
             </button>
@@ -147,7 +157,7 @@ export function Home(props: {
         <button
           type="button"
           onClick={props.onNeedVerification}
-          className="rounded-xl bg-amber-500 px-6 py-4 text-lg font-semibold text-white shadow"
+          className="rounded-xl border border-warnline bg-goldsoft px-6 py-4 text-lg font-semibold text-golddk shadow"
         >
           {locale.home.locked}
         </button>
