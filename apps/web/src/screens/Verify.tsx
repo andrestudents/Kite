@@ -88,12 +88,12 @@ export function Verify(props: {
   return (
     <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center gap-5 px-6">
       <div className="text-center">
-        <h1 className="text-2xl font-bold text-teal-700">{locale.verify.title}</h1>
-        <span className="mt-2 inline-block rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800">
+        <h1 className="text-2xl font-extrabold tracking-tight text-ink">{locale.verify.title}</h1>
+        <span className="mt-2 inline-block rounded-full border border-gold100 bg-goldsoft px-3 py-1 text-xs font-bold text-golddk">
           {locale.verify.demoBadge}
         </span>
       </div>
-      <p className="text-center text-sm text-slate-600">{locale.verify.note}</p>
+      <p className="text-center text-sm text-muted">{locale.verify.note}</p>
       {(
         [
           [locale.verify.ktpLabel, "ktp"],
@@ -101,40 +101,40 @@ export function Verify(props: {
         ] as const
       ).map(([label, slot]) => (
         <label key={slot} className="flex flex-col gap-1">
-          <span className="text-sm font-medium text-slate-700">{label}</span>
+          <span className="text-sm font-medium text-ink2">{label}</span>
           <input
             type="file"
             accept="image/*"
             capture="user"
             disabled={busy}
             onChange={(e) => grab(e.currentTarget, slot)}
-            className="rounded-xl border border-slate-300 px-3 py-2 text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-teal-50 file:px-3 file:py-1 file:text-teal-700"
+            className="rounded-xl border border-line2 bg-white px-3 py-2 text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-leafsoft file:px-3 file:py-1 file:font-semibold file:text-leafdk"
           />
         </label>
       ))}
       {captured > 0 ? (
-        <p className="text-center text-xs text-teal-700">
+        <p className="text-center text-xs font-semibold text-leafdk">
           {locale.verify.captured} ({captured}/2)
         </p>
       ) : null}
       {phase === "ready" ? (
         <>
-          <p className="text-center text-lg font-semibold text-teal-700">{locale.verify.ready}</p>
+          <p className="text-center text-lg font-bold text-leafdk">{locale.verify.ready}</p>
           <button
             type="button"
             onClick={props.onReady}
-            className="rounded-xl bg-teal-600 px-6 py-4 text-lg font-semibold text-white shadow"
+            className="rounded-xl bg-leaf px-6 py-4 text-lg font-semibold text-white shadow"
           >
             {locale.common.continue}
           </button>
         </>
       ) : phase === "stalled" ? (
         <>
-          <p className="text-center text-sm text-slate-600">{locale.verify.stalled}</p>
+          <p className="text-center text-sm text-muted">{locale.verify.stalled}</p>
           <button
             type="button"
             onClick={() => void run()}
-            className="rounded-xl bg-teal-600 px-6 py-4 text-lg font-semibold text-white shadow"
+            className="rounded-xl bg-leaf px-6 py-4 text-lg font-semibold text-white shadow"
           >
             {locale.common.retry}
           </button>
@@ -145,7 +145,7 @@ export function Verify(props: {
             type="button"
             onClick={() => void run()}
             disabled={busy || captured < 2}
-            className="rounded-xl bg-teal-600 px-6 py-4 text-lg font-semibold text-white shadow disabled:opacity-50"
+            className="rounded-xl bg-leaf px-6 py-4 text-lg font-semibold text-white shadow disabled:opacity-50"
           >
             {phase === "submitting"
               ? locale.verify.submitting
@@ -154,7 +154,7 @@ export function Verify(props: {
                 : locale.verify.submit}
           </button>
           {phase === "checking" || hint ? (
-            <p className="text-center text-sm text-slate-500">{hint ?? locale.verify.checking}</p>
+            <p className="text-center text-sm text-muted">{hint ?? locale.verify.checking}</p>
           ) : null}
         </>
       )}

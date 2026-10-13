@@ -62,19 +62,19 @@ export function ToastStack(props: {
           key={t.id}
           className={
             t.kind === "income"
-              ? "rounded-2xl bg-slate-900/95 p-4 text-left shadow-lg"
+              ? "rounded-2xl bg-ink p-4 text-left text-[#F2F6EF] shadow-lg"
               : t.kind === "capped"
-                ? "rounded-2xl bg-teal-600 p-4 text-left text-white shadow-lg"
+                ? "rounded-2xl bg-gold p-4 text-left text-ink shadow-lg"
                 : t.kind === "verify"
-                  ? "rounded-2xl bg-amber-100 p-4 text-left text-amber-900 shadow-lg"
-                  : "rounded-2xl bg-slate-200 p-4 text-left text-slate-700 shadow-lg"
+                  ? "rounded-2xl border border-warnline bg-warnsoft p-4 text-left text-golddk shadow-lg"
+                  : "rounded-2xl bg-night p-4 text-left text-[#F2F6EF] shadow-lg"
           }
         >
           {t.kind === "income" ? (
             <>
-              <p className="text-sm text-slate-300">{locale.moments.splitTitle}</p>
+              <p className="text-xs font-bold text-goldhi">{locale.moments.splitTitle}</p>
               <div className="flex items-baseline justify-between">
-                <p className="text-xl font-bold text-teal-300">
+                <p className="text-xl font-extrabold text-white">
                   {t.deltaAusd !== undefined
                     ? `+${formatAusdDetail(t.deltaAusd, lang)}`
                     : locale.moments.splitTitle}
@@ -83,7 +83,7 @@ export function ToastStack(props: {
                 pctOf(t.progressAfterBps) !== null &&
                 t.progressBeforeBps !== undefined &&
                 t.progressAfterBps !== undefined ? (
-                  <p className="text-xs text-slate-400">
+                  <p className="text-xs text-[#F2F6EF]/70">
                     {locale.dealCard.progressLabel} {pctOf(t.progressBeforeBps)}% →{" "}
                     {pctOf(t.progressAfterBps)}%
                   </p>

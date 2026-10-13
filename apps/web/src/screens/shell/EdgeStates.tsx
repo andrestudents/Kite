@@ -19,10 +19,10 @@ export function LoadingSkeleton() {
       className="mx-auto flex w-full max-w-md animate-pulse flex-col gap-4 px-6 py-10"
       aria-hidden
     >
-      <div className="h-8 w-1/3 rounded-lg bg-slate-200" />
-      <div className="h-28 rounded-2xl bg-slate-200" />
-      <div className="h-20 rounded-2xl bg-slate-200" />
-      <div className="h-20 rounded-2xl bg-slate-200" />
+      <div className="h-8 w-1/3 rounded-lg bg-[#E7ECE3]" />
+      <div className="h-28 rounded-2xl bg-[#E7ECE3]" />
+      <div className="h-20 rounded-2xl bg-[#E7ECE3]" />
+      <div className="h-20 rounded-2xl bg-[#E7ECE3]" />
     </div>
   );
 }
@@ -36,12 +36,12 @@ export function EmptyState(props: {
 }) {
   return (
     <div className="mx-auto flex w-full max-w-md flex-col items-center gap-4 px-6 py-14 text-center">
-      <p className="text-sm text-slate-500">{props.message}</p>
+      <p className="text-sm text-muted">{props.message}</p>
       {props.ctaLabel && props.onCta ? (
         <button
           type="button"
           onClick={props.onCta}
-          className="rounded-xl bg-teal-600 px-6 py-3 font-semibold text-white shadow"
+          className="rounded-xl bg-leaf px-6 py-3 font-semibold text-white shadow"
         >
           {props.ctaLabel}
         </button>
@@ -60,10 +60,10 @@ export function OfflineState(props: {
   const { locale } = props;
   return (
     <div className="mx-auto w-full max-w-md px-6 py-10">
-      <div className="mb-4 rounded-xl border border-amber-300 bg-amber-50 p-4">
-        <p className="font-semibold text-amber-800">{locale.edge.offlineTitle}</p>
-        <p className="mt-1 text-sm text-amber-800">{locale.edge.offlineBody}</p>
-        <p className="mt-2 text-xs font-medium text-amber-700">
+      <div className="mb-4 rounded-xl border border-warnline bg-warnsoft p-4">
+        <p className="font-bold text-ink">{locale.edge.offlineTitle}</p>
+        <p className="mt-1 text-sm text-golddk">{locale.edge.offlineBody}</p>
+        <p className="mt-2 text-xs font-semibold text-golddk">
           {locale.edge.stalePrefix} {formatClock(props.fetchedAt)}
         </p>
       </div>
@@ -79,13 +79,13 @@ export function ErrorState(props: { locale: Locale; message?: string; onRetry?()
   const { locale } = props;
   return (
     <div className="mx-auto flex w-full max-w-md flex-col items-center gap-4 px-6 py-14 text-center">
-      <p className="font-semibold text-slate-700">{locale.edge.errorTitle}</p>
-      {props.message ? <p className="text-sm text-slate-500">{props.message}</p> : null}
+      <p className="font-bold text-ink">{locale.edge.errorTitle}</p>
+      {props.message ? <p className="text-sm text-muted">{props.message}</p> : null}
       {props.onRetry ? (
         <button
           type="button"
           onClick={props.onRetry}
-          className="rounded-xl bg-teal-600 px-6 py-3 font-semibold text-white shadow"
+          className="rounded-xl border border-line2 bg-white px-6 py-3 font-semibold text-ink shadow"
         >
           {locale.edge.retry}
         </button>

@@ -36,7 +36,9 @@ export function Phone(props: { locale: Locale; onDone(phone: string): void }) {
 
   return (
     <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center gap-6 px-6">
-      <h1 className="text-center text-2xl font-bold text-teal-700">{locale.phone.title}</h1>
+      <h1 className="text-center text-2xl font-extrabold tracking-tight text-ink">
+        {locale.phone.title}
+      </h1>
       <div className="flex flex-col gap-2">
         <input
           type="tel"
@@ -47,19 +49,21 @@ export function Phone(props: { locale: Locale; onDone(phone: string): void }) {
           onKeyDown={(e) => {
             if (e.key === "Enter") save();
           }}
-          className="rounded-xl border border-slate-300 px-4 py-3 text-lg tracking-wide focus:border-teal-600 focus:outline-none"
+          className="rounded-xl border border-line2 bg-white px-4 py-3 text-lg tracking-wide text-ink focus:border-leaf focus:shadow-[0_0_0_3px_rgba(46,125,70,0.15)] focus:outline-none"
         />
-        <p className="text-xs text-slate-500">{locale.phone.hint}</p>
-        {touched && !valid ? <p className="text-sm text-rose-600">{locale.phone.invalid}</p> : null}
+        <p className="text-xs text-muted">{locale.phone.hint}</p>
+        {touched && !valid ? (
+          <p className="text-sm font-medium text-clay">{locale.phone.invalid}</p>
+        ) : null}
       </div>
       <button
         type="button"
         onClick={save}
-        className="rounded-xl bg-teal-600 px-6 py-4 text-lg font-semibold text-white shadow"
+        className="rounded-xl bg-leaf px-6 py-4 text-lg font-semibold text-white shadow"
       >
         {locale.common.continue}
       </button>
-      <p className="text-center text-xs text-slate-400">{locale.phone.note}</p>
+      <p className="text-center text-xs text-muted">{locale.phone.note}</p>
     </main>
   );
 }
