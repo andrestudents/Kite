@@ -58,23 +58,26 @@ export function TermsCard(props: { card: DealCardModel; locale: Locale; lang?: M
   const lang: MoneyLocale = props.lang ?? "id";
   const badge = statusLabel(card.status, locale);
   return (
-    <section className="rounded-2xl border border-slate-200 p-5">
+    <section className="rounded-2xl border border-line bg-white p-5">
       <div className="flex items-baseline justify-between">
-        <p className="text-sm font-semibold text-slate-700">{locale.detail.termsTitle}</p>
-        {badge !== "" ? <span className="text-xs text-slate-500">{badge}</span> : null}
+        <p className="text-sm font-bold text-ink">{locale.detail.termsTitle}</p>
+        {badge !== "" ? <span className="text-xs font-semibold text-muted">{badge}</span> : null}
       </div>
       <div className="mt-2 flex items-baseline justify-between text-sm">
-        <span className="text-slate-600">
+        <span className="text-muted">
           {locale.dealCard.shareLabel} {pctLabel(card.shareBps, lang)}
         </span>
-        <span className="text-slate-600">
+        <span className="text-muted">
           {locale.dealCard.capLabel} {formatAusdDetail(card.capAusd, lang)}
         </span>
       </div>
       <div className="mt-1">
         <DealEnd card={card} locale={locale} />
       </div>
-      <p className="mt-1 text-xs text-slate-600">{locale.dealCard.failedHarvest}</p>
+      <p className="mt-3 flex items-center gap-2 rounded-xl bg-leafsoft px-3 py-2.5 text-xs font-bold text-leafdk">
+        <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-leaf" />
+        {locale.dealCard.failedHarvest}
+      </p>
     </section>
   );
 }
@@ -88,19 +91,23 @@ export function PanenHistory(props: {
   const { locale } = props;
   const lang: MoneyLocale = props.lang ?? "id";
   if (props.rows.length === 0) {
-    return <p className="text-sm text-slate-500">{locale.detail.panenEmpty}</p>;
+    return <p className="text-sm text-muted">{locale.detail.panenEmpty}</p>;
   }
   return (
     <section className="flex flex-col gap-3">
       {props.rows.map((row) => (
-        <article key={row.txHash} className="rounded-2xl border border-slate-200 p-4 text-sm">
+        <article
+          key={row.txHash}
+          className="rounded-2xl border border-leaf100 bg-leafsoft p-4 text-sm"
+        >
           <div className="flex items-baseline justify-between">
-            <span className="font-semibold text-slate-800">
+            <span className="flex items-center gap-1.5 font-bold text-leafdk">
+              <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-leaf" />
               {locale.detail.grossLabel} {formatAusdDetail(row.grossAusd, lang)}
             </span>
-            <span className="text-xs text-slate-500">{row.blockTime.slice(0, 10)}</span>
+            <span className="text-xs text-muted">{row.blockTime.slice(0, 10)}</span>
           </div>
-          <div className="mt-1 flex items-baseline justify-between text-slate-600">
+          <div className="mt-1 flex items-baseline justify-between text-muted">
             <span>
               {locale.detail.toYouLabel} {formatAusdDetail(row.toSeekerAusd, lang)}
             </span>
@@ -108,14 +115,14 @@ export function PanenHistory(props: {
               {locale.detail.toBackerLabel} {formatAusdDetail(row.toBackerAusd, lang)}
             </span>
           </div>
-          <p className="mt-1 text-xs text-slate-500">
+          <p className="mt-1 text-xs text-muted">
             {locale.detail.remainingAfterLabel} {formatAusdDetail(row.remainingAfterAusd, lang)}
           </p>
           <a
             href={explorerTxUrl(props.explorerBaseUrl, row.txHash)}
             target="_blank"
             rel="noreferrer"
-            className="mt-1 inline-block text-xs text-teal-700 underline"
+            className="mt-1 inline-block text-xs font-semibold text-leafdk underline"
           >
             {locale.detail.viewProof}
           </a>
@@ -175,7 +182,7 @@ export function BagiHasilDetail(props: {
   if (failed) {
     return (
       <main className="mx-auto flex min-h-dvh flex-col items-center justify-center gap-4 px-6 text-center">
-        <p className="text-slate-600">{locale.common.errorGeneric}</p>
+        <p className="text-muted">{locale.common.errorGeneric}</p>
         <button
           type="button"
           onClick={() => {
@@ -183,7 +190,7 @@ export function BagiHasilDetail(props: {
             setDetail(null);
             setIsa(null);
           }}
-          className="rounded-xl bg-teal-600 px-6 py-3 font-semibold text-white shadow"
+          className="rounded-xl border border-line2 bg-white px-6 py-3 font-semibold text-ink shadow"
         >
           {locale.edge.retry}
         </button>
@@ -192,7 +199,7 @@ export function BagiHasilDetail(props: {
   }
   if (detail === null) {
     return (
-      <main className="flex min-h-dvh items-center justify-center text-slate-500">
+      <main className="flex min-h-dvh items-center justify-center text-muted">
         {locale.edge.loading}
       </main>
     );
@@ -204,7 +211,7 @@ export function BagiHasilDetail(props: {
       : null;
   return (
     <main className="mx-auto flex min-h-dvh max-w-md flex-col gap-4 px-6 py-10">
-      <h1 className="text-xl font-bold text-slate-800">{locale.detail.title}</h1>
+      <h1 className="text-xl font-extrabold tracking-tight text-ink">{locale.detail.title}</h1>
       {finish !== null ? (
         <FinishView
           model={finish}
@@ -216,7 +223,7 @@ export function BagiHasilDetail(props: {
         />
       ) : null}
       <TermsCard card={card} locale={locale} lang={lang} />
-      <h2 className="text-lg font-bold text-slate-700">{locale.detail.panenTitle}</h2>
+      <h2 className="text-lg font-extrabold tracking-tight text-ink">{locale.detail.panenTitle}</h2>
       <PanenHistory
         rows={detail.panen}
         explorerBaseUrl={explorerBaseUrl}
@@ -224,7 +231,7 @@ export function BagiHasilDetail(props: {
         lang={lang}
       />
       {props.onClose ? (
-        <button type="button" onClick={props.onClose} className="text-sm text-slate-500">
+        <button type="button" onClick={props.onClose} className="text-sm text-muted">
           {locale.edge.back}
         </button>
       ) : null}

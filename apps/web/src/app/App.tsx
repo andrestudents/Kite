@@ -382,7 +382,7 @@ export function App() {
         <button
           type="button"
           onClick={toggleLang}
-          className="fixed top-3 right-3 z-30 rounded-full border border-slate-200 bg-white/90 px-3 py-1 text-xs font-semibold text-slate-600 shadow"
+          className="fixed top-3 right-3 z-30 rounded-full border border-line2 bg-white/90 px-3 py-1 text-xs font-semibold text-muted shadow"
         >
           {nextLang(lang).toUpperCase()}
         </button>
@@ -392,7 +392,7 @@ export function App() {
 
   if (adapter === null || route === "entering") {
     return (
-      <main className="flex min-h-dvh items-center justify-center text-slate-500">
+      <main className="flex min-h-dvh items-center justify-center text-muted">
         {locale.common.loading}
       </main>
     );
@@ -528,7 +528,7 @@ export function App() {
       if (session === null) {
         return (
           <main className="mx-auto flex min-h-dvh max-w-md flex-col items-center justify-center gap-4 px-6 text-center">
-            <p className="text-slate-600">{locale.session.expired}</p>
+            <p className="text-muted">{locale.session.expired}</p>
             <button
               type="button"
               onClick={() => {
@@ -536,7 +536,7 @@ export function App() {
                   if (ok) setTab("kirim");
                 });
               }}
-              className="rounded-xl bg-teal-600 px-6 py-3 font-semibold text-white shadow"
+              className="rounded-xl bg-leaf px-6 py-3 font-semibold text-white shadow"
             >
               {locale.session.signIn}
             </button>
@@ -613,7 +613,7 @@ export function App() {
       <button
         type="button"
         onClick={toggleLang}
-        className="fixed top-3 right-3 z-30 rounded-full border border-slate-200 bg-white/90 px-3 py-1 text-xs font-semibold text-slate-600 shadow"
+        className="fixed top-3 right-3 z-30 rounded-full border border-line2 bg-white/90 px-3 py-1 text-xs font-semibold text-muted shadow"
       >
         {nextLang(lang).toUpperCase()}
       </button>
