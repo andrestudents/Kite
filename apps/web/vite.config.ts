@@ -29,7 +29,7 @@ export default defineConfig({
         description: "Buat akun, mulai usaha, terima pendapatan — tanpa ribet.",
         lang: "id",
         theme_color: "#1B4332",
-        background_color: "#f8fafc",
+        background_color: "#F7F9F3",
         display: "standalone",
         start_url: "/",
         icons: [

@@ -1,0 +1,1372 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Kite — Mockup UI · Sawah → Panen</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,600&display=swap" rel="stylesheet" />
+<style>
+  /* KITE — Sawah → Panen
+     Tinta hijau gelap + kertas putih-kehijauan + hijau daun (untukmu) +
+     emas padi (ke pendukung). Satu keluarga huruf: Plus Jakarta Sans.
+     Semua copy layar verbatim dari katalog locale (id.ts). */
+  *{box-sizing:border-box;margin:0}
+  :root{
+    --ink:#16301F; --ink-2:#33463A; --muted:#5C6B5E;
+    --paper:#F7F9F3; --card:#FFFFFF; --line:#DCE5DA; --line-2:#C9D4C6;
+    --leaf:#2E7D46; --leaf-dk:#1F5C35; --leaf-soft:#EAF4EC; --leaf-100:#D7E9DC;
+    --gold:#E3A72F; --gold-dk:#8A6210; --gold-soft:#FBF3DF; --gold-100:#F3E3BC;
+    --deep:#1B4332; --err:#B3372B; --err-soft:#F9E9E6;
+    --warn-soft:#FBF3DF; --warn-line:#E8CE7A;
+    --ripen:linear-gradient(90deg,#7CC08F 0%,#2E7D46 55%,#C98F1B 82%,#E3A72F 100%);
+    --board:#E7EBE2;
+  }
+  body{background:var(--board);color:var(--ink);
+    font-family:"Plus Jakarta Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:1560px;margin:0 auto;padding:26px 34px 100px}
+
+  /* papan desain */
+  .board-head{padding:26px 0 0;display:flex;gap:20px;align-items:flex-start}
+  h1{font-size:33px;font-weight:800;letter-spacing:-.02em}
+  .board-sub{margin-top:8px;max-width:76ch;color:var(--ink-2);font-size:15px;line-height:1.65}
+  .legend{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+  .legend span{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:700;
+    background:#fff;border:1px solid var(--line);border-radius:999px;padding:6px 13px}
+  .toc{display:flex;flex-wrap:wrap;gap:8px;margin:24px 0 4px}
+  .toc a{font-size:13px;font-weight:700;color:var(--leaf-dk);background:#fff;border:1px solid var(--line);
+    border-radius:999px;padding:7px 14px;text-decoration:none}
+  .board-sec{margin-top:52px}
+  .sec-no{font-size:13px;font-weight:800;color:var(--gold-dk)}
+  h2{font-size:22px;font-weight:800;letter-spacing:-.01em}
+  .sec-sub{color:var(--muted);font-size:14px;line-height:1.6;margin:6px 0 20px;max-width:88ch}
+  .flowrow{display:flex;flex-wrap:wrap;gap:40px;align-items:flex-start}
+  .stage{display:flex;flex-direction:column;gap:11px;width:394px}
+  figcaption{font-size:13px;line-height:1.6;color:#44514A}
+  figcaption strong{color:var(--ink)}
+
+  /* ponsel */
+  .phone{width:394px;height:818px;border-radius:46px;border:10px solid var(--ink);overflow:hidden;
+    position:relative;background:var(--paper);box-shadow:0 30px 54px -30px rgba(22,48,31,.42)}
+  .screen{position:absolute;inset:0;display:flex;flex-direction:column;color:var(--ink);background:var(--paper)}
+  .sbar{flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;
+    padding:15px 27px 6px;font-size:14px;font-weight:700}
+  .island{position:absolute;top:11px;left:50%;transform:translateX(-50%);width:110px;height:29px;
+    border-radius:999px;background:#0C1B11;z-index:40}
+  .body{flex:1;overflow:hidden;padding:12px 20px 18px;display:flex;flex-direction:column;gap:14px}
+  .body.pb{padding-bottom:110px}
+  .center{justify-content:center;text-align:center}
+
+  /* tab bar bawah */
+  .tabbar{position:absolute;left:0;right:0;bottom:0;display:flex;background:rgba(255,255,255,.95);
+    border-top:1px solid #E2E8DE;padding:9px 8px 22px;z-index:30}
+  .tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px;
+    font-weight:700;color:#8CA193;background:none;border:0;font-family:inherit}
+  .tab.on{color:var(--leaf-dk)}
+
+  /* header app */
+  .apphead{display:flex;align-items:center;justify-content:space-between}
+  .brand{display:flex;align-items:center;gap:8px}
+  .wordmark{font-size:17px;font-weight:800;letter-spacing:-.01em}
+  .headr{display:flex;align-items:center;gap:10px}
+  .langpill{font-size:11px;font-weight:700;color:var(--muted);border:1px solid var(--line-2);
+    border-radius:999px;padding:3px 9px}
+  .quiet{font-size:13px;font-weight:600;color:var(--muted);background:none;border:0;font-family:inherit;padding:6px 2px}
+  .greet{font-size:24px;font-weight:800;letter-spacing:-.01em}
+
+  /* kartu */
+  .card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px}
+  .card.soft{background:var(--leaf-soft);border-color:var(--leaf-100)}
+  .card.gold{background:var(--gold-soft);border-color:var(--gold-100)}
+  .card.deep{background:var(--deep);border-color:var(--deep);color:#fff}
+  .card.dashed{border:1.5px dashed var(--line-2);background:transparent;text-align:center}
+
+  /* teks */
+  .lbl{font-size:13px;font-weight:600;color:var(--muted)}
+  .val{font-size:15px;font-weight:700}
+  .small{font-size:12.5px;color:var(--muted);line-height:1.55}
+  .money{font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+  .money-xl{font-size:30px;font-weight:800;letter-spacing:-.02em}
+  .money-lg{font-size:21px;font-weight:800;letter-spacing:-.015em}
+  .money-md{font-size:17px;font-weight:800}
+  .cur{font-size:.56em;font-weight:700;opacity:.75;margin-right:2px}
+  .addr{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.9em}
+
+  /* baris label : nilai */
+  .row{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+  .k{font-size:13.5px;color:var(--muted);font-weight:600}
+  .v{font-size:14.5px;font-weight:700}
+
+  /* progress merundang */
+  .bar{height:10px;border-radius:999px;background:#E4EBDF;overflow:hidden}
+  .bar>i{display:block;height:100%;border-radius:999px;background-image:var(--ripen)}
+  .pct{font-size:13px;font-weight:800;color:var(--leaf-dk)}
+  @keyframes ripenCycle{0%,14%{width:8%}30%,54%{width:38%}70%,92%{width:100%}100%{width:8%}}
+  .bar.anim>i{width:38%;animation:ripenCycle 7s ease-in-out infinite}
+  @media (prefers-reduced-motion:reduce){.bar.anim>i{animation:none}}
+
+  /* proporsi split */
+  .splitbar{display:flex;height:14px;border-radius:999px;overflow:hidden}
+  .splitbar .s-seek{background:#3F9A5C}
+  .splitbar .s-back{background:var(--gold)}
+
+  /* tombol */
+  .btn{display:flex;align-items:center;justify-content:center;width:100%;min-height:52px;
+    border-radius:15px;font-family:inherit;font-size:16px;font-weight:700;border:0;color:inherit}
+  .btn.leaf{background:var(--leaf);color:#fff}
+  .btn.gold{background:var(--gold);color:var(--ink)}
+  .btn.outline{background:#fff;color:var(--leaf-dk);border:1.5px solid var(--line-2)}
+  .btn.ink{background:var(--ink);color:#fff}
+  .btn.off{background:#D8E0D4;color:#8AA090}
+  .btn.sm{min-height:44px;font-size:14.5px;border-radius:13px}
+  .btn.again{background:var(--gold-soft);color:var(--gold-dk);border:1.5px solid var(--gold-100)}
+  .linkbtn{background:none;border:0;font-family:inherit;font-size:14px;font-weight:600;
+    color:var(--muted);text-decoration:underline;padding:6px 0;align-self:flex-start}
+
+  /* input */
+  .field{display:flex;flex-direction:column;gap:7px}
+  .field>label{font-size:13.5px;font-weight:700;color:var(--ink-2)}
+  .input{width:100%;min-height:52px;border:1.5px solid var(--line-2);border-radius:14px;background:#fff;
+    padding:0 15px;font-family:inherit;font-size:16px;font-weight:600;color:var(--ink);
+    display:flex;align-items:center}
+  .input.focus{border-color:var(--leaf);box-shadow:0 0 0 3px rgba(46,125,70,.14)}
+  .hint{font-size:12.5px;color:var(--muted)}
+  textarea.input{padding:13px 15px;min-height:88px;align-items:flex-start}
+
+  /* pill status */
+  .pill{display:inline-flex;align-items:center;height:24px;padding:0 11px;border-radius:999px;
+    font-size:11.5px;font-weight:700;white-space:nowrap}
+  .pill.drafted{background:#F0F3EE;color:var(--muted);border:1px solid var(--line)}
+  .pill.active{background:var(--leaf-soft);color:var(--leaf-dk)}
+  .pill.lunas{background:var(--gold-soft);color:var(--gold-dk)}
+  .pill.done{background:#EFEFEA;color:var(--muted)}
+  .pill.wait{background:#F0F3EE;color:var(--muted);border:1px solid var(--line)}
+  .pill.paid{background:var(--leaf-soft);color:var(--leaf-dk)}
+  .pill.demo{background:var(--gold-soft);color:var(--gold-dk);border:1px solid var(--gold-100)}
+
+  /* chip semantik uang */
+  .chip{display:inline-flex;align-items:center;gap:7px;height:30px;padding:0 11px;border-radius:10px;
+    font-size:13px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .chip.seek{background:var(--leaf-soft);color:var(--leaf-dk)}
+  .chip.back{background:var(--gold-soft);color:var(--gold-dk)}
+  .dot{width:8px;height:8px;border-radius:99px;flex:0 0 auto}
+  .dot.seek{background:var(--leaf)}
+  .dot.back{background:var(--gold)}
+
+  /* janji gagal-panen */
+  .fairline{display:flex;align-items:center;gap:9px;background:var(--leaf-soft);border-radius:11px;
+    padding:10px 12px;font-size:13px;font-weight:700;color:var(--leaf-dk)}
+
+  /* layar momen gelap */
+  .dark{background:var(--ink);color:#F2F6EF}
+  .dark .lbl,.dark .small,.dark .k{color:rgba(242,246,239,.72)}
+  .dark .v{color:#fff}
+  .dcard{background:#20392A;border:1px solid #2C4A36;border-radius:18px;padding:16px}
+  .dcard.seek{background:#1E4632;border-color:#2C5A40}
+  .dcard.back{background:#332E17;border-color:#55491F}
+  .goldlbl{font-size:13px;font-weight:800;color:#EFC55C;letter-spacing:.01em}
+
+  /* toast */
+  .toast{position:absolute;left:14px;right:14px;bottom:106px;z-index:35;
+    background:rgba(13,27,17,.96);color:#F2F6EF;border-radius:16px;padding:14px 16px;
+    display:flex;flex-direction:column;gap:5px}
+  .toast .linkbtn{color:#BFD3C2;align-self:flex-end;padding:2px 0}
+
+  /* ring skor */
+  .ring{width:64px;height:64px;flex:0 0 auto}
+
+  /* qr */
+  .qr{background:#fff;border-radius:12px}
+
+  /* swatch & papan token */
+  .tokrow{display:flex;flex-wrap:wrap;gap:13px;margin-top:14px}
+  .sw{width:170px;background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden}
+  .swc{height:58px}
+  .swt{padding:10px 12px}
+  .swn{font-size:13px;font-weight:800}
+  .swh{font-family:ui-monospace,monospace;font-size:11px;color:var(--muted)}
+  .swr{font-size:11.5px;color:var(--muted);margin-top:3px;line-height:1.45}
+  .tokgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(310px,1fr));gap:17px;margin-top:16px}
+  .tokcard{background:#fff;border:1px solid var(--line);border-radius:16px;padding:19px}
+  .tokcard h3{font-size:14px;font-weight:800;margin-bottom:13px}
+  .spec{display:flex;flex-direction:column;gap:11px}
+
+  /* confetti */
+  .cf{position:absolute;border-radius:2px;z-index:5}
+
+  /* frame desktop */
+  .deskwrap{width:100%;max-width:1000px}
+  .desk{border-radius:18px;border:1px solid #C7D0C2;overflow:hidden;background:#fff;
+    box-shadow:0 26px 46px -32px rgba(22,48,31,.35)}
+  .chrome{display:flex;align-items:center;gap:12px;background:#EDF1E8;padding:11px 15px;
+    border-bottom:1px solid var(--line)}
+  .cdots{display:flex;gap:6px}
+  .cdots i{width:10px;height:10px;border-radius:99px;background:#C7D2C1;display:block}
+  .curl{flex:1;background:#fff;border:1px solid var(--line);border-radius:999px;font-size:12.5px;
+    color:var(--muted);padding:6px 15px;font-weight:600}
+  table.mtab{width:100%;border-collapse:collapse;font-size:14px}
+  .mtab th{text-align:left;font-size:12.5px;font-weight:700;color:var(--muted);padding:11px 15px;
+    border-bottom:1px solid var(--line)}
+  .mtab td{padding:13px 15px;border-bottom:1px solid #EDF1E9;vertical-align:middle}
+  .mtab tr.mute td{color:#9AA79B}
+  .mchips{display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+
+  /* verifikasi: ubin foto */
+  .tilerow{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .tile{border:1.5px dashed var(--line-2);border-radius:14px;padding:13px;display:flex;
+    flex-direction:column;gap:9px;min-height:124px}
+  .tile.ok{border-style:solid;border-color:var(--leaf-100);background:var(--leaf-soft)}
+  .tlabel{font-size:13.5px;font-weight:700}
+  .captured{display:inline-flex;gap:5px;align-items:center;font-size:11.5px;font-weight:700;
+    color:var(--leaf-dk)}
+
+  /* keadaan tepi */
+  .offline{background:var(--warn-soft);border:1.5px solid var(--warn-line);border-radius:14px;padding:12px 14px}
+  .dim{opacity:.55;pointer-events:none}
+  .skel{border-radius:8px;background:#E7ECE3;animation:skelp 1.6s ease-in-out infinite}
+  @keyframes skelp{50%{opacity:.55}}
+  @media (prefers-reduced-motion:reduce){.skel{animation:none}}
+
+  .mini-phone{width:236px;height:436px;border:8px solid var(--ink);border-radius:38px;background:#fff;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
+    padding:18px;box-shadow:0 22px 40px -24px rgba(22,48,31,.4)}
+
+  /* tabel implementasi */
+  table.impl{width:100%;border-collapse:collapse;font-size:14px;background:#fff;border-radius:16px;
+    overflow:hidden;border:1px solid var(--line)}
+  .impl th{text-align:left;font-size:12.5px;font-weight:700;color:var(--muted);padding:11px 15px;
+    border-bottom:1px solid var(--line);background:#F4F7F0}
+  .impl td{padding:12px 15px;border-bottom:1px solid #EDF1E9;vertical-align:top;line-height:1.5}
+</style>
+</head>
+<body>
+<!-- gradien & pola bersama -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <linearGradient id="ripengrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#7CC08F"/><stop offset=".55" stop-color="#2E7D46"/>
+      <stop offset=".82" stop-color="#C98F1B"/><stop offset="1" stop-color="#E3A72F"/>
+    </linearGradient>
+    <pattern id="qrp" width="3.2" height="3.2" patternUnits="userSpaceOnUse">
+      <rect width="3.2" height="3.2" fill="#fff"/>
+      <rect width="1.5" height="1.5" fill="#16301F"/>
+      <rect x="1.7" width="1.5" height="1.5" fill="#16301F" opacity=".22"/>
+      <rect x="1.7" y="1.7" width="1.5" height="1.5" fill="#16301F" opacity=".78"/>
+      <rect y="1.7" width="1.5" height="1.5" fill="#16301F" opacity=".4"/>
+    </pattern>
+  </defs>
+</svg>
+
+<div class="wrap">
+
+<header class="board-head">
+  <svg width="52" height="60" viewBox="0 0 64 72" aria-hidden="true">
+    <path d="M32 4 52 28 32 52 12 28Z" fill="#2E7D46"/>
+    <path d="M32 4v48M12 28h40" stroke="#F7F9F3" stroke-width="2.5"/>
+    <path d="M32 52c-1 6-7 7-9 13" stroke="#16301F" stroke-width="2.5" fill="none"/>
+    <path d="m23 65 2.6 3L23 71l-2.6-3z" fill="#E3A72F"/>
+  </svg>
+  <div>
+    <h1>Kite — mockup UI “Sawah → Panen”</h1>
+    <p class="board-sub">Revisi visual seluruh surface yang sudah ada di sistem. Semua copy layar
+      diambil verbatim dari katalog locale — tidak ada kata terlarang, tidak ada kosakata kripto.
+      Latar papan ini sengaja berbeda dari kertas aplikasi supaya layar ponsel terbaca sebagai
+      “perangkat”.</p>
+    <div class="legend">
+      <span><i class="dot seek"></i>hijau daun = milik petani (untukmu)</span>
+      <span><i class="dot back"></i>emas padi = bagian pendukung (ke pendukung, panen, finis)</span>
+      <span><i class="dot" style="background:#7CC08F"></i>progress “merundang”: hijau muda → emas saat penuh</span>
+    </div>
+  </div>
+</header>
+
+<nav class="toc">
+  <a href="#tokens">Token</a><a href="#s1">Masuk</a><a href="#s2">Beranda</a>
+  <a href="#s3">Ajukan</a><a href="#s4">Detail</a><a href="#s5">Momen</a>
+  <a href="#s6">Kirim</a><a href="#s7">Riwayat</a><a href="#s8">Dukung</a>
+  <a href="#s9">Profil publik</a><a href="#s10">Keadaan tepi</a><a href="#s11">Desktop</a>
+  <a href="#s12">Implementasi</a>
+</nav>
+
+<!-- ═══════════════════ 0 · PAPAN TOKEN ═══════════════════ -->
+<section id="tokens" class="board-sec">
+  <p class="sec-no">00</p><h2>Papan token</h2>
+  <p class="sec-sub">Palet menyatukan hijau identitas yang sudah ada di PWA manifest (#1B4332) dan
+    confetti dengan UI — bukan menambah identitas baru. Emas hanya pernah jadi warna aksi di momen
+    perayaan dan penanda aliran pendukung.</p>
+  <div class="tokrow">
+    <div class="sw"><div class="swc" style="background:#16301F"></div><div class="swt"><p class="swn">Tinta</p><p class="swh">#16301F</p><p class="swr">Teks utama; latar layar momen (bukan hitam)</p></div></div>
+    <div class="sw"><div class="swc" style="background:#F7F9F3;border-bottom:1px solid #DCE5DA"></div><div class="swt"><p class="swn">Kertas</p><p class="swh">#F7F9F3</p><p class="swr">Latar aplikasi — putih kehijauan</p></div></div>
+    <div class="sw"><div class="swc" style="background:#1B4332"></div><div class="swt"><p class="swn">Dalam</p><p class="swh">#1B4332</p><p class="swr">Kartu saldo — sama dengan theme_color PWA</p></div></div>
+    <div class="sw"><div class="swc" style="background:#2E7D46"></div><div class="swt"><p class="swn">Daun</p><p class="swh">#2E7D46</p><p class="swr">Untukmu; tombol utama; tautan bukti</p></div></div>
+    <div class="sw"><div class="swc" style="background:#E3A72F"></div><div class="swt"><p class="swn">Padi</p><p class="swh">#E3A72F</p><p class="swr">Ke pendukung; garis finis; bagian jadi emas</p></div></div>
+    <div class="sw"><div class="swc" style="background:#5C6B5E"></div><div class="swt"><p class="swn">Hijau-abu</p><p class="swh">#5C6B5E</p><p class="swr">Label sekunder; teks bantuan</p></div></div>
+    <div class="sw"><div class="swc" style="background:#DCE5DA"></div><div class="swt"><p class="swn">Garis</p><p class="swh">#DCE5DA</p><p class="swr">Batas kartu; pemisah halus</p></div></div>
+    <div class="sw"><div class="swc" style="background:#B3372B"></div><div class="swt"><p class="swn">Tanah</p><p class="swh">#B3372B</p><p class="swr">Kesalahan saja — tidak pernah dekorasi</p></div></div>
+  </div>
+
+  <div class="tokgrid">
+    <div class="tokcard">
+      <h3>Tipografi — Plus Jakarta Sans (Tokotype, Indonesia)</h3>
+      <div class="spec">
+        <p class="money-xl money"><span class="cur">≈ Rp</span> 19.200.000</p>
+        <p class="money-lg">Garis Finis · Selesai</p>
+        <p style="font-size:15px;line-height:1.6;color:var(--ink-2)">Panen gagal? 0 rupiah diambil.
+          Tenang. Batas tercapai, kesepakatan berakhir selamanya.</p>
+        <p class="lbl">Berakhir saat batas tercapai · Didukung oleh</p>
+        <p class="small">Skor tumbuh dari catatan nyata, bukan janji.</p>
+        <p class="small">Bobot: 800 angka &amp; judul · 700 tombol &amp; nilai · 600 label · 400 badan.
+          Angka selalu tabular (kolom rata).</p>
+      </div>
+    </div>
+
+    <div class="tokcard">
+      <h3>Semantik dua arus — setiap rupiah berwarna</h3>
+      <p class="small" style="margin-bottom:12px">Hijau selalu berarti “milik petani”, emas selalu
+        “bagian pendukung”. Berlaku di momen split, kartu kesepakatan, riwayat, dan konsol Mitra —
+        pembaca tidak perlu membaca label untuk tahu ke mana uang pergi.</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <span class="chip seek"><i class="dot seek"></i>untukmu +1.200,00</span>
+        <span class="chip back"><i class="dot back"></i>ke pendukung +300,00</span>
+      </div>
+      <div class="splitbar" style="margin-top:14px"><div class="s-seek" style="width:80%"></div><div class="s-back" style="width:20%"></div></div>
+      <p class="small" style="margin-top:8px">Proporsi 80/20 terlihat sekali lihat — ini jantung produk.</p>
+    </div>
+
+    <div class="tokcard">
+      <h3>Progress “merundang”</h3>
+      <div style="display:flex;flex-direction:column;gap:14px;margin-top:4px">
+        <div><div class="bar"><i style="width:8%"></i></div><p class="small" style="margin-top:5px">baru aktif — hijau muda</p></div>
+        <div><div class="bar anim"><i></i></div><p class="small" style="margin-top:5px">pertengahan musim (animasi: siklus 8% → 38% → 100%)</p></div>
+        <div><div class="bar"><i style="width:100%"></i></div><p class="small" style="margin-top:5px">batas tercapai — emas penuh, lanjut ke Garis Finis</p></div>
+      </div>
+    </div>
+
+    <div class="tokcard">
+      <h3>Tombol &amp; pill status</h3>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <button class="btn leaf sm" style="width:auto;padding:0 22px">Dukung</button>
+        <button class="btn gold sm" style="width:auto;padding:0 22px">Bagikan</button>
+        <button class="btn outline sm" style="width:auto;padding:0 22px">Masuk</button>
+        <button class="btn off sm" style="width:auto;padding:0 22px">Lanjut</button>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">
+        <span class="pill drafted">Permintaan</span><span class="pill active">Aktif</span>
+        <span class="pill lunas">Lunas</span><span class="pill done">Selesai</span>
+        <span class="pill wait">Menunggu</span><span class="pill demo">Demo Tool</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════ 1 · MASUK ═══════════════════ -->
+<section id="s1" class="board-sec">
+  <p class="sec-no">01</p><h2>Masuk — passkey, nomor, verifikasi</h2>
+  <p class="sec-sub">Tiga layar pertama. Logo layang-layang muncul pertama kali di sini — nama
+    produk akhirnya punya wujud. Tombol utama hijau daun 52px (ramah jempol), tidak ada kosakata
+    kripto, tidak ada yang perlu dicatat.</p>
+  <div class="flowrow">
+
+    <figure class="stage"><div class="phone"><div class="screen">
+      <div class="sbar"><span>09.41</span><svg width="58" height="13" viewBox="0 0 58 13" fill="#16301F"><rect y="7" width="3" height="6" rx="1"/><rect x="5" y="4.5" width="3" height="8.5" rx="1"/><rect x="10" y="2" width="3" height="11" rx="1"/><path d="M22 12c2.5-4.5 8.5-4.5 11 0" stroke="#16301F" stroke-width="2" fill="none"/><rect x="38" y="2.5" width="16" height="9" rx="2.5" fill="none" stroke="#16301F" stroke-width="1.4"/><rect x="40" y="4.5" width="9" height="5" rx="1.2"/><rect x="55.5" y="5.2" width="2.2" height="3.6" rx="1"/></svg></div>
+      <div class="island"></div>
+      <div class="body center" style="gap:15px">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:8px;margin-bottom:8px">
+          <svg width="58" height="66" viewBox="0 0 64 72" aria-hidden="true">
+            <path d="M32 4 52 28 32 52 12 28Z" fill="#2E7D46"/>
+            <path d="M32 4v48M12 28h40" stroke="#F7F9F3" stroke-width="2.5"/>
+            <path d="M32 52c-1 6-7 7-9 13" stroke="#16301F" stroke-width="2.5" fill="none"/>
+            <path d="m23 65 2.6 3L23 71l-2.6-3z" fill="#E3A72F"/>
+          </svg>
+          <p class="wordmark" style="font-size:30px;letter-spacing:-.02em">Kite</p>
+        </div>
+        <h2 style="font-size:22px">Selamat datang di Kite</h2>
+        <p class="small" style="max-width:30ch;margin:0 auto">Satu ketukan untuk mulai. Tidak ada yang perlu dicatat.</p>
+        <div style="margin-top:24px;display:flex;flex-direction:column;gap:11px">
+          <button class="btn leaf">Daftar</button>
+          <button class="btn outline">Masuk</button>
+        </div>
+      </div>
+    </div></div>
+    <figcaption><strong>Daftar</strong>: mark layang-layang + wordmark menggantikan halaman teks
+      polos; tombol daun 52px; sekunder outline. Kondisi sibuk: label berganti “Menyiapkan
+      akunmu…” tanpa mengubah tata letak.</figcaption></figure>
+
+    <figure class="stage"><div class="phone"><div class="screen">
+      <div class="sbar"><span>09.41</span><svg width="58" height="13" viewBox="0 0 58 13" fill="#16301F"><rect y="7" width="3" height="6" rx="1"/><rect x="5" y="4.5" width="3" height="8.5" rx="1"/><rect x="10" y="2" width="3" height="11" rx="1"/><path d="M22 12c2.5-4.5 8.5-4.5 11 0" stroke="#16301F" stroke-width="2" fill="none"/><rect x="38" y="2.5" width="16" height="9" rx="2.5" fill="none" stroke="#16301F" stroke-width="1.4"/><rect x="40" y="4.5" width="9" height="5" rx="1.2"/><rect x="55.5" y="5.2" width="2.2" height="3.6" rx="1"/></svg></div>
+      <div class="island"></div>
+      <div class="body">
+        <button class="linkbtn">Kembali</button>
+        <h2 style="margin-top:4px">Nomor HP kamu</h2>
+        <div class="field" style="margin-top:8px">
+          <div class="input">0812 3456 7890</div>
+          <p class="hint">Contoh: 0812xxxxxxx</p>
+        </div>
+        <button class="btn leaf" style="margin-top:4px">Lanjut</button>
+        <p class="small" style="text-align:center;margin-top:auto;margin-bottom:6px">Nomor ini tersimpan di perangkatmu saja. (Tahap demo)</p>
+      </div>
+    </div></div>
+    <figcaption><strong>Nomor HP</strong>: input fokus memakai cincin daun (bukan border tebal);
+      catatan privasi di bawah, kecil dan jujur. Validasi “Nomor belum lengkap.” muncul merah tanah
+      di bawah input, hanya setelah menyentuh.</figcaption></figure>
+
+    <figure class="stage"><div class="phone"><div class="screen">
+      <div class="sbar"><span>09.41</span><svg width="58" height="13" viewBox="0 0 58 13" fill="#16301F"><rect y="7" width="3" height="6" rx="1"/><rect x="5" y="4.5" width="3" height="8.5" rx="1"/><rect x="10" y="2" width="3" height="11" rx="1"/><path d="M22 12c2.5-4.5 8.5-4.5 11 0" stroke="#16301F" stroke-width="2" fill="none"/><rect x="38" y="2.5" width="16" height="9" rx="2.5" fill="none" stroke="#16301F" stroke-width="1.4"/><rect x="40" y="4.5" width="9" height="5" rx="1.2"/><rect x="55.5" y="5.2" width="2.2" height="3.6" rx="1"/></svg></div>
+      <div class="island"></div>
+      <div class="body">
+        <button class="linkbtn">Kembali</button>
+        <div class="row" style="margin-top:4px">
+          <h2>Verifikasi identitas</h2><span class="pill demo">Demo Tool</span>
+        </div>
+        <p class="small">Pemeriksa contoh ini menyetujui otomatis. Fotomu tidak pergi dari perangkatmu.</p>
+        <div class="tilerow" style="margin-top:2px">
+          <div class="tile ok">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#1F5C35" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8" cy="11" r="2"/><path d="M13 9.5h5M13 13.5h5"/></svg>
+            <p class="tlabel">Foto KTP</p>
+            <span class="captured">✓ Foto terambil</span>
+          </div>
+          <div class="tile ok">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#1F5C35" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="9" r="3.4"/><path d="M5.5 19c1.4-3 3.8-4.5 6.5-4.5s5.1 1.5 6.5 4.5"/></svg>
+            <p class="tlabel">Foto selfie</p>
+            <span class="captured">✓ Foto terambil</span>
+          </div>
+        </div>
+        <button class="btn leaf">Kirim</button>
+        <p class="small" style="text-align:center;margin-top:auto;margin-bottom:6px">Fase “Memeriksa…” → “Akun siap!” mengganti teks tombol, bukan menambah layar.</p>
+      </div>
+    </div></div>
+    <figcaption><strong>Verifikasi</strong>: dua ubin foto berubah dari garis putus (belum) ke
+      hijau lembut + “✓ Foto terambil”; lencana Demo Tool pindah ke keluarga emas tanah. Setelah
+      “Akun siap!” saldo biaya layanan terisi otomatis — tanpa layar tambahan.</figcaption></figure>
+
+  </div>
+</section>
+
+<!-- ═══════════════════ 2 · BERANDA ═══════════════════ -->
+<section id="s2" class="board-sec">
+  <p class="sec-no">02</p><h2>Beranda — rumah Budi</h2>
+  <p class="sec-sub">Kartu saldo memakai warna Dalam (#1B4332 — sama dengan theme PWA, identitas
+    yang selama ini terbelah akhirnya satu). Reputasi jadi cincin skor dengan penjelasannya.
+    Kartu kesepakatan: judul rupiah, progress merundang, chip emas untuk bagian pendukung, dan
+    janji gagal-panen dinaikkan jadi strip hijau — keadilan tidak pernah disembunyikan.</p>
+  <div class="flowrow">
+
+    <figure class="stage"><div class="phone"><div class="screen">
+      <div class="sbar"><span>09.41</span><svg width="58" height="13" viewBox="0 0 58 13" fill="#16301F"><rect y="7" width="3" height="6" rx="1"/><rect x="5" y="4.5" width="3" height="8.5" rx="1"/><rect x="10" y="2" width="3" height="11" rx="1"/><path d="M22 12c2.5-4.5 8.5-4.5 11 0" stroke="#16301F" stroke-width="2" fill="none"/><rect x="38" y="2.5" width="16" height="9" rx="2.5" fill="none" stroke="#16301F" stroke-width="1.4"/><rect x="40" y="4.5" width="9" height="5" rx="1.2"/><rect x="55.5" y="5.2" width="2.2" height="3.6" rx="1"/></svg></div>
+      <div class="island"></div>
+      <div class="body pb">
+        <header class="apphead">
+          <div class="brand">
+            <svg width="24" height="28" viewBox="0 0 64 72" aria-hidden="true"><path d="M32 4 52 28 32 52 12 28Z" fill="#2E7D46"/><path d="M32 4v48M12 28h40" stroke="#F7F9F3" stroke-width="3"/><path d="M32 52c-1 6-7 7-9 13" stroke="#16301F" stroke-width="3" fill="none"/></svg>
+            <span class="wordmark">Kite</span>
+          </div>
+          <div class="headr"><span class="langpill">id</span><button class="quiet">Keluar</button></div>
+        </header>
+        <p class="greet">Halo!</p>
+
+        <section class="card deep">
+          <div class="row">
+            <span class="lbl" style="color:rgba(247,249,243,.78)">Saldo</span>
+            <svg width="17" height="20" viewBox="0 0 64 72" aria-hidden="true"><path d="M32 4 52 28 32 52 12 28Z" fill="#E3A72F"/><path d="M32 4v48M12 28h40" stroke="#1B4332" stroke-width="4"/></svg>
+          </div>
+          <p class="money-xl money" style="color:#fff;margin-top:9px"><span class="cur">≈ Rp</span> 28.800.000</p>
+          <p class="small" style="color:#E8C468;font-weight:700;margin-top:4px">1.800,00 AUSD</p>
+        </section>
+
+        <section class="card">
+          <div style="display:flex;gap:14px;align-items:center">
+            <svg class="ring" viewBox="0 0 64 64">
+              <circle cx="32" cy="32" r="26" stroke="#E4EBDF" stroke-width="7" fill="none"/>
+              <circle cx="32" cy="32" r="26" stroke="url(#ripengrad)" stroke-width="7" fill="none" stroke-linecap="round" stroke-dasharray="94.7 163.4" transform="rotate(-90 32 32)"/>
+              <text x="32" y="38" text-anchor="middle" font-size="17" font-weight="800" fill="#16301F" font-family="Plus Jakarta Sans, sans-serif">58</text>
+            </svg>
+            <div style="display:flex;flex-direction:column;gap:3px">
+              <p class="lbl">Reputasi</p>
+              <p class="small"><b style="color:var(--ink)">2</b> perjanjian selesai</p>
+              <p class="small"><b style="color:var(--ink)">4</b> panen konsisten</p>
+              <p class="small"><b style="color:var(--ink)">2</b> pendukung berbeda</p>
+            </div>
+          </div>
+          <p class="small" style="font-style:italic;margin-top:11px">Skor tumbuh dari catatan nyata, bukan janji.</p>
+          <div class="row" style="margin-top:11px;padding-top:11px;border-top:1px solid var(--line)">
+            <span class="k">Batas dukungan</span><span class="v">1.296,00 AUSD</span>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="row"><span class="lbl">Kesepakatan aktif</span><span class="pill active">Aktif</span></div>
+          <div class="row" style="margin-top:12px;align-items:flex-end">
+            <div>
+              <p class="money-lg money"><span class="cur">≈ Rp</span> 7.680.000</p>
+              <p class="small" style="margin-top:3px">Sisa 480,00 AUSD dari batas 780,00 AUSD</p>
+            </div>
+            <span class="pct">38%</span>
+          </div>
+          <div class="bar" style="margin-top:10px"><i style="width:38%"></i></div>
+          <div class="row" style="margin-top:12px"><span class="k">Didukung oleh</span><span class="v addr">0x1a9C…F2b1</span></div>
+          <div class="row" style="margin-top:7px"><span class="k">Bagian</span><span class="chip back"><i class="dot back"></i>20%</span></div>
+          <div class="row" style="margin-top:7px"><span class="k">Berakhir</span><span class="k" style="font-size:13.5px">saat batas tercapai</span></div>
+          <div class="fairline" style="margin-top:12px"><i class="dot seek"></i>Panen gagal? 0 rupiah diambil. Tenang.</div>
+          <button class="btn leaf sm" style="margin-top:13px">Bagi Hasil</button>
+        </section>
+      </div>
+      <nav class="tabbar">
+        <button class="tab on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12 12 4l8 8"/><path d="M6 10v10h12V10"/></svg>Beranda</button>
+        <button class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7-4.6-7-9.5C5 7.5 7 6 9 6c1.4 0 2.4.7 3 1.7C12.6 6.7 13.6 6 15 6c2 0 4 1.5 4 4.5C19 15.4 12 20 12 20Z"/></svg>Dukung</button>
+        <button class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h13"/><path d="m13 6 6 6-6 6"/></svg>Kirim</button>
+        <button class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h14v16l-7-3-7 3Z"/></svg>Riwayat</button>
+      </nav>
+    </div></div>
+    <figcaption><strong>Beranda (Budi, tengah musim, 38%)</strong>: header mark+wordmark, “Keluar”
+      jadi teks tenang (bukan tombol berbingkai); saldo = kartu Dalam dengan detail AUSD emas;
+      reputasi = cincin 58 dengan penjelasan terbuka + batas dukungan; kartu kesepakatan memakai
+      progress merundang, chip emas “Bagian 20%”, dan strip janji gagal-panen.</figcaption></figure>
+
+    <figure class="stage"><div class="phone"><div class="screen">
+      <div class="sbar"><span>09.41</span><svg width="58" height="13" viewBox="0 0 58 13" fill="#16301F"><rect y="7" width="3" height="6" rx="1"/><rect x="5" y="4.5" width="3" height="8.5" rx="1"/><rect x="10" y="2" width="3" height="11" rx="1"/><path d="M22 12c2.5-4.5 8.5-4.5 11 0" stroke="#16301F" stroke-width="2" fill="none"/><rect x="38" y="2.5" width="16" height="9" rx="2.5" fill="none" stroke="#16301F" stroke-width="1.4"/><rect x="40" y="4.5" width="9" height="5" rx="1.2"/><rect x="55.5" y="5.2" width="2.2" height="3.6" rx="1"/></svg></div>
+      <div class="island"></div>
+      <div class="body pb">
+        <header class="apphead">
+          <div class="brand">
+            <svg width="24" height="28" viewBox="0 0 64 72" aria-hidden="true"><path d="M32 4 52 28 32 52 12 28Z" fill="#2E7D46"/><path d="M32 4v48M12 28h40" stroke="#F7F9F3" stroke-width="3"/><path d="M32 52c-1 6-7 7-9 13" stroke="#16301F" stroke-width="3" fill="none"/></svg>
+            <span class="wordmark">Kite</span>
+          </div>
+          <div class="headr"><span class="langpill">id</span><button class="quiet">Keluar</button></div>
+        </header>
+        <p class="greet">Halo!</p>
+
+        <section class="card deep">
+          <div class="row"><span class="lbl" style="color:rgba(247,249,243,.78)">Saldo</span></div>
+          <p class="money-xl money" style="color:#fff;margin-top:9px"><span class="cur">≈ Rp</span> 0</p>
+          <p class="small" style="color:#E8C468;font-weight:700;margin-top:4px">0,00 AUSD</p>
+        </section>
+
+        <section class="card">
+          <div style="display:flex;gap:14px;align-items:center">
+            <svg class="ring" viewBox="0 0 64 64">
+              <circle cx="32" cy="32" r="26" stroke="#E4EBDF" stroke-width="7" fill="none"/>
+              <circle cx="32" cy="32" r="26" stroke="url(#ripengrad)" stroke-width="7" fill="none" stroke-linecap="round" stroke-dasharray="0.5 163.4" transform="rotate(-90 32 32)"/>
+              <text x="32" y="38" text-anchor="middle" font-size="17" font-weight="800" fill="#16301F" font-family="Plus Jakarta Sans, sans-serif">0</text>
+            </svg>
+            <div style="display:flex;flex-direction:column;gap:3px">
+              <p class="lbl">Reputasi</p>
+              <p class="small"><b style="color:var(--ink)">0</b> perjanjian selesai</p>
+              <p class="small"><b style="color:var(--ink)">0</b> panen konsisten</p>
+              <p class="small"><b style="color:var(--ink)">0</b> pendukung berbeda</p>
+            </div>
+          </div>
+          <div class="row" style="margin-top:11px;padding-top:11px;border-top:1px solid var(--line)">
+            <span class="k">Batas dukungan</span><span class="v">600,00 AUSD</span>
+          </div>
+        </section>
+
+        <section class="card dashed" style="padding:22px 18px">
+          <p class="val" style="color:var(--ink)">Belum ada kesepakatan aktif.</p>
+          <p class="small" style="margin-top:6px">Ajukan bagi hasil untuk mulai — batasnya dihitung dari rekam jejakmu.</p>
+          <button class="btn leaf sm" style="margin-top:14px">Ajukan dana</button>
+        </section>
+      </div>
+      <nav class="tabbar">
+        <button class="tab on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12 12 4l8 8"/><path d="M6 10v10h12V10"/></svg>Beranda</button>
+        <button class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7-4.6-7-9.5C5 7.5 7 6 9 6c1.4 0 2.4.7 3 1.7C12.6 6.7 13.6 6 15 6c2 0 4 1.5 4 4.5C19 15.4 12 20 12 20Z"/></svg>Dukung</button>
+        <button class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h13"/><path d="m13 6 6 6-6 6"/></svg>Kirim</button>
+        <button class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h14v16l-7-3-7 3Z"/></svg>Riwayat</button>
+      </nav>
+    </div></div>
+    <figcaption><strong>Beranda (pengguna baru)</strong>: cincin 0 dan kartu kosong tetap jujur —
+      “Belum ada kesepakatan aktif.” dengan ajakan dan batas dukungan 600,00 AUSD terlihat sejak
+      awal. Sebelum verifikasi selesai, tombol terkunci menampilkan “Selesaikan verifikasi dulu
+      untuk mulai.” (kondisi yang sudah ada, hanya berganti warna).</figcaption></figure>
+
+  </div>
+</section>
+
+<!-- ═══════════════════ 3 · AJUKAN ═══════════════════ -->
+<section id="s3" class="board-sec">
+  <p class="sec-no">03</p><h2>Ajukan — permintaan Budi</h2>
+  <p class="sec-sub">Layar padat informasi yang paling butuh disiplin: panduan aturan
+    (“aturan: 20% dikurangi 0,8% × skor”) tetap satu kartu lembut dengan nilai tebal; status
+    “Melebihi batas pengajuanmu saat ini” merah tanah inline, bukan dialog.</p>
+  <div class="flowrow">
+
+    <figure class="stage"><div class="phone"><div class="screen">
+      <div class="sbar"><span>09.41</span><svg width="58" height="13" viewBox="0 0 58 13" fill="#16301F"><rect y="7" width="3" height="6" rx="1"/><rect x="5" y="4.5" width="3" height="8.5" rx="1"/><rect x="10" y="2" width="3" height="11" rx="1"/><path d="M22 12c2.5-4.5 8.5-4.5 11 0" stroke="#16301F" stroke-width="2" fill="none"/><rect x="38" y="2.5" width="16" height="9" rx="2.5" fill="none" stroke="#16301F" stroke-width="1.4"/><rect x="40" y="4.5" width="9" height="5" rx="1.2"/><rect x="55.5" y="5.2" width="2.2" height="3.6" rx="1"/></svg></div>
+      <div class="island"></div>
+      <div class="body">
+        <button class="linkbtn">Kembali</button>
+        <h2 style="margin-top:2px">Ajukan bagi hasil</h2>
+        <div class="field">
+          <label>Didukung oleh</label>
+          <div class="input addr">0x9dF4…c2A7</div>
+          <p class="hint">Kode terima pendukung</p>
+        </div>
+        <div class="field">
+          <label>Jumlah</label>
+          <div class="input" style="justify-content:space-between"><span>600</span><span class="small">AUSD</span></div>
+          <p class="hint">Batas pengajuanmu sekarang 1.296,00 AUSD</p>
+        </div>
+        <div class="field">
+          <label>Tujuan</label>
+          <div class="input" style="min-height:74px">Bibit padi, pupuk, dan upah buruh tanam.</div>
+          <p class="hint">Maksimal 140 karakter. Tujuan ini ikut dibagikan.</p>
+        </div>
+        <section class="card soft">
+          <div class="row"><span class="k">Bagian pendukung</span><span class="chip back"><i class="dot back"></i>15,4%</span></div>
+          <p class="small" style="margin-top:3px">aturan: 20% dikurangi 0,8% × skor</p>
+          <div class="row" style="margin-top:10px"><span class="k">Batas total</span><span class="v">780,00 AUSD</span></div>
+          <p class="small" style="margin-top:3px">aturan: 1,3 × jumlah pengajuan</p>
+        </section>
+        <button class="btn leaf">Ajukan bagi hasil</button>
+      </div>
+    </div></div>
+    <figcaption><strong>Ajukan</strong>: satu kolom tenang; kartu panduan hijau lembut menjelaskan
+      setiap angka dengan aturannya (tidak ada angka tanpa alasan). Fase lain: “Menandatangani…”,
+      “Pengajuan belum terkirim” (saldo biaya layanan habis — kartu jujur, bukan error).</figcaption></figure>
+
+    <figure class="stage"><div class="phone"><div class="screen">
+      <div class="sbar"><span>09.41</span><svg width="58" height="13" viewBox="0 0 58 13" fill="#16301F"><rect y="7" width="3" height="6" rx="1"/><rect x="5" y="4.5" width="3" height="8.5" rx="1"/><rect x="10" y="2" width="3" height="11" rx="1"/><path d="M22 12c2.5-4.5 8.5-4.5 11 0" stroke="#16301F" stroke-width="2" fill="none"/><rect x="38" y="2.5" width="16" height="9" rx="2.5" fill="none" stroke="#16301F" stroke-width="1.4"/><rect x="40" y="4.5" width="9" height="5" rx="1.2"/><rect x="55.5" y="5.2" width="2.2" height="3.6" rx="1"/></svg></div>
+      <div class="island"></div>
+      <div class="body center">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:8px;margin-top:12px">
+          <svg width="50" height="57" viewBox="0 0 64 72" aria-hidden="true"><path d="M32 4 52 28 32 52 12 28Z" fill="#E3A72F"/><path d="M32 4v48M12 28h40" stroke="#16301F" stroke-width="3"/><path d="M32 52c-1 6-7 7-9 13" stroke="#16301F" stroke-width="3" fill="none"/><path d="m23 65 2.6 3L23 71l-2.6-3z" fill="#2E7D46"/></svg>
+        </div>
+        <h2 style="font-size:22px">Pengajuan terkirim!</h2>
+        <p class="small" style="max-width:32ch;margin:0 auto">Bagikan permintaanmu ke pendukung supaya mereka bisa mendukungmu.</p>
+        <div class="input addr" style="width:100%;font-size:13.5px">kite.id/p/budi?ajukan=bibit-padi</div>
+        <button class="btn leaf">Bagikan lewat WhatsApp</button>
+        <div style="display:flex;gap:9px;width:100%;align-items:center">
+          <button class="btn outline sm" style="flex:1">Salin tautan</button>
+          <span class="chip seek">✓ Tautan tersalin</span>
+        </div>
+      </div>
+    </div></div>
+    <figcaption><strong>Terkirim</strong>: tautan profil terbaca sebagai alamat pendek (bukan hex
+      mentah); “✓ Tautan tersalin” menggantikan tombol sesaat. Profilmu publik adalah aset
+      rujukan — langkah berikutnya ada di layar 09.</figcaption></figure>
+
+  </div>
+</section>
+
+<!-- ═══════════════════ 4 · DETAIL ═══════════════════ -->
+<section id="s4" class="board-sec">
+  <p class="sec-no">04</p><h2>Detail bagi hasil</h2>
+  <p class="sec-sub">Syarat dan riwayat panen dalam dua kartu. Setiap baris split diberi titik
+    warna semantik — hijau untukmu, emas ke pendukung — jadi riwayat bisa dibaca tanpa label.</p>
+  <div class="flowrow" style="max-width:480px">
+
+    <figure class="stage"><div class="phone"><div class="screen">
+      <div class="sbar"><span>09.41</span><svg width="58" height="13" viewBox="0 0 58 13" fill="#16301F"><rect y="7" width="3" height="6" rx="1"/><rect x="5" y="4.5" width="3" height="8.5" rx="1"/><rect x="10" y="2" width="3" height="11" rx="1"/><path d="M22 12c2.5-4.5 8.5-4.5 11 0" stroke="#16301F" stroke-width="2" fill="none"/><rect x="38" y="2.5" width="16" height="9" rx="2.5" fill="none" stroke="#16301F" stroke-width="1.4"/><rect x="40" y="4.5" width="9" height="5" rx="1.2"/><rect x="55.5" y="5.2" width="2.2" height="3.6" rx="1"/></svg></div>
+      <div class="island"></div>
+      <div class="body">
+        <button class="linkbtn">Kembali</button>
+        <div class="row" style="margin-top:2px"><h2>Bagi Hasil</h2><span class="pill active">Aktif</span></div>
+
+        <section class="card">
+          <p class="lbl" style="margin-bottom:10px">Syarat</p>
+          <div class="row"><span class="k">Didukung oleh</span><span class="v addr">0x1a9C…F2b1</span></div>
+          <div class="row" style="margin-top:7px"><span class="k">Jumlah</span><span class="v">600,00 AUSD</span></div>
+          <div class="row" style="margin-top:7px"><span class="k">Bagian</span><span class="chip back"><i class="dot back"></i>20%</span></div>
+          <div class="row" style="margin-top:7px"><span class="k">Batas</span><span class="v">780,00 AUSD</span></div>
+          <div class="row" style="margin-top:7px"><span class="k">Berakhir</span><span class="k" style="font-size:13.5px">saat batas tercapai</span></div>
+          <div class="bar" style="margin-top:13px"><i style="width:38%"></i></div>
+          <div class="row" style="margin-top:6px"><span class="k">Kemajuan</span><span class="pct">38%</span></div>
+          <div class="fairline" style="margin-top:13px"><i class="dot seek"></i>Panen gagal? 0 rupiah diambil. Tenang.</div>
+        </section>
+
+        <section class="card">
+          <p class="lbl" style="margin-bottom:10px">Riwayat panen</p>
+          <div class="row"><span class="v">Panen 1</span><span class="small">12 Okt 2026</span></div>
+          <div style="display:flex;flex-direction:column;gap:6px;margin-top:9px">
+            <div class="row"><span class="k">Kotor</span><span class="v">1.500,00 AUSD</span></div>
+            <div class="row"><span class="k" style="display:flex;gap:7px;align-items:center"><i class="dot seek"></i>untukmu</span><span class="v" style="color:var(--leaf)">+1.200,00 AUSD</span></div>
+            <div class="row"><span class="k" style="display:flex;gap:7px;align-items:center"><i class="dot back"></i>ke pendukung</span><span class="v" style="color:var(--gold-dk)">+300,00 AUSD</span></div>
+            <div class="row"><span class="k">Sisa setelah</span><span class="v">480,00 AUSD</span></div>
+          </div>
+          <button class="linkbtn" style="color:var(--leaf-dk)">lihat bukti</button>
+        </section>
+
+        <p class="small" style="text-align:center;margin-top:auto">Setiap panen menambah satu baris; bukti membuka halaman penjelajah.</p>
+      </div>
+    </div></div>
+    <figcaption><strong>Detail</strong>: syarat lengkap (semua elemen kartu kesepakatan tetap satu
+      komponen, FR-004) + riwayat panen per baris dengan split berwarna. “lihat bukti” tetap
+      tautan hijau tua — labelnya teks, hash hanya di tautan.</figcaption></figure>
+
+  </div>
+</section>
+
+<!-- ═══════════════════ 5 · MOMEN ═══════════════════ -->
+<section id="s5" class="board-sec">
+  <p class="sec-no">05</p><h2>Momen — jantung produk</h2>
+  <p class="sec-sub">Tiga wajah dari satu kejadian. Momen gelap memakai tinta hijau #16301F (bukan
+    hitam), aksen emas hanya di sini dan di Garis Finis — perayaan adalah satu-satunya tempat
+    emas berteriak. Momen maaf-masa justru sunyi: tanpa warna, tanpa pesta, martabat.</p>
+  <div class="flowrow">
+
+    <figure class="stage"><div class="phone"><div class="screen dark">
+      <div class="sbar"><span>09.41</span><svg width="58" height="13" viewBox="0 0 58 13" fill="#F2F6EF"><rect y="7" width="3" height="6" rx="1"/><rect x="5" y="4.5" width="3" height="8.5" rx="1"/><rect x="10" y="2" width="3" height="11" rx="1"/><path d="M22 12c2.5-4.5 8.5-4.5 11 0" stroke="#F2F6EF" stroke-width="2" fill="none"/><rect x="38" y="2.5" width="16" height="9" rx="2.5" fill="none" stroke="#F2F6EF" stroke-width="1.4"/><rect x="40" y="4.5" width="9" height="5" rx="1.2"/><rect x="55.5" y="5.2" width="2.2" height="3.6" rx="1"/></svg></div>
+      <div class="island"></div>
+      <div class="body center" style="gap:17px">
+        <p class="goldlbl">Bagi hasil</p>
+        <div>
+          <p class="money-xl money" style="font-size:34px;color:#fff"><span class="cur">≈ Rp</span> 24.000.000</p>
+          <p class="small" style="margin-top:5px">Kotor 1.500,00 AUSD</p>
+        </div>
+        <div class="splitbar" style="width:100%"><div class="s-seek" style="width:80%"></div><div class="s-back" style="width:20%"></div></div>
+        <div style="display:flex;gap:10px;width:100%">
+          <div class="dcard seek" style="flex:1;text-align:left">
+            <p class="lbl" style="color:rgba(242,246,239,.72)">untukmu</p>
+            <p class="money-md money" style="color:#9FE0B0;margin-top:4px">+1.200,00</p>
+            <p class="small" style="color:rgba(242,246,239,.6)">AUSD · ≈ Rp 19.200.000</p>
+          </div>
+          <div class="dcard back" style="flex:1;text-align:left">
+            <p class="lbl" style="color:rgba(242,246,239,.72)">ke pendukung</p>
+            <p class="money-md money" style="color:#F0C86A;margin-top:4px">+300,00</p>
+            <p class="small" style="color:rgba(242,246,239,.6)">AUSD · ≈ Rp 4.800.000</p>
+          </div>
+        </div>
+        <div style="width:100%">
+          <div class="row" style="margin-bottom:6px"><span class="k">Kemajuan</span><span class="v">0% → 38%</span></div>
+          <div class="bar"><i style="width:38%"></i></div>
+          <p class="small" style="margin-top:7px">Sisa 480,00 AUSD dari batas 780,00 AUSD</p>
+        </div>
+        <button class="btn gold" style="max-width:100%">Lanjut</button>
+      </div>
+    </div></div>
+    <figcaption><strong>Momen split</strong>: uang tiba dan terbelah di layar yang sama — bar
+      proporsi 80/20 memperlihatkan pembagian sebelum kartu dibaca. Ini layar yang difilmkan saat
+      panen; angka kotor jadi judul, dua kartu mengikuti, progress melompat 0% → 38%.</figcaption></figure>
+
+    <figure class="stage"><div class="phone"><div class="screen dark">
+      <span class="cf" style="left:8%;top:7%;width:8px;height:12px;background:#E3A72F;transform:rotate(24deg)"></span>
+      <span class="cf" style="left:18%;top:15%;width:7px;height:7px;background:#F3E3BC;transform:rotate(40deg)"></span>
+      <span class="cf" style="left:80%;top:9%;width:9px;height:11px;background:#C98F1B;transform:rotate(-18deg)"></span>
+      <span class="cf" style="left:90%;top:22%;width:6px;height:9px;background:#7CC08F;transform:rotate(50deg)"></span>
+      <span class="cf" style="left:70%;top:5%;width:7px;height:7px;background:#FFF3D6;transform:rotate(12deg)"></span>
+      <span class="cf" style="left:30%;top:4%;width:6px;height:10px;background:#E3A72F;transform:rotate(-30deg)"></span>
+      <span class="cf" style="left:55%;top:8%;width:8px;height:8px;background:#7CC08F;transform:rotate(66deg)"></span>
+      <span class="cf" style="left:12%;top:30%;width:7px;height:11px;background:#C98F1B;transform:rotate(8deg)"></span>
+      <span class="cf" style="left:86%;top:38%;width:6px;height:10px;background:#E3A72F;transform:rotate(-45deg)"></span>
+      <span class="cf" style="left:5%;top:52%;width:9px;height:9px;background:#2E7D46;transform:rotate(30deg)"></span>
+      <span class="cf" style="left:93%;top:56%;width:7px;height:12px;background:#F3E3BC;transform:rotate(20deg)"></span>
+      <span class="cf" style="left:78%;top:72%;width:8px;height:8px;background:#E3A72F;transform:rotate(-25deg)"></span>
+      <span class="cf" style="left:10%;top:74%;width:6px;height:10px;background:#7CC08F;transform:rotate(45deg)"></span>
+      <span class="cf" style="left:25%;top:84%;width:8px;height:11px;background:#C98F1B;transform:rotate(-12deg)"></span>
+      <span class="cf" style="left:65%;top:86%;width:7px;height:7px;background:#E3A72F;transform:rotate(35deg)"></span>
+      <span class="cf" style="left:42%;top:90%;width:9px;height:9px;background:#7CC08F;transform:rotate(-38deg)"></span>
+      <div class="sbar"><span>09.41</span><svg width="58" height="13" viewBox="0 0 58 13" fill="#F2F6EF"><rect y="7" width="3" height="6" rx="1"/><rect x="5" y="4.5" width="3" height="8.5" rx="1"/><rect x="10" y="2" width="3" height="11" rx="1"/><path d="M22 12c2.5-4.5 8.5-4.5 11 0" stroke="#F2F6EF" stroke-width="2" fill="none"/><rect x="38" y="2.5" width="16" height="9" rx="2.5" fill="none" stroke="#F2F6EF" stroke-width="1.4"/><rect x="40" y="4.5" width="9" height="5" rx="1.2"/><rect x="55.5" y="5.2" width="2.2" height="3.6" rx="1"/></svg></div>
+      <div class="island"></div>
+      <div class="body center" style="gap:16px">
+        <svg width="46" height="52" viewBox="0 0 64 72" aria-hidden="true"><path d="M32 4 52 28 32 52 12 28Z" fill="#E3A72F"/><path d="M32 4v48M12 28h40" stroke="#16301F" stroke-width="3"/><path d="M32 52c-1 6-7 7-9 13" stroke="#E3A72F" stroke-width="3" fill="none"/><path d="m23 65 2.6 3L23 71l-2.6-3z" fill="#F2F6EF"/></svg>
+        <p class="goldlbl">Garis Finis</p>
+        <div>
+          <p class="money-xl money" style="font-size:34px;color:#fff"><span class="cur">≈ Rp</span> 12.480.000</p>
+          <p class="small" style="color:#EFC55C;font-weight:700;margin-top:5px">780,00 AUSD total tersalurkan</p>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%">
+          <div class="dcard"><p class="money-lg money" style="color:#fff">3</p><p class="small">panen</p></div>
+          <div class="dcard"><p class="money-lg money" style="color:#fff">540</p><p class="small">hari</p></div>
+          <div class="dcard"><p class="money-lg money" style="color:#9FE0B0">+33</p><p class="small">skor naik</p></div>
+          <div class="dcard"><p class="money-md money" style="color:#fff">1.692,00</p><p class="small">Penawaran barumu (AUSD)</p></div>
+        </div>
+        <button class="btn gold">Bagikan</button>
+        <button class="linkbtn" style="color:#BFD3C2;align-self:center">Lanjut</button>
+      </div>
+    </div></div>
+    <figcaption><strong>Garis Finis</strong>: satu-satunya pesta di produk — layang-layang emas,
+      confetti (palet hutan yang sudah ada di lib/confetti), skor melompat +33, dan penawaran
+      musim baru yang lebih besar. Layar yang tidak pernah ditunjukkan tengkulak.</figcaption></figure>
+
+    <figure class="stage"><div class="phone"><div class="screen">
+      <div class="sbar"><span>09.41</span><svg width="58" height="13" viewBox="0 0 58 13" fill="#16301F"><rect y="7" width="3" height="6" rx="1"/><rect x="5" y="4.5" width="3" height="8.5" rx="1"/><rect x="10" y="2" width="3" height="11" rx="1"/><path d="M22 12c2.5-4.5 8.5-4.5 11 0" stroke="#16301F" stroke-width="2" fill="none"/><rect x="38" y="2.5" width="16" height="9" rx="2.5" fill="none" stroke="#16301F" stroke-width="1.4"/><rect x="40" y="4.5" width="9" height="5" rx="1.2"/><rect x="55.5" y="5.2" width="2.2" height="3.6" rx="1"/></svg></div>
+      <div class="island"></div>
+      <div class="body" style="padding-top:34px">
+        <section class="card" style="border-color:var(--line-2)">
+          <span class="pill done">Selesai</span>
+          <h2 style="margin-top:12px;color:var(--muted)">Garis Finis</h2>
+          <p class="small" style="font-style:italic;margin-top:4px">waktu selesai — sisanya dimaafkan</p>
+          <p class="money-lg money" style="margin-top:16px"><span class="cur">≈ Rp</span> 9.920.000</p>
+          <p class="small" style="margin-top:3px">620,00 AUSD tersalurkan</p>
+          <div style="display:flex;flex-direction:column;gap:5px;margin-top:14px;padding-top:13px;border-top:1px solid var(--line)">
+            <div class="row"><span class="k">kembali dari target</span><span class="v">620,00 AUSD</span></div>
+            <div class="row"><span class="k">sisanya dimaafkan</span><span class="v">160,00 AUSD</span></div>
+          </div>
+          <div style="background:var(--paper);border-radius:13px;padding:13px;margin-top:14px;display:flex;flex-direction:column;gap:6px">
+            <div class="row"><span class="k">panen</span><span class="v">2</span></div>
+            <div class="row"><span class="k">hari</span><span class="v">480</span></div>
+            <div class="row"><span class="k">Berakhir</span><span class="v">26 Mar 2027</span></div>
+          </div>
+          <button class="btn outline sm" style="margin-top:14px">Lanjut</button>
+        </section>
+        <p class="small" style="text-align:center;margin-top:auto;margin-bottom:4px">Tanpa confetti, tanpa emas. Panen rendah bukan aib.</p>
+      </div>
+    </div></div>
+    <figcaption><strong>Maaf-masa (berakhir pada waktunya)</strong>: sengaja sunyi — hijau-abu di
+      atas kertas, satu kartu, tanpa pesta. Varian “replay” di riwayat memakai wajah yang sama.
+      Ini desain kepribadian: pesta hanya untuk yang lunas.</figcaption></figure>
+
+  </div>
+</section>
+
+<!-- ═══════════════════ 6 · KIRIM ═══════════════════ -->
+<section id="s6" class="board-sec">
+  <p class="sec-no">06</p><h2>Kirim — antar sesama Kite</h2>
+  <p class="sec-sub">Kirim tanpa biaya dan tanpa kata “biaya”: penerima lewat kode terima atau
+    alamat, jumlah, satu tombol. Kartu kode terima (QR) menempel di bawah — teman memindai untuk
+    melihat profilmu.</p>
+  <div class="flowrow">
+
+    <figure class="stage"><div class="phone"><div class="screen">
+      <div class="sbar"><span>09.41</span><svg width="58" height="13" viewBox="0 0 58 13" fill="#16301F"><rect y="7" width="3" height="6" rx="1"/><rect x="5" y="4.5" width="3" height="8.5" rx="1"/><rect x="10" y="2" width="3" height="11" rx="1"/><path d="M22 12c2.5-4.5 8.5-4.5 11 0" stroke="#16301F" stroke-width="2" fill="none"/><rect x="38" y="2.5" width="16" height="9" rx="2.5" fill="none" stroke="#16301F" stroke-width="1.4"/><rect x="40" y="4.5" width="9" height="5" rx="1.2"/><rect x="55.5" y="5.2" width="2.2" height="3.6" rx="1"/></svg></div>
+      <div class="island"></div>
+      <div class="body">
+        <button class="linkbtn">Kembali</button>
+        <h2 style="margin-top:2px">Kirim</h2>
+        <div style="display:flex;gap:4px;background:#EDF1E8;border-radius:13px;padding:4px">
+          <button style="flex:1;min-height:40px;border-radius:10px;border:0;background:#fff;color:var(--ink);font-family:inherit;font-weight:700;font-size:13.5px;box-shadow:0 1px 3px rgba(22,48,31,.12)">Kode terima</button>
+          <button style="flex:1;min-height:40px;border-radius:10px;border:0;background:transparent;color:var(--muted);font-family:inherit;font-weight:700;font-size:13.5px">Alamat manual</button>
+        </div>
+        <div class="field">
+          <label>Kirim ke</label>
+          <div class="input addr">0x77b2…31aF</div>
+        </div>
+        <div class="field">
+          <label>Jumlah</label>
+          <div class="input" style="justify-content:space-between"><span>200</span><span class="small">AUSD</span></div>
+          <p class="hint">Saldo 1.800,00 AUSD</p>
+        </div>
+        <button class="btn leaf">Kirim</button>
+        <p class="small" style="text-align:center">Terkirim — menyelesaikan…</p>
+        <section class="card" style="margin-top:auto;display:flex;flex-direction:column;align-items:center;gap:8px">
+          <p class="lbl">Kode terimamu</p>
+          <svg class="qr" width="150" height="150" viewBox="0 0 84 84"><rect width="84" height="84" fill="url(#qrp)"/><rect x="2" y="2" width="18" height="18" fill="#fff"/><rect x="2" y="2" width="18" height="18" fill="none" stroke="#16301F" stroke-width="5"/><rect x="8.5" y="8.5" width="5" height="5" fill="#16301F"/><rect x="64" y="2" width="18" height="18" fill="#fff"/><rect x="64" y="2" width="18" height="18" fill="none" stroke="#16301F" stroke-width="5"/><rect x="70.5" y="8.5" width="5" height="5" fill="#16301F"/><rect x="2" y="64" width="18" height="18" fill="#fff"/><rect x="2" y="64" width="18" height="18" fill="none" stroke="#16301F" stroke-width="5"/><rect x="8.5" y="70.5" width="5" height="5" fill="#16301F"/></svg>
+          <p class="small" style="text-align:center">Teman memindai kode ini untuk melihat profilmu.</p>
+        </section>
+      </div>
+    </div></div>
+    <figcaption><strong>Kirim</strong>: segmen “Kode terima / Alamat manual” menggantikan dua
+      input sekaligus; saldo tampil sebagai bantuan (bukan batas yang menghakimi). “Saldo tidak
+      cukup” merah tanah inline di bawah jumlah. Pencetakan tanda tangan tetap satu ketukan
+      passkey.</figcaption></figure>
+
+    <figure class="stage"><div class="phone"><div class="screen">
+      <div class="sbar"><span>09.41</span><svg width="58" height="13" viewBox="0 0 58 13" fill="#16301F"><rect y="7" width="3" height="6" rx="1"/><rect x="5" y="4.5" width="3" height="8.5" rx="1"/><rect x="10" y="2" width="3" height="11" rx="1"/><path d="M22 12c2.5-4.5 8.5-4.5 11 0" stroke="#16301F" stroke-width="2" fill="none"/><rect x="38" y="2.5" width="16" height="9" rx="2.5" fill="none" stroke="#16301F" stroke-width="1.4"/><rect x="40" y="4.5" width="9" height="5" rx="1.2"/><rect x="55.5" y="5.2" width="2.2" height="3.6" rx="1"/></svg></div>
+      <div class="island"></div>
+      <div class="body center">
+        <svg width="64" height="64" viewBox="0 0 64 64" aria-hidden="true" style="margin-top:16px"><circle cx="32" cy="32" r="29" fill="none" stroke="#2E7D46" stroke-width="4"/><path d="M20 33.5 28.5 42 45 24" fill="none" stroke="#2E7D46" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <p style="font-size:42px;font-weight:800;letter-spacing:-.02em;color:var(--leaf-dk)">Lunas</p>
+        <p class="small">200,00 AUSD terkirim ke 0x77b2…31aF</p>
+        <button class="btn outline" style="margin-top:18px">Kembali</button>
+      </div>
+    </div></div>
+    <figcaption><strong>Berhasil</strong>: satu kata “Lunas” raksasa + lingkaran centang — momen
+      selesai yang tenang (pesta hanya milik Garis Finis). Detail alamat dalam bentuk pendek,
+      monospace hanya untuk alamat.</figcaption></figure>
+
+  </div>
+</section>
+
+<!-- ═══════════════════ 7 · RIWAYAT ═══════════════════ -->
+<section id="s7" class="board-sec">
+  <p class="sec-no">07</p><h2>Riwayat — catatan panen, kirim, selesai</h2>
+  <p class="sec-sub">Umpan terbaru-jadi-di-atas dari Envio. Setiap kartu membawa warna jenisnya:
+    panen hijau, selesai emas, kirim netral. Tautan bukti per baris.</p>
+  <div class="flowrow" style="max-width:480px">
+
+    <figure class="stage"><div class="phone"><div class="screen">
+      <div class="sbar"><span>09.41</span><svg width="58" height="13" viewBox="0 0 58 13" fill="#16301F"><rect y="7" width="3" height="6" rx="1"/><rect x="5" y="4.5" width="3" height="8.5" rx="1"/><rect x="10" y="2" width="3" height="11" rx="1"/><path d="M22 12c2.5-4.5 8.5-4.5 11 0" stroke="#16301F" stroke-width="2" fill="none"/><rect x="38" y="2.5" width="16" height="9" rx="2.5" fill="none" stroke="#16301F" stroke-width="1.4"/><rect x="40" y="4.5" width="9" height="5" rx="1.2"/><rect x="55.5" y="5.2" width="2.2" height="3.6" rx="1"/></svg></div>
+      <div class="island"></div>
+      <div class="body pb">
+        <h2 style="margin-top:6px">Riwayat</h2>
+
+        <section class="card">
+          <div class="row"><span class="chip seek"><i class="dot seek"></i>Panen</span><span class="small">12 Okt 2026</span></div>
+          <p class="money-lg money" style="color:var(--leaf-dk);margin-top:11px">+1.200,00 <span style="font-size:14px">AUSD</span></p>
+          <p class="small" style="margin-top:2px">≈ Rp 19.200.000</p>
+          <div class="row" style="margin-top:9px"><span class="k" style="display:flex;gap:7px;align-items:center"><i class="dot back"></i>ke pendukung</span><span class="v">+300,00 AUSD</span></div>
+          <button class="linkbtn" style="color:var(--leaf-dk)">lihat bukti</button>
+        </section>
+
+        <section class="card">
+          <div class="row"><span class="chip" style="background:#F0F3EE;color:var(--muted)">Kirim</span><span class="small">11 Okt 2026</span></div>
+          <p class="money-lg money" style="margin-top:11px">−200,00 <span style="font-size:14px">AUSD</span></p>
+          <p class="small" style="margin-top:2px">≈ Rp 3.200.000 ke 0x77b2…31aF</p>
+        </section>
+
+        <section class="card">
+          <div class="row"><span class="chip back"><i class="dot back"></i>Selesai</span><span class="small">28 Sep 2026</span></div>
+          <p class="money-lg money" style="color:var(--gold-dk);margin-top:11px">780,00 <span style="font-size:14px">AUSD</span></p>
+          <p class="small" style="margin-top:2px">≈ Rp 12.480.000 total tersalurkan</p>
+          <button class="linkbtn" style="color:var(--leaf-dk)">lihat bukti</button>
+        </section>
+
+        <p class="small" style="text-align:center">Menyentuh kartu Selesai membuka Garis Finis versi replay.</p>
+      </div>
+      <nav class="tabbar">
+        <button class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12 12 4l8 8"/><path d="M6 10v10h12V10"/></svg>Beranda</button>
+        <button class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7-4.6-7-9.5C5 7.5 7 6 9 6c1.4 0 2.4.7 3 1.7C12.6 6.7 13.6 6 15 6c2 0 4 1.5 4 4.5C19 15.4 12 20 12 20Z"/></svg>Dukung</button>
+        <button class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h13"/><path d="m13 6 6 6-6 6"/></svg>Kirim</button>
+        <button class="tab on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h14v16l-7-3-7 3Z"/></svg>Riwayat</button>
+      </nav>
+    </div></div>
+    <figcaption><strong>Riwayat</strong>: tiga jenis kartu — panen (hijau, split terlihat), kirim
+      (netral, dengan penerima bentuk pendek), selesai (emas, membuka replay Garis Finis). Kosong:
+      “Belum ada riwayat.” satu baris jujur.</figcaption></figure>
+
+  </div>
+</section>
+
+<!-- ═══════════════════ 8 · DUKUNG (PAK HAJI) ═══════════════════ -->
+<section id="s8" class="board-sec">
+  <p class="sec-no">08</p><h2>Dukung — sisi Pak Haji</h2>
+  <p class="sec-sub">Daftar orang yang didukung, pintu masuk (tempel tautan), tiga langkah dukung
+    baru, dan layar selesai. Pemeriksaan langsung “Batas dukungan saat ini …” inline; satu ketukan
+    passkey menandatangani perjanjian.</p>
+  <div class="flowrow">
+
+    <figure class="stage"><div class="phone"><div class="screen">
+      <div class="sbar"><span>09.41</span><svg width="58" height="13" viewBox="0 0 58 13" fill="#16301F"><rect y="7" width="3" height="6" rx="1"/><rect x="5" y="4.5" width="3" height="8.5" rx="1"/><rect x="10" y="2" width="3" height="11" rx="1"/><path d="M22 12c2.5-4.5 8.5-4.5 11 0" stroke="#16301F" stroke-width="2" fill="none"/><rect x="38" y="2.5" width="16" height="9" rx="2.5" fill="none" stroke="#16301F" stroke-width="1.4"/><rect x="40" y="4.5" width="9" height="5" rx="1.2"/><rect x="55.5" y="5.2" width="2.2" height="3.6" rx="1"/></svg></div>
+      <div class="island"></div>
+      <div class="body pb">
+        <header class="apphead">
+          <div class="brand">
+            <svg width="24" height="28" viewBox="0 0 64 72" aria-hidden="true"><path d="M32 4 52 28 32 52 12 28Z" fill="#2E7D46"/><path d="M32 4v48M12 28h40" stroke="#F7F9F3" stroke-width="3"/><path d="M32 52c-1 6-7 7-9 13" stroke="#16301F" stroke-width="3" fill="none"/></svg>
+            <span class="wordmark">Kite</span>
+          </div>
+          <div class="headr"><span class="langpill">id</span><button class="quiet">Keluar</button></div>
+        </header>
+        <h2>Dukung</h2>
+
+        <section class="card gold">
+          <div class="row"><span class="k">Total diterima</span><span class="money-md money">≈ Rp 12.480.000</span></div>
+          <p class="small" style="margin-top:4px">780,00 AUSD dari 1 orang</p>
+        </section>
+
+        <section class="card">
+          <div class="row" style="align-items:flex-start">
+            <div><p class="val">Budi</p><p class="small">Bibit padi musim ini</p></div>
+            <span class="pill lunas">Lunas</span>
+          </div>
+          <p class="small" style="margin-top:8px"><span style="color:var(--gold);letter-spacing:2px">★★★</span><span style="color:#D8E0D4;letter-spacing:2px">☆☆</span><span style="margin-left:7px">2 selesai</span></p>
+          <div style="display:flex;flex-direction:column;gap:6px;margin-top:10px">
+            <div class="row"><span class="k">Jumlah</span><span class="v">600,00 AUSD</span></div>
+            <div class="row"><span class="k">Bagian</span><span class="chip back"><i class="dot back"></i>20%</span></div>
+            <div class="row"><span class="k">Diterima</span><span class="v" style="color:var(--gold-dk)">780,00 AUSD</span></div>
+          </div>
+          <div class="bar" style="margin-top:12px"><i style="width:100%"></i></div>
+          <p class="small" style="margin-top:7px">780,00 AUSD kembali dari target</p>
+          <button class="btn again sm" style="margin-top:12px">Musim barunya siap. Dukung lagi?</button>
+        </section>
+      </div>
+
+      <div class="toast">
+        <p class="goldlbl">Bagi hasil</p>
+        <div class="row"><span class="v">+300,00 AUSD</span><span class="small">≈ Rp 4.800.000</span></div>
+        <p class="small">Kemajuan 38% → 76%</p>
+        <button class="linkbtn">Lanjut</button>
+      </div>
+
+      <nav class="tabbar">
+        <button class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12 12 4l8 8"/><path d="M6 10v10h12V10"/></svg>Beranda</button>
+        <button class="tab on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7-4.6-7-9.5C5 7.5 7 6 9 6c1.4 0 2.4.7 3 1.7C12.6 6.7 13.6 6 15 6c2 0 4 1.5 4 4.5C19 15.4 12 20 12 20Z"/></svg>Dukung</button>
+        <button class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h13"/><path d="m13 6 6 6-6 6"/></svg>Kirim</button>
+        <button class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h14v16l-7-3-7 3Z"/></svg>Riwayat</button>
+      </nav>
+    </div></div>
+    <figcaption><strong>Daftar yang didukung</strong>: ringkasan emas di atas, kartu per orang
+      dengan progress merundang penuh dan rekap. Toast gelap = peristiwa panen LIVE yang disaksikan
+      pendukung: bagian emasnya tiba di layarnya pada detik yang sama.</figcaption></figure>
+
+    <figure class="stage"><div class="phone"><div class="screen">
+      <div class="sbar"><span>09.41</span><svg width="58" height="13" viewBox="0 0 58 13" fill="#16301F"><rect y="7" width="3" height="6" rx="1"/><rect x="5" y="4.5" width="3" height="8.5" rx="1"/><rect x="10" y="2" width="3" height="11" rx="1"/><path d="M22 12c2.5-4.5 8.5-4.5 11 0" stroke="#16301F" stroke-width="2" fill="none"/><rect x="38" y="2.5" width="16" height="9" rx="2.5" fill="none" stroke="#16301F" stroke-width="1.4"/><rect x="40" y="4.5" width="9" height="5" rx="1.2"/><rect x="55.5" y="5.2" width="2.2" height="3.6" rx="1"/></svg></div>
+      <div class="island"></div>
+      <div class="body pb">
+        <header class="apphead">
+          <div class="brand">
+            <svg width="24" height="28" viewBox="0 0 64 72" aria-hidden="true"><path d="M32 4 52 28 32 52 12 28Z" fill="#2E7D46"/><path d="M32 4v48M12 28h40" stroke="#F7F9F3" stroke-width="3"/><path d="M32 52c-1 6-7 7-9 13" stroke="#16301F" stroke-width="3" fill="none"/></svg>
+            <span class="wordmark">Kite</span>
+          </div>
+          <div class="headr"><span class="langpill">id</span><button class="quiet">Keluar</button></div>
+        </header>
+        <h2>Dukung</h2>
+
+        <section class="card soft">
+          <h3 style="font-size:15px;font-weight:800">Dukung seseorang</h3>
+          <p class="small" style="margin-top:5px">Belum ada yang kamu dukung. Mulai dari alamat atau tautan kode terima mereka.</p>
+          <div class="field" style="margin-top:12px">
+            <div class="input addr">/p/0x1a9C…F2b1</div>
+            <p class="hint">Tempel alamat atau tautan kode terima (contoh: /p/0x…)</p>
+          </div>
+          <button class="btn leaf sm" style="margin-top:12px">Lanjut</button>
+        </section>
+
+        <p class="small" style="text-align:center;margin-top:auto;margin-bottom:8px">Langkah 1 memuat profil publik dan permintaan terbukanya (layar berikutnya).</p>
+      </div>
+      <nav class="tabbar">
+        <button class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12 12 4l8 8"/><path d="M6 10v10h12V10"/></svg>Beranda</button>
+        <button class="tab on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7-4.6-7-9.5C5 7.5 7 6 9 6c1.4 0 2.4.7 3 1.7C12.6 6.7 13.6 6 15 6c2 0 4 1.5 4 4.5C19 15.4 12 20 12 20Z"/></svg>Dukung</button>
+        <button class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h13"/><path d="m13 6 6 6-6 6"/></svg>Kirim</button>
+        <button class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h14v16l-7-3-7 3Z"/></svg>Riwayat</button>
+      </nav>
+    </div></div>
+    <figcaption><strong>Pintu masuk</strong>: menempel tautan menggantikan pemindai QR di ponsel
+      pendukung — kartu hijau lembut dengan contoh format. Tombol aktif begitu alamat terbaca.</figcaption></figure>
+
+    <figure class="stage"><div class="phone"><div class="screen">
+      <div class="sbar"><span>09.41</span><svg width="58" height="13" viewBox="0 0 58 13" fill="#16301F"><rect y="7" width="3" height="6" rx="1"/><rect x="5" y="4.5" width="3" height="8.5" rx="1"/><rect x="10" y="2" width="3" height="11" rx="1"/><path d="M22 12c2.5-4.5 8.5-4.5 11 0" stroke="#16301F" stroke-width="2" fill="none"/><rect x="38" y="2.5" width="16" height="9" rx="2.5" fill="none" stroke="#16301F" stroke-width="1.4"/><rect x="40" y="4.5" width="9" height="5" rx="1.2"/><rect x="55.5" y="5.2" width="2.2" height="3.6" rx="1"/></svg></div>
+      <div class="island"></div>
+      <div class="body">
+        <button class="linkbtn">Kembali</button>
+        <h2 style="margin-top:2px">Berapa, dan untuk apa?</h2>
+        <div class="row"><span class="v">Budi</span><span class="small">Bibit padi musim ini</span></div>
+
+        <section class="card">
+          <p class="lbl">Jumlah</p>
+          <p class="money-xl money" style="margin-top:8px"><span class="cur">≈ Rp</span> 9.600.000</p>
+          <p class="small" style="margin-top:4px">600,00 AUSD</p>
+          <p class="small" style="margin-top:10px;color:var(--leaf-dk)">✓ Batas dukungan saat ini 1.296,00 AUSD</p>
+        </section>
+
+        <div class="field">
+          <label>Tujuan</label>
+          <div class="input">Bibit padi</div>
+          <p class="hint">Untuk apa? (contoh: bibit padi)</p>
+        </div>
+
+        <button class="btn leaf" style="margin-top:auto">Lanjut</button>
+      </div>
+    </div></div>
+    <figcaption><strong>Dukung, langkah 2</strong>: jumlah permintaan tampil sebagai rupiah besar
+      dengan detail AUSD; pemeriksaan batas inline (jika lewat: “Melebihi batas…” merah tanah,
+      tombol terkunci — tidak pernah kirim-dulu-gagal). Langkah 1 (siapa) memakai pola input
+      pintu masuk di sebelah.</figcaption></figure>
+
+    <figure class="stage"><div class="phone"><div class="screen">
+      <div class="sbar"><span>09.41</span><svg width="58" height="13" viewBox="0 0 58 13" fill="#16301F"><rect y="7" width="3" height="6" rx="1"/><rect x="5" y="4.5" width="3" height="8.5" rx="1"/><rect x="10" y="2" width="3" height="11" rx="1"/><path d="M22 12c2.5-4.5 8.5-4.5 11 0" stroke="#16301F" stroke-width="2" fill="none"/><rect x="38" y="2.5" width="16" height="9" rx="2.5" fill="none" stroke="#16301F" stroke-width="1.4"/><rect x="40" y="4.5" width="9" height="5" rx="1.2"/><rect x="55.5" y="5.2" width="2.2" height="3.6" rx="1"/></svg></div>
+      <div class="island"></div>
+      <div class="body">
+        <button class="linkbtn">Kembali</button>
+        <h2 style="margin-top:2px">Perjanjian</h2>
+
+        <section class="card">
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <div class="row"><span class="k">Jumlah</span><span class="v">600,00 AUSD</span></div>
+            <div class="row"><span class="k">Bagian</span><span class="chip back"><i class="dot back"></i>20%</span></div>
+            <div class="row"><span class="k">Batas total</span><span class="v">780,00 AUSD</span></div>
+            <div class="row"><span class="k">Berakhir</span><span class="k" style="font-size:13.5px">saat batas tercapai</span></div>
+          </div>
+          <p class="small" style="margin-top:12px;line-height:1.6">20% dari setiap panen, maksimal 780,00 AUSD. Panen gagal, tidak diambil apa pun. Batas tercapai, selesai selamanya.</p>
+          <div class="fairline" style="margin-top:12px"><i class="dot seek"></i>Panen gagal? 0 rupiah diambil. Tenang.</div>
+        </section>
+
+        <div class="field">
+          <label>Simpan sebagai</label>
+          <div class="input">Budi</div>
+        </div>
+
+        <button class="btn leaf" style="margin-top:auto">Konfirmasi</button>
+      </div>
+    </div></div>
+    <figcaption><strong>Dukung, langkah 3</strong>: perjanjian satu paragraf + tabel ringkas —
+      semua elemen kartu kesepakatan hadir sebelum tanda tangan. “Konfirmasi” berganti
+      “Tanda tangani” saat Face ID aktif; satu ketukan, selesai (clientRef membuat ulang aman).</figcaption></figure>
+
+    <figure class="stage"><div class="phone"><div class="screen">
+      <div class="sbar"><span>09.41</span><svg width="58" height="13" viewBox="0 0 58 13" fill="#16301F"><rect y="7" width="3" height="6" rx="1"/><rect x="5" y="4.5" width="3" height="8.5" rx="1"/><rect x="10" y="2" width="3" height="11" rx="1"/><path d="M22 12c2.5-4.5 8.5-4.5 11 0" stroke="#16301F" stroke-width="2" fill="none"/><rect x="38" y="2.5" width="16" height="9" rx="2.5" fill="none" stroke="#16301F" stroke-width="1.4"/><rect x="40" y="4.5" width="9" height="5" rx="1.2"/><rect x="55.5" y="5.2" width="2.2" height="3.6" rx="1"/></svg></div>
+      <div class="island"></div>
+      <div class="body center">
+        <svg width="52" height="59" viewBox="0 0 64 72" aria-hidden="true" style="margin-top:14px"><path d="M32 4 52 28 32 52 12 28Z" fill="#E3A72F"/><path d="M32 4v48M12 28h40" stroke="#16301F" stroke-width="3"/><path d="M32 52c-1 6-7 7-9 13" stroke="#16301F" stroke-width="3" fill="none"/><path d="m23 65 2.6 3L23 71l-2.6-3z" fill="#2E7D46"/></svg>
+        <h2 style="font-size:22px">Dukungan aktif!</h2>
+        <p class="small" style="max-width:32ch;margin:0 auto">Bagi hasil akan mengalir saat panen. Pantau perjannya di Beranda.</p>
+        <button class="btn leaf" style="margin-top:16px">Lanjut</button>
+      </div>
+    </div></div>
+    <figcaption><strong>Aktif</strong>: layang-layang emas (budi terbangkit) + satu kalimat apa
+      yang terjadi berikutnya. Di ponsel Budi, saat yang sama: “Dukungan diterima”.</figcaption></figure>
+
+  </div>
+</section>
+
+<!-- ═══════════════════ 9 · PROFIL PUBLIK ═══════════════════ -->
+<section id="s9" class="board-sec">
+  <p class="sec-no">09</p><h2>Profil publik — kite.id/p/budi</h2>
+  <p class="sec-sub">Tujuan tautan yang dibagikan. Bintang dari skor langsung, jumlah selesai,
+    permintaan terbuka tampil paling menonjol dengan tombol Dukung, riwayat per-kesepakatan dengan
+    bukti. Tanpa nama, tanpa dokumen — catatannya adalah identitasnya.</p>
+  <div class="flowrow" style="max-width:480px">
+
+    <figure class="stage"><div class="phone"><div class="screen">
+      <div class="sbar"><span>09.41</span><svg width="58" height="13" viewBox="0 0 58 13" fill="#16301F"><rect y="7" width="3" height="6" rx="1"/><rect x="5" y="4.5" width="3" height="8.5" rx="1"/><rect x="10" y="2" width="3" height="11" rx="1"/><path d="M22 12c2.5-4.5 8.5-4.5 11 0" stroke="#16301F" stroke-width="2" fill="none"/><rect x="38" y="2.5" width="16" height="9" rx="2.5" fill="none" stroke="#16301F" stroke-width="1.4"/><rect x="40" y="4.5" width="9" height="5" rx="1.2"/><rect x="55.5" y="5.2" width="2.2" height="3.6" rx="1"/></svg></div>
+      <div class="island"></div>
+      <div class="body">
+        <header class="apphead">
+          <div class="brand">
+            <svg width="24" height="28" viewBox="0 0 64 72" aria-hidden="true"><path d="M32 4 52 28 32 52 12 28Z" fill="#2E7D46"/><path d="M32 4v48M12 28h40" stroke="#F7F9F3" stroke-width="3"/><path d="M32 52c-1 6-7 7-9 13" stroke="#16301F" stroke-width="3" fill="none"/></svg>
+            <span class="wordmark">Kite</span>
+          </div>
+          <button class="quiet">Kembali</button>
+        </header>
+
+        <div>
+          <p style="font-size:24px;color:var(--gold);letter-spacing:3px">★★★<span style="color:#D8E0D4">☆☆</span></p>
+          <p class="small" style="margin-top:3px">2 selesai</p>
+        </div>
+
+        <section class="card gold">
+          <p class="lbl">Tujuan</p>
+          <p class="val" style="margin-top:4px;font-weight:600;font-size:14.5px">Bibit padi, pupuk, dan upah buruh tanam.</p>
+        </section>
+
+        <section class="card" style="border:2px solid var(--leaf);background:var(--leaf-soft)">
+          <p class="lbl" style="color:var(--leaf-dk);font-weight:700">Permintaan terbuka</p>
+          <p class="money-xl money" style="margin-top:7px"><span class="cur">≈ Rp</span> 9.600.000</p>
+          <p class="small" style="margin-top:3px">600,00 AUSD</p>
+          <div class="row" style="margin-top:11px"><span class="k">Bagian</span><span class="chip back"><i class="dot back"></i>20%</span></div>
+          <div class="row" style="margin-top:6px"><span class="k">Batas</span><span class="v">780,00 AUSD</span></div>
+          <p class="small" style="margin-top:9px">Berakhir saat batas tercapai</p>
+          <div class="fairline" style="margin-top:11px;background:#fff"><i class="dot seek"></i>Panen gagal? 0 rupiah diambil. Tenang.</div>
+          <button class="btn leaf" style="margin-top:13px">Dukung</button>
+        </section>
+
+        <section class="card">
+          <p class="lbl" style="margin-bottom:10px">Riwayat</p>
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <div class="row"><span class="v">600,00 AUSD</span><span class="pill lunas">Lunas</span></div>
+              <div class="row"><span class="k">Bagian 20%</span><span class="k">Batas 780,00 AUSD</span></div>
+              <div class="row"><span class="k">Kemajuan</span><span class="pct">100%</span></div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:6px;border-top:1px solid var(--line);padding-top:12px">
+              <div class="row"><span class="v">400,00 AUSD</span><span class="pill lunas">Lunas</span></div>
+              <div class="row"><span class="k">Bagian 20%</span><span class="k">Batas 520,00 AUSD</span></div>
+              <div class="row"><span class="k">Kemajuan</span><span class="pct">100%</span></div>
+            </div>
+          </div>
+          <button class="linkbtn" style="color:var(--leaf-dk)">lihat bukti</button>
+        </section>
+
+        <p class="small" style="text-align:center;margin-top:auto">Tanpa masuk pun bisa melihat; menekan Dukung membuka tiga langkah (layar 08).</p>
+      </div>
+    </div></div>
+    <figcaption><strong>Profil publik</strong>: permintaan terbuka memakai bingkai daun ganda —
+      satu-satunya kartu berbingkai tebal di produk, karena ini satu-satunya ajakan. Aset rujukan:
+      setiap kesepakatan selesai menambah baris. QR kode terima tampil versi pemilik profil.</figcaption></figure>
+
+  </div>
+</section>
+
+<!-- ═══════════════════ 10 · KEADAAN TEPI ═══════════════════ -->
+<section id="s10" class="board-sec">
+  <p class="sec-no">10</p><h2>Keadaan tepi — jujur di setiap keadaan</h2>
+  <p class="sec-sub">Empat komponen yang sudah ada, diberi wajah baru: luring (data terakhir,
+    tombol dimatikan), rangka memuat (bukan spinner), galat (coba lagi), dan kosong (ajakan).</p>
+  <div class="flowrow" style="max-width:480px">
+
+    <figure class="stage"><div class="phone"><div class="screen">
+      <div class="sbar"><span>09.41</span><svg width="58" height="13" viewBox="0 0 58 13" fill="#16301F"><rect y="7" width="3" height="6" rx="1"/><rect x="5" y="4.5" width="3" height="8.5" rx="1"/><rect x="10" y="2" width="3" height="11" rx="1"/><path d="M22 12c2.5-4.5 8.5-4.5 11 0" stroke="#16301F" stroke-width="2" fill="none"/><rect x="38" y="2.5" width="16" height="9" rx="2.5" fill="none" stroke="#16301F" stroke-width="1.4"/><rect x="40" y="4.5" width="9" height="5" rx="1.2"/><rect x="55.5" y="5.2" width="2.2" height="3.6" rx="1"/></svg></div>
+      <div class="island"></div>
+      <div class="body">
+        <div class="offline">
+          <p class="val" style="font-size:14px">Sedang tanpa sambungan</p>
+          <p class="small" style="margin-top:3px">Yang tampil adalah data terakhir. Semua tombol dimatikan dulu.</p>
+          <p class="small" style="margin-top:3px;font-weight:700">Data per 13.05</p>
+        </div>
+
+        <div class="dim" style="display:flex;flex-direction:column;gap:14px">
+          <section class="card deep">
+            <div class="row"><span class="lbl" style="color:rgba(247,249,243,.78)">Saldo</span></div>
+            <p class="money-xl money" style="color:#fff;margin-top:9px"><span class="cur">≈ Rp</span> 28.800.000</p>
+            <p class="small" style="color:#E8C468;font-weight:700;margin-top:4px">1.800,00 AUSD</p>
+          </section>
+          <section class="card" style="display:flex;flex-direction:column;gap:9px">
+            <div class="skel" style="height:12px;width:38%"></div>
+            <div class="skel" style="height:22px;width:62%"></div>
+            <div class="skel" style="height:10px;width:100%"></div>
+            <div class="skel" style="height:10px;width:74%"></div>
+          </section>
+        </div>
+
+        <section class="card" style="display:flex;flex-direction:column;gap:9px">
+          <p class="val" style="font-size:14px">Ada kendala</p>
+          <button class="btn outline sm" style="width:auto;align-self:flex-start;padding:0 18px">Coba lagi</button>
+        </section>
+
+        <section class="card dashed" style="padding:18px">
+          <p class="small">Belum ada apa pun di sini.</p>
+        </section>
+      </div>
+    </div></div>
+    <figcaption><strong>Keadaan tepi</strong>: luring = pita emas-tanah + seluruh isi diredam dan
+      tombol dimatikan (waktu data ditulis); memuat = rangka batang bergerak lembut; galat =
+      judul + satu tombol; kosong = satu kalimat ajakan. Kebijakan lama dipertahankan, wajahnya
+      yang baru.</figcaption></figure>
+
+  </div>
+</section>
+
+<!-- ═══════════════════ 11 · DESKTOP ═══════════════════ -->
+<section id="s11" class="board-sec">
+  <p class="sec-no">11</p><h2>Desktop — konsol Mitra &amp; pendamping</h2>
+  <p class="sec-sub">Dua permukaan desktop: alat demo Mitra (berlabel jujur) dan layar pendamping
+    yang mengarahkan ke ponsel. Keduanya memakai sistem warna yang sama — split hijau/emas membuat
+    pembagian terbaca bahkan di meja penggilingan.</p>
+  <div class="flowrow">
+
+    <figure class="stage deskwrap"><div class="desk">
+      <div class="chrome"><div class="cdots"><i></i><i></i><i></i></div><div class="curl">kite.id/mitra</div></div>
+      <div style="padding:20px 24px 26px">
+        <div class="row" style="align-items:center">
+          <div class="brand">
+            <svg width="22" height="25" viewBox="0 0 64 72" aria-hidden="true"><path d="M32 4 52 28 32 52 12 28Z" fill="#2E7D46"/><path d="M32 4v48M12 28h40" stroke="#F7F9F3" stroke-width="3"/><path d="M32 52c-1 6-7 7-9 13" stroke="#16301F" stroke-width="3" fill="none"/></svg>
+            <span class="wordmark">Kite</span>
+            <span class="pill demo" style="margin-left:6px">Demo Tool</span>
+          </div>
+          <span class="small">Penggilingan Tani Makmur</span>
+        </div>
+        <h2 style="margin:18px 0 12px">Pembelian</h2>
+        <table class="mtab">
+          <thead><tr><th>Ref</th><th>Pembelian</th><th>Total</th><th>Bagi hasil</th><th>Status</th><th></th></tr></thead>
+          <tbody>
+            <tr>
+              <td class="addr">#0042</td><td style="font-weight:700">Budi (gabah 1 ha)</td>
+              <td><p class="val">Rp 24.000.000</p><p class="small">1.500,00 AUSD</p></td>
+              <td><div class="mchips"><span class="chip seek"><i class="dot seek"></i>ke petani 19.200.000</span><span class="chip back"><i class="dot back"></i>bagi hasil 4.800.000</span></div></td>
+              <td><span class="pill wait">Menunggu</span></td>
+              <td><button class="btn leaf sm" style="width:auto;padding:0 20px">Bayar</button></td>
+            </tr>
+            <tr>
+              <td class="addr">#0041</td><td style="font-weight:700">Budi (gabah 1 ha)</td>
+              <td><p class="val">Rp 24.000.000</p><p class="small">1.500,00 AUSD</p></td>
+              <td><div class="mchips"><span class="chip seek"><i class="dot seek"></i>ke petani 19.200.000</span><span class="chip back"><i class="dot back"></i>bagi hasil 4.800.000</span></div></td>
+              <td><span class="pill paid">Dibayar</span></td>
+              <td><span class="small">Terkirim</span></td>
+            </tr>
+            <tr class="mute">
+              <td class="addr">#0040</td><td>Siti (jagung 2 ton)</td>
+              <td><p style="font-weight:700">Rp 9.600.000</p></td>
+              <td>Di luar Kite</td>
+              <td><span class="pill done">Selesai</span></td>
+              <td></td>
+            </tr>
+            <tr>
+              <td class="addr">#0039</td><td style="font-weight:700">Budi (gabah 1 ha)</td>
+              <td><p class="val">Rp 24.000.000</p><p class="small">1.500,00 AUSD</p></td>
+              <td><div class="mchips"><span class="chip seek"><i class="dot seek"></i>ke petani 19.320.000</span><span class="chip back"><i class="dot back"></i>bagi hasil 180.000</span></div></td>
+              <td><span class="pill done">Selesai</span></td>
+              <td><a href="#" class="small addr" style="color:var(--leaf-dk)">0x9f3c…a2b1</a></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <figcaption><strong>Konsol Mitra</strong>: nama penggiling di kanan atas, lencana Demo Tool
+      tetap. Baris Kite menampilkan pratinjau split hijau/emas sebelum dibayar; baris non-Kite
+      diredam dan bertanda “Di luar Kite”. Menekan Bayar membuka layar berikut.</figcaption></figure>
+
+    <figure class="stage" style="max-width:640px"><div class="desk">
+      <div class="chrome"><div class="cdots"><i></i><i></i><i></i></div><div class="curl">kite.id/mitra/bayar/0042</div></div>
+      <div style="padding:26px 24px;display:flex;justify-content:center">
+        <div style="width:100%;max-width:440px;display:flex;flex-direction:column;gap:14px">
+          <div class="row"><h2>Pembelian <span class="addr" style="font-weight:700">#0042</span></h2><span class="pill demo">Demo Tool</span></div>
+          <section class="card">
+            <p class="money-lg money"><span class="cur">Rp</span> 24.000.000</p>
+            <p class="small" style="margin-top:2px">1.500,00 AUSD ke Budi (gabah 1 ha)</p>
+            <div style="display:flex;flex-direction:column;gap:8px;margin-top:14px;padding-top:13px;border-top:1px solid var(--line)">
+              <div class="row"><span class="k" style="display:flex;gap:7px;align-items:center"><i class="dot seek"></i>ke petani</span><span class="v">Rp 19.200.000</span></div>
+              <div class="row"><span class="k" style="display:flex;gap:7px;align-items:center"><i class="dot back"></i>bagi hasil</span><span class="v" style="color:var(--gold-dk)">Rp 4.800.000</span></div>
+            </div>
+          </section>
+          <section class="card">
+            <div class="row"><span class="pill paid">Dibayar</span><button class="btn ink sm" style="width:auto;padding:0 18px">Kirim penyelesaian</button></div>
+            <p class="small" style="margin-top:11px">Selesai — bukti <span class="addr" style="color:var(--leaf-dk)">0x9f3c…a2b1</span></p>
+          </section>
+        </div>
+      </div>
+    </div>
+    <figcaption><strong>Bayar</strong>: pratinjau split dalam rupiah penuh; “Tandai lunas”
+      → “Kirim penyelesaian” (tinta gelap — aksi operator, bukan aksi warga); setelah selesai,
+      bukti tampil sebagai tautan pendek. Kartu “alat belum dikonfigurasi” tetap ada bila
+      penyetel tidak siap.</figcaption></figure>
+
+    <figure class="stage deskwrap"><div class="desk">
+      <div class="chrome"><div class="cdots"><i></i><i></i><i></i></div><div class="curl">kite.id/p/budi</div></div>
+      <div style="padding:38px 40px;display:flex;gap:44px;align-items:center;flex-wrap:wrap">
+        <div style="flex:1;min-width:280px;display:flex;flex-direction:column;gap:12px">
+          <div class="brand">
+            <svg width="28" height="32" viewBox="0 0 64 72" aria-hidden="true"><path d="M32 4 52 28 32 52 12 28Z" fill="#2E7D46"/><path d="M32 4v48M12 28h40" stroke="#F7F9F3" stroke-width="3"/><path d="M32 52c-1 6-7 7-9 13" stroke="#16301F" stroke-width="3" fill="none"/></svg>
+            <span class="wordmark" style="font-size:20px">Kite</span>
+          </div>
+          <h2 style="font-size:26px">Lanjut di ponselmu</h2>
+          <p class="small" style="font-size:14px;max-width:38ch">Pindai kode ini dengan ponselmu. Layar ini hanya pendamping.</p>
+          <div>
+            <p class="small" style="margin-bottom:6px">Atau ketik alamat halaman ini di ponselmu:</p>
+            <div class="curl" style="max-width:280px;flex:none">kite.id/p/budi</div>
+          </div>
+        </div>
+        <div class="mini-phone">
+          <span class="pill active">Membuat akun</span>
+          <svg class="qr" width="152" height="152" viewBox="0 0 84 84"><rect width="84" height="84" fill="url(#qrp)"/><rect x="2" y="2" width="18" height="18" fill="#fff"/><rect x="2" y="2" width="18" height="18" fill="none" stroke="#16301F" stroke-width="5"/><rect x="8.5" y="8.5" width="5" height="5" fill="#16301F"/><rect x="64" y="2" width="18" height="18" fill="#fff"/><rect x="64" y="2" width="18" height="18" fill="none" stroke="#16301F" stroke-width="5"/><rect x="70.5" y="8.5" width="5" height="5" fill="#16301F"/><rect x="2" y="64" width="18" height="18" fill="#fff"/><rect x="2" y="64" width="18" height="18" fill="none" stroke="#16301F" stroke-width="5"/><rect x="8.5" y="70.5" width="5" height="5" fill="#16301F"/></svg>
+          <p class="small" style="text-align:center">Alur penuh — daftar, nomor, verifikasi — berjalan di ponsel.</p>
+        </div>
+      </div>
+    </div>
+    <figcaption><strong>Pendamping desktop</strong>: pengunjung laptop tetap dilayani — ponsel
+      tiruan bermerek (bingkai tinta, bukan abu-abu generik) dengan QR dan pil langkah yang
+      mengikuti posisi alur (“Membuat akun” → “Langkah nomor HP” → “Verifikasi identitas”).</figcaption></figure>
+
+  </div>
+</section>
+
+<!-- ═══════════════════ 12 · IMPLEMENTASI ═══════════════════ -->
+<section id="s12" class="board-sec">
+  <p class="sec-no">12</p><h2>Peta implementasi — setelah mockup disetujui</h2>
+  <p class="sec-sub">Urutan kerja sesuai keputusan: token global + lima momen hero. Langkah 1 saja
+    sudah mengubah seluruh aplikasi; langkah 2–6 menyelesaikan wajahnya. Semua copy tetap dari
+    katalog locale, semua logic/test/data tidak disentuh, gerbang kata-terlarang tetap hijau.</p>
+  <table class="impl">
+    <thead><tr><th style="width:52px">Urut</th><th style="width:230px">Kerja</th><th>Berkas yang disentuh</th><th style="width:300px">Catatan risiko</th></tr></thead>
+    <tbody>
+      <tr><td><b>1</b></td><td><b>Token global</b> — palet Sawah→Panen, Plus Jakarta Sans, radius,
+        bentuk tombol/kartu/input</td><td><span class="addr">apps/web/src/index.css</span> (Tailwind v4
+        <span class="addr">@theme</span>) + tautan huruf di <span class="addr">index.html</span></td>
+        <td>Semua layar berubah otomatis; test tidak tersentuh. Estimasi ½–1 jam.</td></tr>
+      <tr><td><b>2</b></td><td><b>Mark layang-layang + TabBar</b> — komponen logo (SVG inline,
+        varian daun/emas) + warna glyph tab</td><td><span class="addr">screens/shell/TabBar.tsx</span>,
+        komponen baru <span class="addr">Mark</span></td><td>Kecil. Perlu favicon/ikon PWA mengikuti (PNG dari SVG).</td></tr>
+      <tr><td><b>3</b></td><td><b>Beranda</b> — header mark + kartu saldo Dalam + cincin reputasi</td>
+        <td><span class="addr">screens/Home.tsx</span>, <span class="addr">screens/beranda/ReputationWhy.tsx</span></td>
+        <td>Sedang. Struktur DOM berubah; test Home/ReputationWhy mungkin perlu penyesuaian selektor kelas.</td></tr>
+      <tr><td><b>4</b></td><td><b>DealCard</b> — progress merundang + chip semantik + judul ≈Rp</td>
+        <td><span class="addr">screens/beranda/DealCard.tsx</span> (dipakai semua surface)</td>
+        <td>Sedang. Satu komponen → semua kartu kesepakatan ikut (termasuk /p/:id &amp; Dukung).</td></tr>
+      <tr><td><b>5</b></td><td><b>Momen</b> — SplitMoment (bar proporsi + dua kartu), GarisFinis
+        (emas + confetti), TermForgiveness (sunyi)</td>
+        <td><span class="addr">screens/moments/SplitMoment.tsx</span>,
+        <span class="addr">screens/riwayat/GarisFinis.tsx</span>,
+        <span class="addr">screens/riwayat/TermForgiveness.tsx</span></td>
+        <td>Sedang. Test moment memeriksa teks/angka — angka tidak berubah, hanya kelas.</td></tr>
+      <tr><td><b>6</b></td><td><b>Wajah Signup</b> — mark + wordmark + tombol</td>
+        <td><span class="addr">screens/Signup.tsx</span></td><td>Kecil.</td></tr>
+      <tr><td><b>7</b></td><td><b>Sisanya</b> (Ajukan, Kirim, Riwayat, Dukung, /p/:id, Mitra,
+        pendamping desktop, keadaan tepi)</td><td>kelas warna Tailwind lama → token baru per berkas</td>
+        <td>Bisa token-only bila waktu habis; mockup ini jadi referensi 1:1.</td></tr>
+    </tbody>
+  </table>
+  <p class="small" style="margin-top:14px;max-width:96ch">Yang tidak pernah berubah: katalog copy
+    dan aturan kata-terlarang, alur &amp; status mesin, integer money, aksesibilitas (fokus
+    terlihat, <span class="addr">prefers-reduced-motion</span> mematikan animasi merundang dan
+    confetti), serta perilaku luring. Angka pada mockup adalah angka demo §6.3 (600 AUSD · cap
+    780 · tiga panen 1.500 · skor 58 → 91) supaya bisa diperiksa tangan.</p>
+</section>
+
+<footer style="margin-top:64px;padding-top:22px;border-top:1px solid #CBD5C6;color:#5C6B5E;font-size:13px;line-height:1.6">
+  Kite · mockup UI “Sawah → Panen” — papan keputusan untuk revisi desain, 13 Okt 2026.
+  Setujui per bagian (nomor 1–7 di atas); implementasi menyusul setelah persetujuan.
+  Buka berkas ini di browser layar lebar; font dimuat dari Google Fonts (Plus Jakarta Sans).
+</footer>
+
+</div>
+</body>
+</html>

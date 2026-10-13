@@ -3,6 +3,40 @@
 /* Kite app shell — mobile-first; the desktop companion renders the same flow
  * inside a phone frame (T026). */
 
+/* ── Sawah → Panen (mockup.html §00) ──────────────────────────────────────
+ * Ink-green text on green-tinted paper. Leaf green is always the farmer's
+ * money (untukmu) and the primary action; padi gold is always the supporter's
+ * share and the celebration accent — never decoration. The deep green is the
+ * PWA theme color (#1B4332), so the installed app and the saldo card finally
+ * share one identity. */
+@theme {
+  --color-ink: #16301f;
+  --color-ink2: #33463a;
+  --color-paper: #f7f9f3;
+  --color-leaf: #2e7d46;
+  --color-leafdk: #1f5c35;
+  --color-leafsoft: #eaf4ec;
+  --color-leaf100: #d7e9dc;
+  --color-gold: #e3a72f;
+  --color-golddk: #8a6210;
+  --color-goldsoft: #fbf3df;
+  --color-gold100: #f3e3bc;
+  --color-goldhi: #e8c468;
+  --color-deep: #1b4332;
+  --color-muted: #5c6b5e;
+  --color-line: #dce5da;
+  --color-line2: #c9d4c6;
+  --color-clay: #b3372b;
+  --color-claysoft: #f9e9e6;
+  --color-lichen: #8ca193;
+  --color-warnsoft: #fbf3df;
+  --color-warnline: #e8ce7a;
+  --color-night: #20392a;
+  --color-nightseek: #1e4632;
+  --color-nightback: #332e17;
+  --font-sans: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
 :root {
   color-scheme: light;
 }
@@ -14,8 +48,17 @@ body,
 }
 
 body {
-  background: #f8fafc;
-  color: #0f172a;
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+}
+
+/* The ripening fill — young light green maturing to padi gold as a season
+ * fills its cap. One gradient, clipped by width, shared by the deal cards,
+ * the backer list, and the score ring (which mirrors the same stops in SVG).
+ * Purely a background image: no animation, nothing for reduced-motion to
+ * turn off. */
+.ripen {
+  background-image: linear-gradient(90deg, #7cc08f 0%, #2e7d46 55%, #c98f1b 82%, #e3a72f 100%);
 }
