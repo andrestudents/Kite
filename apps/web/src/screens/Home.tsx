@@ -137,7 +137,7 @@ export function Home(props: {
       <ReputationWhy reputation={model.reputation} locale={locale} lang={lang} />
 
       {model.deal !== null ? (
-        <DealCard card={model.deal} locale={locale} lang={lang} />
+        <DealCard card={model.deal} locale={locale} lang={lang} formatIdr={displayIdr} />
       ) : (
         <section className="rounded-2xl border border-dashed border-line2 bg-white p-5 text-center text-sm text-muted">
           {locale.home.emptyDeal}
