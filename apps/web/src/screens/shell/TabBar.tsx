@@ -11,7 +11,7 @@ export const TAB_IDS: readonly TabId[] = ["beranda", "dukung", "kirim", "riwayat
 /** Decorative geometric glyphs — no icons dependency; the title carries the
  *  catalog label so the glyph is never an unnamed graphic. */
 function TabGlyph({ tab, active, label }: { tab: TabId; active: boolean; label: string }) {
-  const stroke = active ? "currentColor" : "#94a3b8";
+  const stroke = active ? "currentColor" : "#8CA193";
   const common = {
     width: 22,
     height: 22,
@@ -62,7 +62,7 @@ export function TabBar(props: { locale: Locale; active: TabId; onNavigate(tab: T
   return (
     <nav
       aria-label={locale.appName}
-      className="fixed inset-x-0 bottom-0 z-20 mx-auto flex max-w-md justify-around border-t border-slate-200 bg-white/95 px-2 pb-[env(safe-area-inset-bottom)] pt-1 backdrop-blur"
+      className="fixed inset-x-0 bottom-0 z-20 mx-auto flex max-w-md justify-around border-t border-line bg-white/95 px-2 pb-[env(safe-area-inset-bottom)] pt-1 backdrop-blur"
     >
       {TAB_IDS.map((tab) => {
         const isActive = tab === active;
@@ -73,7 +73,7 @@ export function TabBar(props: { locale: Locale; active: TabId; onNavigate(tab: T
             onClick={() => onNavigate(tab)}
             aria-current={isActive ? "page" : undefined}
             className={`flex flex-1 flex-col items-center gap-0.5 px-2 py-1.5 text-xs font-semibold ${
-              isActive ? "text-teal-700" : "text-slate-400"
+              isActive ? "text-leafdk" : "text-lichen"
             }`}
           >
             <TabGlyph tab={tab} active={isActive} label={locale.tabs[tab]} />
