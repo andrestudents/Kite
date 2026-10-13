@@ -27,21 +27,22 @@ export function RiwayatRowView(props: {
   const lang: MoneyLocale = props.lang ?? "id";
   if (row.kind === "income") {
     return (
-      <article className="rounded-2xl border border-slate-200 p-4 text-sm">
+      <article className="rounded-2xl border border-leaf100 bg-leafsoft p-4 text-sm">
         <div className="flex items-baseline justify-between">
-          <span className="font-semibold text-slate-800">
+          <span className="flex items-center gap-1.5 font-bold text-leafdk">
+            <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-leaf" />
             {locale.riwayat.incomeLabel} {formatAusdDetail(row.panen.grossAusd, lang)}
           </span>
-          <span className="text-xs text-slate-500">{row.panen.blockTime.slice(0, 10)}</span>
+          <span className="text-xs text-muted">{row.panen.blockTime.slice(0, 10)}</span>
         </div>
-        <p className="mt-1 text-xs text-slate-500">
+        <p className="mt-1 text-xs text-muted">
           {locale.detail.toYouLabel} {formatAusdDetail(row.panen.toSeekerAusd, lang)}
         </p>
         <a
           href={explorerTxUrl(props.explorerBaseUrl, row.panen.txHash)}
           target="_blank"
           rel="noreferrer"
-          className="mt-1 inline-block text-xs text-teal-700 underline"
+          className="mt-1 inline-block text-xs font-semibold text-leafdk underline"
         >
           {locale.riwayat.viewProof}
         </a>
@@ -50,22 +51,22 @@ export function RiwayatRowView(props: {
   }
   if (row.kind === "send") {
     return (
-      <article className="rounded-2xl border border-slate-200 p-4 text-sm">
+      <article className="rounded-2xl border border-line bg-white p-4 text-sm">
         <div className="flex items-baseline justify-between">
-          <span className="font-semibold text-slate-800">
+          <span className="font-bold text-ink">
             {locale.riwayat.sendLabel} {formatAusdDetail(row.send.valueAusd, lang)}
           </span>
-          <span className="text-xs text-slate-500">
+          <span className="text-xs text-muted">
             {new Date(row.send.at).toISOString().slice(0, 10)}
           </span>
         </div>
-        <p className="mt-1 text-xs text-slate-500">{shortAddress(row.send.to)}</p>
+        <p className="mt-1 font-mono text-xs text-muted">{shortAddress(row.send.to)}</p>
         {row.send.txHash !== undefined ? (
           <a
             href={explorerTxUrl(props.explorerBaseUrl, row.send.txHash)}
             target="_blank"
             rel="noreferrer"
-            className="mt-1 inline-block text-xs text-teal-700 underline"
+            className="mt-1 inline-block text-xs font-semibold text-leafdk underline"
           >
             {locale.riwayat.viewProof}
           </a>
@@ -74,22 +75,23 @@ export function RiwayatRowView(props: {
     );
   }
   return (
-    <article className="rounded-2xl border border-slate-200 p-4 text-sm">
+    <article className="rounded-2xl border border-gold100 bg-goldsoft p-4 text-sm">
       <div className="flex items-baseline justify-between">
-        <span className="font-semibold text-slate-800">
+        <span className="flex items-center gap-1.5 font-bold text-golddk">
+          <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-gold" />
           {locale.riwayat.completeLabel} {formatAusdDetail(row.card.principalAusd, lang)}
         </span>
         {props.onOpen ? (
           <button
             type="button"
             onClick={() => props.onOpen?.(row.card.isaId)}
-            className="text-xs text-teal-700 underline"
+            className="text-xs font-semibold text-golddk underline"
           >
             {locale.detail.title}
           </button>
         ) : null}
       </div>
-      <p className="mt-1 text-xs text-slate-500">
+      <p className="mt-1 text-xs text-muted">
         {locale.dealCard.shareLabel} {pctLabel(row.card.shareBps, lang)} ·{" "}
         {locale.dealCard.capLabel} {formatAusdDetail(row.card.capAusd, lang)}
       </p>
@@ -144,11 +146,11 @@ export function Riwayat(props: {
   if (failed) {
     return (
       <main className="mx-auto flex min-h-dvh max-w-md flex-col items-center justify-center gap-4 px-6 text-center">
-        <p className="text-slate-600">{locale.common.errorGeneric}</p>
+        <p className="text-muted">{locale.common.errorGeneric}</p>
         <button
           type="button"
           onClick={() => void load()}
-          className="rounded-xl bg-teal-600 px-6 py-3 font-semibold text-white shadow"
+          className="rounded-xl border border-line2 bg-white px-6 py-3 font-semibold text-ink shadow"
         >
           {locale.edge.retry}
         </button>
@@ -157,16 +159,16 @@ export function Riwayat(props: {
   }
   if (model === null) {
     return (
-      <main className="flex min-h-dvh items-center justify-center text-slate-500">
+      <main className="flex min-h-dvh items-center justify-center text-muted">
         {locale.edge.loading}
       </main>
     );
   }
   return (
     <main className="mx-auto flex min-h-dvh max-w-md flex-col gap-4 px-6 py-10">
-      <h1 className="text-xl font-bold text-slate-800">{locale.riwayat.title}</h1>
+      <h1 className="text-xl font-extrabold tracking-tight text-ink">{locale.riwayat.title}</h1>
       {model.rows.length === 0 ? (
-        <p className="text-sm text-slate-500">{locale.riwayat.empty}</p>
+        <p className="text-sm text-muted">{locale.riwayat.empty}</p>
       ) : (
         model.rows.map((row) => (
           <RiwayatRowView
@@ -180,7 +182,7 @@ export function Riwayat(props: {
         ))
       )}
       {props.onBack ? (
-        <button type="button" onClick={props.onBack} className="text-sm text-slate-500">
+        <button type="button" onClick={props.onBack} className="text-sm text-muted">
           {locale.edge.back}
         </button>
       ) : null}

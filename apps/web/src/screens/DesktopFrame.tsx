@@ -47,26 +47,22 @@ export function DesktopHandoff({ locale, step }: { locale: Locale; step?: Onboar
   }, []);
 
   return (
-    <main className="flex min-h-dvh items-center justify-center bg-slate-100 p-6">
-      <section className="flex h-[844px] w-[390px] flex-col items-center justify-center gap-3 rounded-[2rem] border-8 border-slate-800 bg-white p-6 text-center shadow-xl">
-        <p className="text-lg font-semibold text-slate-800">{locale.desktop.title}</p>
-        <p className="text-sm text-slate-500">{locale.desktop.body}</p>
+    <main className="flex min-h-dvh items-center justify-center bg-paper p-6">
+      <section className="flex h-[844px] w-[390px] flex-col items-center justify-center gap-3 rounded-[2rem] border-8 border-ink bg-white p-6 text-center shadow-xl">
+        <p className="text-lg font-bold text-ink">{locale.desktop.title}</p>
+        <p className="text-sm text-muted">{locale.desktop.body}</p>
         {step !== undefined ? (
-          <p className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
+          <p className="rounded-full bg-leafsoft px-3 py-1 text-xs font-semibold text-leafdk">
             {stepLabel(locale, step)}
           </p>
         ) : null}
         {qr !== null ? (
-          <img
-            src={qr}
-            alt={locale.desktop.title}
-            className="mt-2 rounded-lg border border-slate-200"
-          />
+          <img src={qr} alt={locale.desktop.title} className="mt-2 rounded-lg border border-line" />
         ) : (
-          <div className="mt-2 h-[220px] w-[220px] animate-pulse rounded-lg bg-slate-200" />
+          <div className="mt-2 h-[220px] w-[220px] animate-pulse rounded-lg bg-[#E7ECE3]" />
         )}
-        <p className="mt-2 text-xs text-slate-500">{locale.desktop.addressNote}</p>
-        <p className="break-all font-mono text-xs text-slate-600">{url}</p>
+        <p className="mt-2 text-xs text-muted">{locale.desktop.addressNote}</p>
+        <p className="break-all font-mono text-xs text-ink2">{url}</p>
       </section>
     </main>
   );

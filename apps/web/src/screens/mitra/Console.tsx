@@ -31,21 +31,21 @@ export function ConsoleView(props: {
   return (
     <section className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-xl font-bold text-slate-800">{locale.mitra.title}</h1>
-        <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800">
+        <h1 className="text-xl font-extrabold tracking-tight text-ink">{locale.mitra.title}</h1>
+        <span className="rounded-full border border-gold100 bg-goldsoft px-3 py-1 text-xs font-bold text-golddk">
           {locale.mitra.badge}
         </span>
       </div>
       {rows.length === 0 ? (
-        <p className="text-sm text-slate-500">{locale.edge.empty}</p>
+        <p className="text-sm text-muted">{locale.edge.empty}</p>
       ) : (
-        <div className="overflow-x-auto rounded-2xl border border-slate-200">
+        <div className="overflow-x-auto rounded-2xl border border-line bg-white">
           <table className="w-full min-w-[42rem] text-left text-sm">
-            <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+            <thead className="border-b border-line text-xs text-muted">
               <tr>
-                <th className="px-4 py-3 font-medium">#</th>
-                <th className="px-4 py-3 font-medium">{locale.mitra.totalLabel}</th>
-                <th className="px-4 py-3 font-medium">{locale.mitra.statusLabel}</th>
+                <th className="px-4 py-3 font-semibold">#</th>
+                <th className="px-4 py-3 font-semibold">{locale.mitra.totalLabel}</th>
+                <th className="px-4 py-3 font-semibold">{locale.mitra.statusLabel}</th>
                 <th className="px-4 py-3" aria-label={locale.mitra.nonKiteRow}></th>
                 <th className="px-4 py-3" aria-label={locale.mitra.bayarCta}></th>
               </tr>
@@ -56,27 +56,30 @@ export function ConsoleView(props: {
                 const payable =
                   kite && row.status === STATUS_PENDING && props.onBayar !== undefined;
                 return (
-                  <tr key={row.id} className="border-t border-slate-100">
-                    <td className="px-4 py-3 font-mono text-xs text-slate-600">
-                      {shortAddress(row.purchaseRef)}
-                    </td>
-                    <td className="px-4 py-3 font-semibold text-slate-800">
+                  <tr
+                    key={row.id}
+                    className={
+                      kite
+                        ? "border-t border-line text-ink"
+                        : "border-t border-line text-muted opacity-70"
+                    }
+                  >
+                    <td className="px-4 py-3 font-mono text-xs">{shortAddress(row.purchaseRef)}</td>
+                    <td className="px-4 py-3 font-semibold">
                       {formatAusdDetail(row.grossAusd, lang)}
                     </td>
                     <td className="px-4 py-3">
-                      <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700">
+                      <span className="rounded-full bg-[#F0F3EE] px-2 py-0.5 text-xs font-semibold text-muted">
                         {statusLabelOf(row.status, locale)}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-xs text-slate-500">
-                      {kite ? null : locale.mitra.nonKiteRow}
-                    </td>
+                    <td className="px-4 py-3 text-xs">{kite ? null : locale.mitra.nonKiteRow}</td>
                     <td className="px-4 py-3">
                       {payable ? (
                         <button
                           type="button"
                           onClick={() => props.onBayar?.(row)}
-                          className="rounded-xl bg-teal-600 px-4 py-2 text-xs font-semibold text-white shadow"
+                          className="rounded-xl bg-leaf px-4 py-2 text-xs font-semibold text-white shadow"
                         >
                           {locale.mitra.bayarCta}
                         </button>
@@ -121,14 +124,14 @@ export function Console(props: {
   if (failed) {
     return (
       <main className="mx-auto flex min-h-dvh max-w-3xl flex-col items-center justify-center gap-4 px-6 text-center">
-        <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800">
+        <span className="rounded-full border border-gold100 bg-goldsoft px-3 py-1 text-xs font-bold text-golddk">
           {locale.mitra.badge}
         </span>
-        <p className="text-slate-600">{locale.common.errorGeneric}</p>
+        <p className="text-muted">{locale.common.errorGeneric}</p>
         <button
           type="button"
           onClick={() => void load()}
-          className="rounded-xl bg-teal-600 px-6 py-3 font-semibold text-white shadow"
+          className="rounded-xl border border-line2 bg-white px-6 py-3 font-semibold text-ink shadow"
         >
           {locale.edge.retry}
         </button>
@@ -137,7 +140,7 @@ export function Console(props: {
   }
   if (rows === null) {
     return (
-      <main className="flex min-h-dvh items-center justify-center text-slate-500">
+      <main className="flex min-h-dvh items-center justify-center text-muted">
         {locale.edge.loading}
       </main>
     );
@@ -146,7 +149,7 @@ export function Console(props: {
     <main className="mx-auto flex min-h-dvh max-w-3xl flex-col gap-4 px-6 py-10">
       <ConsoleView rows={rows} locale={locale} lang={props.lang} onBayar={props.onBayar} />
       {props.onBack ? (
-        <button type="button" onClick={props.onBack} className="text-sm text-slate-500">
+        <button type="button" onClick={props.onBack} className="text-sm text-muted">
           {locale.edge.back}
         </button>
       ) : null}

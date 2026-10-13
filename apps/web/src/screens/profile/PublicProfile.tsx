@@ -61,9 +61,9 @@ export function statusLabel(status: number, locale: Locale): string {
  *  payload; no HTML ever reaches the DOM from the URL). */
 export function AjukanContext(props: { locale: Locale; text: string }) {
   return (
-    <section className="rounded-2xl bg-amber-50 p-4 text-sm">
-      <p className="text-xs text-slate-500">{props.locale.dealCard.purposeLabel}</p>
-      <p className="mt-1 text-slate-800">{props.text}</p>
+    <section className="rounded-2xl border border-gold100 bg-goldsoft p-4 text-sm">
+      <p className="text-xs font-semibold text-golddk">{props.locale.dealCard.purposeLabel}</p>
+      <p className="mt-1 text-ink">{props.text}</p>
     </section>
   );
 }
@@ -76,27 +76,27 @@ export function OpenRequest(props: {
 }) {
   const { locale, lang, card } = props;
   return (
-    <section className="rounded-2xl border-2 border-teal-600 bg-teal-50 p-5">
-      <p className="text-sm font-semibold text-teal-800">{locale.profile.openRequestTitle}</p>
-      <p className="mt-2 text-2xl font-bold text-slate-900">
+    <section className="rounded-2xl border-2 border-leaf bg-leafsoft p-5">
+      <p className="text-sm font-bold text-leafdk">{locale.profile.openRequestTitle}</p>
+      <p className="mt-2 text-2xl font-extrabold tracking-tight text-ink">
         {formatAusdDetail(card.principalAusd, lang)}
       </p>
       <div className="mt-2 flex items-baseline justify-between text-sm">
-        <span className="text-slate-500">
+        <span className="text-muted">
           {locale.dealCard.shareLabel} {pctLabel(card.shareBps, lang)}
         </span>
-        <span className="text-slate-500">
+        <span className="text-muted">
           {locale.dealCard.capLabel} {formatAusdDetail(card.capAusd, lang)}
         </span>
       </div>
-      <p className="mt-2 text-xs text-slate-500">
+      <p className="mt-2 text-xs text-muted">
         {locale.dealCard.endLabel} {locale.dealCard.endByCap}
       </p>
-      <p className="mt-1 text-xs text-slate-600">{locale.dealCard.failedHarvest}</p>
+      <p className="mt-1 text-xs text-muted">{locale.dealCard.failedHarvest}</p>
       <button
         type="button"
         onClick={() => props.onDukung?.(card.seeker)}
-        className="mt-4 w-full rounded-xl bg-teal-600 px-6 py-3 text-lg font-semibold text-white shadow"
+        className="mt-4 w-full rounded-xl bg-leaf px-6 py-3 text-lg font-semibold text-white shadow"
       >
         {locale.profile.dukungCta}
       </button>
@@ -112,33 +112,39 @@ function HistoryRow(props: {
 }) {
   const { locale, lang, card } = props;
   const badge = statusLabel(card.status, locale);
+  const terminal = card.status === 3 || card.status === 4;
   return (
-    <article className="rounded-2xl border border-slate-200 p-4">
+    <article className="rounded-2xl border border-line bg-white p-4">
       <div className="flex items-baseline justify-between">
-        <span className="font-semibold text-slate-800">
-          {formatAusdDetail(card.principalAusd, lang)}
-        </span>
-        {badge !== "" ? <span className="text-xs text-slate-500">{badge}</span> : null}
+        <span className="font-bold text-ink">{formatAusdDetail(card.principalAusd, lang)}</span>
+        {badge !== "" ? (
+          <span
+            className={
+              terminal
+                ? "inline-flex h-6 items-center rounded-full bg-goldsoft px-2.5 text-[11px] font-bold text-golddk"
+                : "inline-flex h-6 items-center rounded-full bg-[#F0F3EE] px-2.5 text-[11px] font-bold text-muted"
+            }
+          >
+            {badge}
+          </span>
+        ) : null}
       </div>
-      <p className="mt-1 text-xs text-slate-500">
+      <p className="mt-1 text-xs text-muted">
         {locale.dealCard.shareLabel} {pctLabel(card.shareBps, lang)} · {locale.dealCard.capLabel}{" "}
         {formatAusdDetail(card.capAusd, lang)}
       </p>
-      <p className="mt-1 text-xs text-slate-500">
+      <p className="mt-1 text-xs text-muted">
         {locale.dealCard.progressLabel} {Math.floor(card.progressBps / 100)}%
       </p>
       {(card.panen ?? []).map((row) => (
-        <div
-          key={row.txHash}
-          className="mt-2 border-t border-slate-100 pt-2 text-xs text-slate-600"
-        >
+        <div key={row.txHash} className="mt-2 border-t border-line pt-2 text-xs text-muted">
           <div className="flex items-baseline justify-between">
             <span>{row.blockTime.slice(0, 10)}</span>
             <a
               href={explorerTxUrl(props.explorerBaseUrl, row.txHash)}
               target="_blank"
               rel="noreferrer"
-              className="text-teal-700 underline"
+              className="font-semibold text-leafdk underline"
             >
               {locale.detail.viewProof}
             </a>
@@ -219,11 +225,11 @@ export function PublicProfile(props: {
   if (failed) {
     return (
       <main className="mx-auto flex min-h-dvh max-w-md flex-col items-center justify-center gap-4 px-6 text-center">
-        <p className="text-slate-600">{locale.common.errorGeneric}</p>
+        <p className="text-muted">{locale.common.errorGeneric}</p>
         <button
           type="button"
           onClick={() => void reload()}
-          className="rounded-xl bg-teal-600 px-6 py-3 font-semibold text-white shadow"
+          className="rounded-xl border border-line2 bg-white px-6 py-3 font-semibold text-ink shadow"
         >
           {locale.edge.retry}
         </button>
@@ -232,7 +238,7 @@ export function PublicProfile(props: {
   }
   if (model === null) {
     return (
-      <main className="flex min-h-dvh items-center justify-center text-slate-500">
+      <main className="flex min-h-dvh items-center justify-center text-muted">
         {locale.edge.loading}
       </main>
     );
@@ -242,10 +248,10 @@ export function PublicProfile(props: {
   return (
     <main className="mx-auto flex min-h-dvh max-w-md flex-col gap-4 px-6 py-10">
       <header className="flex flex-col gap-1">
-        <p className="text-2xl" aria-hidden="true">
+        <p className="text-2xl tracking-wide text-gold" aria-hidden="true">
           {starsLabel(model.stars)}
         </p>
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-muted">
           {model.completedDeals} {locale.profile.completedLabel}
         </p>
       </header>
@@ -262,9 +268,11 @@ export function PublicProfile(props: {
       ) : null}
 
       <section className="flex flex-col gap-3">
-        <h2 className="text-lg font-bold text-slate-700">{locale.profile.historyTitle}</h2>
+        <h2 className="text-lg font-extrabold tracking-tight text-ink">
+          {locale.profile.historyTitle}
+        </h2>
         {historyRows.length === 0 && model.openRequest === null ? (
-          <p className="text-sm text-slate-500">{locale.profile.noHistory}</p>
+          <p className="text-sm text-muted">{locale.profile.noHistory}</p>
         ) : (
           historyRows.map((d) => (
             <HistoryRow
@@ -279,15 +287,15 @@ export function PublicProfile(props: {
       </section>
 
       {qrDataUrl !== null ? (
-        <section className="rounded-2xl border border-slate-200 p-5 text-center">
-          <p className="text-sm font-semibold text-slate-700">{locale.profile.qrTitle}</p>
+        <section className="rounded-2xl border border-line bg-white p-5 text-center">
+          <p className="text-sm font-bold text-ink">{locale.profile.qrTitle}</p>
           <img src={qrDataUrl} alt={locale.profile.qrTitle} className="mx-auto mt-3 h-44 w-44" />
-          <p className="mt-2 text-xs text-slate-500">{locale.profile.qrHint}</p>
+          <p className="mt-2 text-xs text-muted">{locale.profile.qrHint}</p>
         </section>
       ) : null}
 
       {props.onBack ? (
-        <button type="button" onClick={props.onBack} className="text-sm text-slate-500">
+        <button type="button" onClick={props.onBack} className="text-sm text-muted">
           {locale.edge.back}
         </button>
       ) : null}

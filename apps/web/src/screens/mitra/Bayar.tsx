@@ -44,38 +44,42 @@ export function BayarView(props: {
   return (
     <section className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-xl font-bold text-slate-800">{locale.mitra.bayarCta}</h1>
-        <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800">
+        <h1 className="text-xl font-extrabold tracking-tight text-ink">{locale.mitra.bayarCta}</h1>
+        <span className="rounded-full border border-gold100 bg-goldsoft px-3 py-1 text-xs font-bold text-golddk">
           {locale.mitra.badge}
         </span>
       </div>
-      <p className="font-mono text-xs text-slate-500">{shortAddress(row.purchaseRef)}</p>
+      <p className="font-mono text-xs text-muted">{shortAddress(row.purchaseRef)}</p>
       {split === null ? (
-        <p className="text-sm text-slate-500">{locale.edge.loading}</p>
+        <p className="text-sm text-muted">{locale.edge.loading}</p>
       ) : (
-        <div className="rounded-2xl border border-slate-200 p-4 text-sm">
+        <div className="rounded-2xl border border-line bg-white p-4 text-sm">
           <div className="flex items-baseline justify-between">
-            <span className="text-slate-500">{locale.mitra.totalLabel}</span>
-            <span className="font-semibold text-slate-800">
-              {formatAusdDetail(split.grossAusd, lang)}
-            </span>
+            <span className="text-muted">{locale.mitra.totalLabel}</span>
+            <span className="font-bold text-ink">{formatAusdDetail(split.grossAusd, lang)}</span>
           </div>
           <div className="mt-2 flex items-baseline justify-between">
-            <span className="text-slate-500">{locale.mitra.toFarmerLabel}</span>
-            <span className="font-semibold text-teal-700">
+            <span className="flex items-center gap-1.5 text-muted">
+              <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-leaf" />
+              {locale.mitra.toFarmerLabel}
+            </span>
+            <span className="font-bold text-leafdk">
               {formatAusdDetail(split.toSeekerAusd, lang)}
             </span>
           </div>
           <div className="mt-2 flex items-baseline justify-between">
-            <span className="text-slate-500">{locale.mitra.toBackerLabel}</span>
-            <span className="font-semibold text-slate-800">
+            <span className="flex items-center gap-1.5 text-muted">
+              <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-gold" />
+              {locale.mitra.toBackerLabel}
+            </span>
+            <span className="font-bold text-golddk">
               {formatAusdDetail(split.toBackerAusd, lang)}
             </span>
           </div>
         </div>
       )}
       <div className="flex items-center justify-between gap-4">
-        <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">
+        <span className="rounded-full bg-[#F0F3EE] px-3 py-1 text-xs font-semibold text-muted">
           {statusLabelOf(row.status, locale)}
         </span>
         {payable ? (
@@ -83,7 +87,7 @@ export function BayarView(props: {
             type="button"
             disabled={props.busy || props.latch}
             onClick={() => props.onPay?.()}
-            className="rounded-xl bg-teal-600 px-6 py-3 font-semibold text-white shadow disabled:opacity-50"
+            className="rounded-xl bg-leaf px-6 py-3 font-semibold text-white shadow disabled:opacity-50"
           >
             {locale.mitra.markPaid}
           </button>
@@ -95,24 +99,24 @@ export function BayarView(props: {
             type="button"
             disabled={props.settleBusy}
             onClick={() => props.onSettle?.()}
-            className="rounded-xl bg-slate-800 px-6 py-3 font-semibold text-white shadow disabled:opacity-50"
+            className="rounded-xl bg-ink px-6 py-3 font-semibold text-[#F2F6EF] shadow disabled:opacity-50"
           >
             {locale.mitra.settleCta}
           </button>
         ) : (
-          <p className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-xs text-amber-800">
+          <p className="rounded-2xl border border-warnline bg-warnsoft p-4 text-xs text-golddk">
             {locale.mitra.unconfigured}
           </p>
         )
       ) : null}
       {props.receipt !== null ? (
-        <p className="text-xs text-slate-500">
+        <p className="font-mono text-xs text-muted">
           {locale.mitra.statusSettled}
           {props.receipt.txHash !== undefined ? ` · ${shortAddress(props.receipt.txHash)}` : ""}
         </p>
       ) : null}
       {props.onBack ? (
-        <button type="button" onClick={props.onBack} className="text-sm text-slate-500">
+        <button type="button" onClick={props.onBack} className="text-sm text-muted">
           {locale.edge.back}
         </button>
       ) : null}
@@ -189,21 +193,21 @@ export function Bayar(props: {
   if (!isKiteRow(current)) {
     return (
       <main className="mx-auto flex min-h-dvh max-w-md flex-col items-center justify-center gap-4 px-6 text-center">
-        <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800">
+        <span className="rounded-full border border-gold100 bg-goldsoft px-3 py-1 text-xs font-bold text-golddk">
           {locale.mitra.badge}
         </span>
-        <p className="text-sm text-slate-500">{locale.mitra.nonKiteRow}</p>
+        <p className="text-sm text-muted">{locale.mitra.nonKiteRow}</p>
       </main>
     );
   }
   if (failed) {
     return (
       <main className="mx-auto flex min-h-dvh max-w-md flex-col items-center justify-center gap-4 px-6 text-center">
-        <p className="text-slate-600">{locale.common.errorGeneric}</p>
+        <p className="text-muted">{locale.common.errorGeneric}</p>
         <button
           type="button"
           onClick={() => void load()}
-          className="rounded-xl bg-teal-600 px-6 py-3 font-semibold text-white shadow"
+          className="rounded-xl border border-line2 bg-white px-6 py-3 font-semibold text-ink shadow"
         >
           {locale.edge.retry}
         </button>
