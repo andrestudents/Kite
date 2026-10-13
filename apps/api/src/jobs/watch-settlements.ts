@@ -76,8 +76,16 @@ function upsertIsaRow(isaId: number, isa: IsaOnchain) {
   return { isaId, ...row };
 }
 
-/** One observation pass: checkpoint → head. Idempotent end to end. */
-export async function processNewLogs(db: AnyDb, chain: ChainClient): Promise<ProcessResult> {
+/** One observation pass: checkpoint → head. Idempotent end to end. An
+ *  optional `deadlineMs` bounds the walk (submit-settlement's observation
+ *  uses it): a checkpoint far behind head on a small-chunk RPC is thousands
+ *  of serial getLogs — a pass that cannot finish within its budget stops and
+ *  the committed checkpoint says where the next pass resumes. */
+export async function processNewLogs(
+  db: AnyDb,
+  chain: ChainClient,
+  opts: { deadlineMs?: number } = {},
+): Promise<ProcessResult> {
   let checkpoint = await checkpointOf(db, chain);
   const passStart = checkpoint;
   const head = await chain.blockNumber();
@@ -90,6 +98,9 @@ export async function processNewLogs(db: AnyDb, chain: ChainClient): Promise<Pro
   let unmatched = 0;
 
   while (checkpoint < head) {
+    if (opts.deadlineMs !== undefined && Date.now() > opts.deadlineMs) {
+      break; // out of budget — resume from the committed checkpoint next pass
+    }
     const end = checkpoint + range > head ? head : checkpoint + range;
 
     // Chain reads happen BEFORE the write transaction — no RPC inside a tx.

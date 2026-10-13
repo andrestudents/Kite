@@ -11,7 +11,7 @@
 import { abis, KITE_DEPLOYMENT, KITE_GAS_LIMITS } from "@kite/contracts";
 import { KiteError, requireEnv } from "@kite/core";
 import { type AnyDb, PURCHASE_STATUS, purchases } from "@kite/core/db";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import type { Abi, Hex } from "viem";
 import { createWalletClient, http } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
@@ -21,6 +21,10 @@ import { markPurchaseFailed } from "../services/purchase-service.js";
 import { processNewLogs } from "./watch-settlements.js";
 
 const GAS_LIMIT = KITE_GAS_LIMITS.receiveIncome.fixedLimit;
+/** One observation pass's walk budget — the guard against an unbounded
+ *  checkpoint-to-head grind on a small-chunk RPC (the crash that orphaned a
+ *  settled purchase in the SC-002 run). */
+const PASS_BUDGET_MS = 20_000;
 
 export interface IncomeCall {
   isaId: number;
@@ -148,19 +152,44 @@ export async function submitSettlement(
     return { status: "FAILED", reason };
   }
 
+  // §7.2 rule 6 — the receipt is not success, but the broadcast must leave
+  // its trace BEFORE any observation can fail: the SC-002 run crashed inside
+  // an unbounded watcher pass AFTER the money had split onchain, and the row
+  // sat PAID with no tx evidence (recon read backend=0 vs chain=1 AUSD).
+  // With the hash on the row, a later watcher pass completes the PAID →
+  // SETTLED transition from the event — the run-gate crash loses nothing.
+  await db
+    .update(purchases)
+    .set({ txHash })
+    .where(and(eq(purchases.id, purchaseId), eq(purchases.status, PURCHASE_STATUS.PAID)));
+
+  // Each pass is bounded: a checkpoint far behind head on a small-chunk RPC
+  // is thousands of serial getLogs — an unbounded pass here is what crashed
+  // the observation mid-walk. A bounded pass stops, the committed checkpoint
+  // says where the next pass (or the API's watcher) resumes.
+  const lastObservation: unknown[] = [];
   for (let pass = 0; pass < passes; pass++) {
     if (pass > 0) {
       await sleep(1_500);
     }
-    await processNewLogs(db, chain);
+    try {
+      await processNewLogs(db, chain, { deadlineMs: Date.now() + PASS_BUDGET_MS });
+    } catch (err) {
+      // a failed observation pass is not a failed settlement — the money
+      // already moved; the next pass (or watcher) resumes from the checkpoint
+      lastObservation.push(err);
+      continue;
+    }
     const after = await db.select().from(purchases).where(eq(purchases.id, purchaseId)).limit(1);
     if (after[0]?.status === PURCHASE_STATUS.SETTLED) {
       return { status: "SETTLED", txHash };
     }
   }
+  const observed = lastObservation.at(-1);
+  const cause = observed instanceof Error ? ` — last observation error: ${observed.message}` : "";
   throw new KiteError(
     "settlement_not_observed",
-    `broadcast ${txHash} not observed as settled after ${passes} passes`,
+    `broadcast ${txHash} not observed as settled after ${passes} passes${cause}`,
   );
 }
 

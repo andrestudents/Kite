@@ -184,4 +184,21 @@ describe("processNewLogs (T018)", () => {
     expect(rows.find((r) => r.key === UNMATCHED_KEY)?.value).toBe("1");
     expect((await db.select().from(purchases))[0]?.status).toBe("PAID");
   });
+
+  it("an expired deadline walks NOTHING — a bounded pass must not grind a backlog", async () => {
+    await seedPaidPurchase(db, REF);
+    let calls = 0;
+    const chain = fakeChain([logAt(50, 2)], 100n, {
+      settlementLogs: async () => {
+        calls += 1;
+        return [];
+      },
+    });
+    const result = await processNewLogs(db, chain, { deadlineMs: Date.now() - 1 });
+
+    expect(result.settled).toBe(0);
+    expect(calls).toBe(0); // the budget was spent before the first range
+    expect(await checkpointOf(db)).toBe("10"); // the seed — the next pass resumes from it
+    expect((await db.select().from(purchases))[0]?.status).toBe("PAID");
+  });
 });

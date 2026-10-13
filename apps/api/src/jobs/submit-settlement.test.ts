@@ -200,4 +200,53 @@ describe("submitSettlement (T019)", () => {
     }
     expect((await db.select().from(purchases))[0]?.status).toBe("PAID");
   });
+
+  it("a crashing observation pass loses NOTHING — the tx evidence stays on the row", async () => {
+    // The SC-002 crash shape: the broadcast lands, the watcher pass throws
+    // mid-walk (throttle on a 315k-block backlog), and the row used to sit
+    // PAID with no tx recorded. The evidence must survive every pass.
+    const id = await seedPaid();
+    const crashing = {
+      ...fakeChain([]),
+      settlementLogs: async () => {
+        throw new Error("429 — slow down");
+      },
+    } as ChainClient;
+    try {
+      await submitSettlement(db, crashing, id, {
+        submit: okSubmit,
+        passes: 2,
+        sleep: async () => {},
+      });
+      throw new Error("should have thrown");
+    } catch (e) {
+      expect((e as KiteError).code).toBe("settlement_not_observed");
+      expect((e as Error).message).toContain("429");
+    }
+    const rows = await db.select().from(purchases);
+    expect(rows[0]?.status).toBe("PAID");
+    expect(rows[0]?.txHash).toBe("0xsuccess"); // the broadcast, preserved
+  });
+
+  it("a recovered pass after a crashing one still settles from the event", async () => {
+    const id = await seedPaid();
+    let calls = 0;
+    const flaky = {
+      ...fakeChain([LOG]),
+      settlementLogs: async () => {
+        calls += 1;
+        if (calls === 1) throw new Error("429 — slow down");
+        return [LOG];
+      },
+    } as ChainClient;
+    const outcome = await submitSettlement(db, flaky, id, {
+      submit: okSubmit,
+      passes: 2,
+      sleep: async () => {},
+    });
+    expect(outcome.status).toBe("SETTLED");
+    const rows = await db.select().from(purchases);
+    expect(rows[0]?.status).toBe("SETTLED");
+    expect(rows[0]?.txHash).toBe("0xsettled"); // the SETTLEMENT tx, from the log
+  });
 });
