@@ -7,6 +7,7 @@
 import { useState } from "react";
 import type { AccountSession, AuthAdapter, CredentialRef, RpConfig } from "../auth/types.js";
 import type { Locale } from "../locales/id.js";
+import { Mark } from "./shell/Mark.js";
 
 export function Signup(props: {
   locale: Locale;
@@ -64,18 +65,24 @@ export function Signup(props: {
 
   return (
     <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center gap-6 px-6 text-center">
+      <div className="flex flex-col items-center gap-2">
+        <Mark className="h-14 w-12" />
+        <span className="text-3xl font-extrabold tracking-tight">{locale.appName}</span>
+      </div>
       <div>
-        <h1 className="text-3xl font-bold text-teal-700">{locale.signup.title}</h1>
-        <p className="mt-2 text-slate-600">{locale.signup.subtitle}</p>
+        <h1 className="text-2xl font-extrabold tracking-tight">{locale.signup.title}</h1>
+        <p className="mt-2 text-muted">{locale.signup.subtitle}</p>
       </div>
       {banner ? (
-        <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-800">{banner}</p>
+        <p className="rounded-lg border border-gold100 bg-goldsoft p-3 text-sm text-golddk">
+          {banner}
+        </p>
       ) : null}
       <button
         type="button"
         onClick={() => void signUp()}
         disabled={busy}
-        className="rounded-xl bg-teal-600 px-6 py-4 text-lg font-semibold text-white shadow disabled:opacity-50"
+        className="rounded-xl bg-leaf px-6 py-4 text-lg font-semibold text-white shadow disabled:opacity-50"
       >
         {working ? locale.signup.working : locale.signup.cta}
       </button>
@@ -84,12 +91,12 @@ export function Signup(props: {
           type="button"
           onClick={() => void signIn()}
           disabled={busy}
-          className="-mt-3 rounded-xl border border-teal-600 px-6 py-3 text-base font-semibold text-teal-700 disabled:opacity-50"
+          className="-mt-3 rounded-xl border border-line2 bg-white px-6 py-3 text-base font-semibold text-leafdk disabled:opacity-50"
         >
           {signingIn ? locale.signup.signingIn : locale.session.signIn}
         </button>
       ) : null}
-      {error ? <p className="text-sm text-rose-600">{error}</p> : null}
+      {error ? <p className="text-sm text-clay">{error}</p> : null}
     </main>
   );
 }
