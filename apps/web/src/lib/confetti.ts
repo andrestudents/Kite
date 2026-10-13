@@ -11,7 +11,7 @@ export interface ConfettiPlan {
   reduced: boolean;
 }
 
-const PALETTE = ["#1B4332", "#2D6A4F", "#40916C", "#52B788", "#B7E4C7", "#F4A261"];
+const PALETTE = ["#1B4332", "#2D6A4F", "#40916C", "#52B788", "#B7E4C7", "#E3A72F"];
 
 /** Pure plan — fixture-testable. Reduced motion plans ZERO pieces. */
 export function planConfetti(reduced: boolean, count = 60, durationMs = 1800): ConfettiPlan {

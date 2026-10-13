@@ -16,6 +16,7 @@ import type { MoneyLocale } from "../../lib/money.js";
 import { formatAusdDetail, formatGrouped, toDisplayUnits } from "../../lib/money.js";
 import type { Locale } from "../../locales/id.js";
 import type { Quote } from "../moments/SplitMoment.js";
+import { Mark } from "../shell/Mark.js";
 import { TermForgiveness } from "./TermForgiveness.js";
 
 export function finishFromIsa(
@@ -58,15 +59,6 @@ export function finishFromIsa(
     variant,
     fetchedAt: over.fetchedAt,
   };
-}
-
-function StatRow(props: { label: string; value: string }) {
-  return (
-    <div className="flex items-baseline justify-between">
-      <span className="text-sm text-slate-400">{props.label}</span>
-      <span className="font-semibold text-slate-100">{props.value}</span>
-    </div>
-  );
 }
 
 export function GarisFinis(props: {
@@ -112,49 +104,53 @@ export function GarisFinis(props: {
   const repDelta = model.repAfter - model.repBefore;
   return (
     <div className={model.entry === "live" ? MOMENT_LIVE_FRAME : MOMENT_REPLAY_FRAME}>
-      <p className="text-sm font-semibold tracking-wide text-teal-300">
-        {locale.moments.finishTitle}
-      </p>
+      <Mark variant="gold" className="h-12 w-11" />
+      <p className="text-sm font-extrabold text-goldhi">{locale.moments.finishTitle}</p>
       <div>
         {idrHeadline !== null ? (
-          <p className="text-4xl font-bold text-white">{idrHeadline}</p>
+          <p className="text-4xl font-extrabold tracking-tight text-white">{idrHeadline}</p>
         ) : null}
         <p
           className={
-            idrHeadline !== null ? "mt-1 text-sm text-teal-200" : "text-3xl font-bold text-white"
+            idrHeadline !== null
+              ? "mt-1 text-sm text-goldhi font-bold"
+              : "text-3xl font-extrabold text-white"
           }
         >
           {formatAusdDetail(model.totalDivertedAusd, lang)}
         </p>
       </div>
-      <div className="w-full max-w-sm rounded-2xl bg-slate-800 p-4 text-left">
-        <StatRow label={locale.moments.seasonPanen} value={String(model.panenCount)} />
-        <div className="mt-1">
-          <StatRow label={locale.moments.seasonDuration} value={String(model.durationDays)} />
+      <div className="grid w-full max-w-sm grid-cols-2 gap-2.5">
+        <div className="rounded-2xl bg-night p-3.5 text-left">
+          <p className="text-xl font-extrabold text-white">{String(model.panenCount)}</p>
+          <p className="mt-0.5 text-xs text-[#F2F6EF]/70">{locale.moments.seasonPanen}</p>
+        </div>
+        <div className="rounded-2xl bg-night p-3.5 text-left">
+          <p className="text-xl font-extrabold text-white">{String(model.durationDays)}</p>
+          <p className="mt-0.5 text-xs text-[#F2F6EF]/70">{locale.moments.seasonDuration}</p>
         </div>
         {repDelta !== 0 ? (
-          <div className="mt-1">
-            <StatRow label={locale.moments.repJump} value={`+${String(repDelta)}`} />
+          <div className="rounded-2xl bg-night p-3.5 text-left">
+            <p className="text-xl font-extrabold text-[#9FE0B0]">+{String(repDelta)}</p>
+            <p className="mt-0.5 text-xs text-[#F2F6EF]/70">{locale.moments.repJump}</p>
           </div>
         ) : null}
-        <div className="mt-1">
-          <StatRow
-            label={locale.moments.nextOfferLabel}
-            value={formatAusdDetail(nextOffer, lang)}
-          />
+        <div className="rounded-2xl bg-night p-3.5 text-left">
+          <p className="text-xl font-extrabold text-white">{formatAusdDetail(nextOffer, lang)}</p>
+          <p className="mt-0.5 text-xs text-[#F2F6EF]/70">{locale.moments.nextOfferLabel}</p>
         </div>
       </div>
       {props.onShare ? (
         <button
           type="button"
           onClick={props.onShare}
-          className="w-full max-w-sm rounded-xl bg-teal-500 px-6 py-3 text-lg font-semibold text-slate-900 shadow"
+          className="w-full max-w-sm rounded-xl bg-gold px-6 py-3.5 text-lg font-bold text-ink shadow"
         >
           {locale.moments.shareCta}
         </button>
       ) : null}
       {props.onClose ? (
-        <button type="button" onClick={props.onClose} className="text-sm text-slate-400 underline">
+        <button type="button" onClick={props.onClose} className="text-sm text-[#BFD3C2] underline">
           {locale.common.continue}
         </button>
       ) : null}
