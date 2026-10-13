@@ -35,10 +35,10 @@ export function ReceiveCode(props: {
   }, [props.storage, props.qr, props.origin, profileId]);
   if (dataUrl === null) return null;
   return (
-    <section className="rounded-2xl border border-slate-200 p-5 text-center">
-      <p className="text-sm font-semibold text-slate-700">{locale.profile.qrTitle}</p>
+    <section className="rounded-2xl border border-line bg-white p-5 text-center">
+      <p className="text-sm font-bold text-ink">{locale.profile.qrTitle}</p>
       <img src={dataUrl} alt={locale.profile.qrTitle} className="mx-auto mt-3 h-44 w-44" />
-      <p className="mt-2 text-xs text-slate-500">{locale.profile.qrHint}</p>
+      <p className="mt-2 text-xs text-muted">{locale.profile.qrHint}</p>
     </section>
   );
 }

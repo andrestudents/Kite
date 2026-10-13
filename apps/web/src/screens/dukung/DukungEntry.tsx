@@ -19,19 +19,19 @@ export function DukungEntry(props: {
   const [raw, setRaw] = useState(props.initialRaw ?? "");
   const parsed = parseBackerInput(raw);
   return (
-    <section className="flex flex-col gap-3 rounded-2xl border border-teal-200 bg-teal-50 p-4">
-      <h2 className="text-lg font-semibold text-teal-700">{locale.dukung.entryTitle}</h2>
-      <p className="text-sm text-slate-600">{locale.dukung.listEmpty}</p>
-      <label className="flex flex-col gap-1 text-sm text-slate-600" htmlFor="dukung-entry-who">
+    <section className="flex flex-col gap-3 rounded-2xl border border-leaf100 bg-leafsoft p-4">
+      <h2 className="text-lg font-bold text-leafdk">{locale.dukung.entryTitle}</h2>
+      <p className="text-sm text-muted">{locale.dukung.listEmpty}</p>
+      <label className="flex flex-col gap-1 text-sm text-muted" htmlFor="dukung-entry-who">
         {locale.kirim.recipientLabel}
         <input
           id="dukung-entry-who"
           value={raw}
           onChange={(e) => setRaw(e.target.value)}
           placeholder={locale.kirim.recipientManual}
-          className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-base text-slate-800"
+          className="w-full rounded-xl border border-line2 bg-white px-3 py-2 text-base text-ink"
         />
-        <span className="text-xs text-slate-500">{locale.dukung.entryHint}</span>
+        <span className="text-xs text-muted">{locale.dukung.entryHint}</span>
       </label>
       <button
         type="button"
@@ -39,7 +39,7 @@ export function DukungEntry(props: {
         onClick={() => {
           if (parsed !== null) props.onDukung?.(parsed);
         }}
-        className="rounded-xl bg-teal-600 px-6 py-3 text-base font-semibold text-white shadow disabled:bg-slate-300"
+        className="rounded-xl bg-leaf px-6 py-3 text-base font-semibold text-white shadow disabled:bg-[#C6D2C3]"
       >
         {locale.common.continue}
       </button>

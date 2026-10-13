@@ -28,6 +28,7 @@ import {
 import { savePurposeRecord } from "../../data/records.js";
 import { formatAusdDetail, type MoneyLocale } from "../../lib/money.js";
 import type { Locale } from "../../locales/id.js";
+import { Mark } from "../shell/Mark.js";
 
 type Phase = "loading" | "ready" | "signing" | "submitted" | "done" | "drip" | "blocked" | "error";
 
@@ -153,7 +154,7 @@ export function Ajukan(props: {
 
   if (phase === "loading") {
     return (
-      <main className="flex min-h-dvh items-center justify-center text-slate-500">
+      <main className="flex min-h-dvh items-center justify-center text-muted">
         {locale.edge.loading}
       </main>
     );
@@ -161,15 +162,15 @@ export function Ajukan(props: {
   if (phase === "error") {
     return (
       <main className="mx-auto flex min-h-dvh max-w-md flex-col items-center justify-center gap-4 px-6 text-center">
-        <p className="text-slate-600">{locale.common.errorGeneric}</p>
+        <p className="text-muted">{locale.common.errorGeneric}</p>
         <button
           type="button"
           onClick={() => void load()}
-          className="rounded-xl bg-teal-600 px-6 py-3 font-semibold text-white shadow"
+          className="rounded-xl border border-line2 bg-white px-6 py-3 font-semibold text-ink shadow"
         >
           {locale.edge.retry}
         </button>
-        <button type="button" onClick={props.onBack} className="text-sm text-slate-500">
+        <button type="button" onClick={props.onBack} className="text-sm text-muted">
           {locale.edge.back}
         </button>
       </main>
@@ -178,11 +179,11 @@ export function Ajukan(props: {
   if (phase === "blocked") {
     return (
       <main className="mx-auto flex min-h-dvh max-w-md flex-col items-center justify-center gap-4 px-6 text-center">
-        <p className="text-slate-600">{locale.dukung.satuPerjanjian}</p>
+        <p className="text-muted">{locale.dukung.satuPerjanjian}</p>
         <button
           type="button"
           onClick={props.onBack}
-          className="rounded-xl bg-teal-600 px-6 py-3 font-semibold text-white shadow"
+          className="rounded-xl bg-leaf px-6 py-3 font-semibold text-white shadow"
         >
           {locale.edge.back}
         </button>
@@ -192,12 +193,12 @@ export function Ajukan(props: {
   if (phase === "drip") {
     return (
       <main className="mx-auto flex min-h-dvh max-w-md flex-col items-center justify-center gap-4 px-6 text-center">
-        <p className="text-lg font-semibold text-slate-800">{locale.ajukan.dripTitle}</p>
-        <p className="text-slate-600">{locale.ajukan.dripBody}</p>
+        <p className="text-lg font-bold text-ink">{locale.ajukan.dripTitle}</p>
+        <p className="text-muted">{locale.ajukan.dripBody}</p>
         <button
           type="button"
           onClick={() => void load()}
-          className="rounded-xl bg-teal-600 px-6 py-3 font-semibold text-white shadow"
+          className="rounded-xl bg-leaf px-6 py-3 font-semibold text-white shadow"
         >
           {locale.common.retry}
         </button>
@@ -207,19 +208,22 @@ export function Ajukan(props: {
   if (phase === "done") {
     return (
       <main className="mx-auto flex min-h-dvh max-w-md flex-col gap-4 px-6 py-10 text-center">
-        <h1 className="text-2xl font-bold text-teal-700">{locale.ajukan.doneTitle}</h1>
-        <p className="text-slate-600">{locale.ajukan.doneBody}</p>
+        <Mark variant="gold" className="mx-auto h-14 w-12" />
+        <h1 className="text-2xl font-extrabold tracking-tight text-ink">
+          {locale.ajukan.doneTitle}
+        </h1>
+        <p className="text-muted">{locale.ajukan.doneBody}</p>
         <input
           readOnly
           value={shareLink}
           onFocus={(e) => e.currentTarget.select()}
-          className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700"
+          className="w-full rounded-xl border border-line2 bg-white px-3 py-2 text-sm text-ink2"
         />
         <a
           href={waShareLink(shareLink, purpose)}
           target="_blank"
           rel="noreferrer"
-          className="rounded-xl bg-teal-600 px-6 py-3 font-semibold text-white shadow"
+          className="rounded-xl bg-leaf px-6 py-3 font-semibold text-white shadow"
         >
           {locale.ajukan.waShare}
         </a>
@@ -231,12 +235,12 @@ export function Ajukan(props: {
               () => setCopied(false),
             );
           }}
-          className="rounded-xl border border-slate-300 px-6 py-3 font-semibold text-slate-700"
+          className="rounded-xl border border-line2 bg-white px-6 py-3 font-semibold text-ink"
         >
           {copied ? locale.ajukan.copied : locale.ajukan.copyLink}
         </button>
-        <p className="text-xs text-slate-500">{locale.edge.leavesApp}</p>
-        <button type="button" onClick={props.onBack} className="mt-2 text-sm text-slate-500">
+        <p className="text-xs text-muted">{locale.edge.leavesApp}</p>
+        <button type="button" onClick={props.onBack} className="mt-2 text-sm text-muted">
           {locale.edge.back}
         </button>
       </main>
@@ -246,71 +250,67 @@ export function Ajukan(props: {
   const busy = phase !== "ready";
   return (
     <main className="mx-auto flex min-h-dvh max-w-md flex-col gap-4 px-6 py-10">
-      <h1 className="text-2xl font-bold text-teal-700">{locale.ajukan.title}</h1>
+      <h1 className="text-2xl font-extrabold tracking-tight text-ink">{locale.ajukan.title}</h1>
 
-      <label className="flex flex-col gap-1 text-sm text-slate-600" htmlFor="ajukan-backer">
+      <label className="flex flex-col gap-1 text-sm text-muted" htmlFor="ajukan-backer">
         {locale.ajukan.backerLabel}
         <input
           id="ajukan-backer"
           value={backerRaw}
           onChange={(e) => setBackerRaw(e.target.value)}
-          className="w-full rounded-xl border border-slate-300 px-3 py-2 text-base text-slate-800"
+          className="w-full rounded-xl border border-line2 bg-white px-3 py-2 text-base text-ink focus:border-leaf focus:outline-none"
         />
-        <span className="text-xs text-slate-500">{locale.ajukan.backerCode}</span>
+        <span className="text-xs text-muted">{locale.ajukan.backerCode}</span>
         {backer === null && backerRaw.trim() !== "" ? (
-          <span className="text-xs text-red-600">{locale.kirim.invalidAddress}</span>
+          <span className="text-xs font-medium text-clay">{locale.kirim.invalidAddress}</span>
         ) : null}
       </label>
 
-      <label className="flex flex-col gap-1 text-sm text-slate-600" htmlFor="ajukan-amount">
+      <label className="flex flex-col gap-1 text-sm text-muted" htmlFor="ajukan-amount">
         {locale.ajukan.amountLabel}
         <input
           id="ajukan-amount"
           value={amountRaw}
           onChange={(e) => setAmountRaw(e.target.value)}
           inputMode="decimal"
-          className="w-full rounded-xl border border-slate-300 px-3 py-2 text-base text-slate-800"
+          className="w-full rounded-xl border border-line2 bg-white px-3 py-2 text-base text-ink focus:border-leaf focus:outline-none"
         />
         {overLimit && guidance !== null ? (
-          <span className="text-xs text-red-600">
+          <span className="text-xs font-medium text-clay">
             {locale.ajukan.overLimit} — {formatAusdDetail(guidance.offerAusd, lang)}
           </span>
         ) : null}
       </label>
 
-      <label className="flex flex-col gap-1 text-sm text-slate-600" htmlFor="ajukan-purpose">
+      <label className="flex flex-col gap-1 text-sm text-muted" htmlFor="ajukan-purpose">
         {locale.ajukan.purposeLabel}
         <textarea
           id="ajukan-purpose"
           value={purpose}
           maxLength={140}
           onChange={(e) => setPurpose(e.target.value)}
-          className="w-full rounded-xl border border-slate-300 px-3 py-2 text-base text-slate-800"
+          className="w-full rounded-xl border border-line2 bg-white px-3 py-2 text-base text-ink focus:border-leaf focus:outline-none"
         />
-        <span className="text-xs text-slate-500">{locale.ajukan.purposeHint}</span>
+        <span className="text-xs text-muted">{locale.ajukan.purposeHint}</span>
       </label>
 
       {guidance !== null ? (
-        <section className="rounded-2xl border border-slate-200 p-4 text-sm">
+        <section className="rounded-2xl border border-line bg-white p-4 text-sm">
           <div className="flex items-baseline justify-between">
-            <span className="text-slate-500">{locale.ajukan.shareRuleLabel}</span>
-            <span className="text-lg font-semibold text-slate-800">
-              {pctLabel(guidance.shareBps, lang)}
-            </span>
+            <span className="text-muted">{locale.ajukan.shareRuleLabel}</span>
+            <span className="text-lg font-bold text-ink">{pctLabel(guidance.shareBps, lang)}</span>
           </div>
-          <p className="text-xs text-slate-500">{locale.ajukan.shareRuleWhy}</p>
+          <p className="text-xs text-muted">{locale.ajukan.shareRuleWhy}</p>
           {cap !== null ? (
             <>
               <div className="mt-3 flex items-baseline justify-between">
-                <span className="text-slate-500">{locale.ajukan.capRuleLabel}</span>
-                <span className="text-lg font-semibold text-slate-800">
-                  {formatAusdDetail(cap, lang)}
-                </span>
+                <span className="text-muted">{locale.ajukan.capRuleLabel}</span>
+                <span className="text-lg font-bold text-ink">{formatAusdDetail(cap, lang)}</span>
               </div>
-              <p className="text-xs text-slate-500">{locale.ajukan.capRuleWhy}</p>
+              <p className="text-xs text-muted">{locale.ajukan.capRuleWhy}</p>
             </>
           ) : null}
-          <div className="mt-3 border-t border-slate-100 pt-3 text-xs text-slate-500">
+          <div className="mt-3 border-t border-line pt-3 text-xs text-muted">
             {locale.ajukan.offerWhyPrefix}: {formatAusdDetail(guidance.offerAusd, lang)}
           </div>
         </section>
@@ -320,7 +320,7 @@ export function Ajukan(props: {
         type="button"
         disabled={!inputReady || busy}
         onClick={() => void submit()}
-        className="rounded-xl bg-teal-600 px-6 py-4 text-lg font-semibold text-white shadow disabled:bg-slate-300"
+        className="rounded-xl bg-leaf px-6 py-4 text-lg font-semibold text-white shadow disabled:bg-[#C6D2C3]"
       >
         {phase === "signing"
           ? locale.ajukan.signing
@@ -328,7 +328,7 @@ export function Ajukan(props: {
             ? locale.ajukan.submitting
             : locale.beranda.ajukanCta}
       </button>
-      <button type="button" onClick={props.onBack} className="text-sm text-slate-500">
+      <button type="button" onClick={props.onBack} className="text-sm text-muted">
         {locale.edge.back}
       </button>
     </main>

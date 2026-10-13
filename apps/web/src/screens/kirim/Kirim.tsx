@@ -110,13 +110,13 @@ export function Kirim(props: {
   if (doneValue !== null) {
     return (
       <main className="mx-auto flex min-h-dvh max-w-md flex-col items-center justify-center gap-4 px-6 text-center">
-        <p className="text-4xl font-bold text-teal-700">{locale.kirim.lunas}</p>
-        <p className="text-sm text-slate-500">{formatAusdDetail(doneValue, lang)}</p>
+        <p className="text-4xl font-extrabold tracking-tight text-leafdk">{locale.kirim.lunas}</p>
+        <p className="text-sm text-muted">{formatAusdDetail(doneValue, lang)}</p>
         {props.onBack ? (
           <button
             type="button"
             onClick={props.onBack}
-            className="rounded-xl bg-teal-600 px-6 py-3 font-semibold text-white shadow"
+            className="rounded-xl bg-leaf px-6 py-3 font-semibold text-white shadow"
           >
             {locale.edge.back}
           </button>
@@ -127,62 +127,62 @@ export function Kirim(props: {
 
   return (
     <main className="mx-auto flex min-h-dvh max-w-md flex-col gap-4 px-6 py-10">
-      <h1 className="text-xl font-bold text-slate-800">{locale.kirim.title}</h1>
+      <h1 className="text-xl font-extrabold tracking-tight text-ink">{locale.kirim.title}</h1>
 
       {offline ? (
-        <section className="rounded-2xl bg-amber-50 p-4 text-sm text-slate-700">
-          <p className="font-semibold">{locale.edge.offlineTitle}</p>
+        <section className="rounded-2xl border border-warnline bg-warnsoft p-4 text-sm text-golddk">
+          <p className="font-bold text-ink">{locale.edge.offlineTitle}</p>
           <p className="mt-1">{locale.edge.offlineBody}</p>
         </section>
       ) : null}
 
       <label className="flex flex-col gap-1 text-sm">
-        <span className="text-slate-500">{locale.kirim.recipientLabel}</span>
+        <span className="text-muted">{locale.kirim.recipientLabel}</span>
         <input
           type="text"
           value={recipientRaw}
           onChange={(e) => setRecipientRaw(e.target.value)}
           placeholder={locale.kirim.recipientCode}
-          className="rounded-xl border border-slate-300 px-4 py-3 text-base"
+          className="rounded-xl border border-line2 bg-white px-4 py-3 text-base text-ink focus:border-leaf focus:outline-none"
         />
-        <span className="text-xs text-slate-400">{locale.kirim.recipientManual}</span>
+        <span className="text-xs text-muted">{locale.kirim.recipientManual}</span>
       </label>
 
       <label className="flex flex-col gap-1 text-sm">
-        <span className="text-slate-500">{locale.kirim.amountLabel}</span>
+        <span className="text-muted">{locale.kirim.amountLabel}</span>
         <input
           type="text"
           inputMode="decimal"
           value={amountRaw}
           onChange={(e) => setAmountRaw(e.target.value)}
-          className="rounded-xl border border-slate-300 px-4 py-3 text-base"
+          className="rounded-xl border border-line2 bg-white px-4 py-3 text-base text-ink focus:border-leaf focus:outline-none"
         />
       </label>
 
       {insufficient !== null ? (
-        <p className="text-sm text-red-600">
+        <p className="text-sm font-medium text-clay">
           {locale.kirim.saldoShort} ({formatAusdDetail(insufficient, lang)})
         </p>
       ) : null}
-      {failed !== "" ? <p className="text-sm text-red-600">{failed}</p> : null}
+      {failed !== "" ? <p className="text-sm font-medium text-clay">{failed}</p> : null}
 
       <button
         type="button"
         disabled={offline || busy !== null}
         onClick={() => void send()}
-        className="mt-2 w-full rounded-xl bg-teal-600 px-6 py-4 text-lg font-semibold text-white shadow disabled:opacity-40"
+        className="mt-2 w-full rounded-xl bg-leaf px-6 py-4 text-lg font-semibold text-white shadow disabled:opacity-40"
       >
         {busy === null ? locale.kirim.confirmCta : locale.dukung.checking}
       </button>
 
       {busy === "confirming" ? (
-        <p className="text-center text-sm text-slate-500">{locale.kirim.submitted}</p>
+        <p className="text-center text-sm text-muted">{locale.kirim.submitted}</p>
       ) : null}
 
       <ReceiveCode locale={locale} storage={storage} profileId={profileId} origin={props.origin} />
 
       {props.onBack ? (
-        <button type="button" onClick={props.onBack} className="text-sm text-slate-500">
+        <button type="button" onClick={props.onBack} className="text-sm text-muted">
           {locale.edge.back}
         </button>
       ) : null}

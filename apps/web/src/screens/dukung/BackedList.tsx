@@ -108,13 +108,13 @@ function EndLine(props: { isa: IsaOnChain; locale: Locale }) {
   if (isa.status === 4) {
     const day = new Date(Number(isa.termEnd) * 1000).toISOString().slice(0, 10);
     return (
-      <p className="text-xs text-slate-500">
+      <p className="text-xs text-muted">
         {locale.dealCard.endLabel} {locale.dealCard.endByTerm} {day}
       </p>
     );
   }
   return (
-    <p className="text-xs text-slate-500">
+    <p className="text-xs text-muted">
       {locale.dealCard.endLabel} {locale.dealCard.endByCap}
     </p>
   );
@@ -135,67 +135,67 @@ export function BackedCardView(props: {
     <section
       className={
         terminal
-          ? "rounded-2xl border border-teal-300 bg-teal-50 p-4"
-          : "rounded-2xl border border-slate-200 p-4"
+          ? "rounded-2xl border border-gold100 bg-goldsoft p-4"
+          : "rounded-2xl border border-line bg-white p-4"
       }
     >
       <div className="flex items-baseline justify-between gap-2">
-        <h3 className="text-base font-semibold text-slate-900">{card.label}</h3>
-        <span className="text-xs text-slate-500">{statusLabel(isa.status, locale)}</span>
+        <h3 className="text-base font-bold text-ink">{card.label}</h3>
+        <span className="text-xs text-muted">{statusLabel(isa.status, locale)}</span>
       </div>
-      <p className="mt-1 text-sm font-semibold text-teal-700">
+      <p className="mt-1 text-sm font-semibold text-golddk">
         {starsLabel(card.stars)} · {card.completed} {locale.beranda.whyCompleted} · {progressPct}%{" "}
         {locale.dealCard.progressLabel}
       </p>
       <div className="mt-3 flex items-baseline justify-between">
-        <span className="text-sm text-slate-500">{locale.dukung.amountLabel}</span>
-        <span className="text-lg font-bold text-slate-900">
+        <span className="text-sm text-muted">{locale.dukung.amountLabel}</span>
+        <span className="text-lg font-extrabold tracking-tight text-ink">
           {formatAusdDetail(isa.principal, lang)}
         </span>
       </div>
       <div className="mt-1 flex items-baseline justify-between text-sm">
-        <span className="text-slate-500">{locale.dealCard.shareLabel}</span>
-        <span className="text-slate-800">{pctLabel(isa.shareBps, lang)}</span>
+        <span className="text-muted">{locale.dealCard.shareLabel}</span>
+        <span className="text-ink2">{pctLabel(isa.shareBps, lang)}</span>
       </div>
       <div className="mt-1 flex items-baseline justify-between text-sm">
-        <span className="text-slate-500">{locale.dealCard.capLabel}</span>
-        <span className="text-slate-800">{formatAusdDetail(card.capAusd, lang)}</span>
+        <span className="text-muted">{locale.dealCard.capLabel}</span>
+        <span className="text-ink2">{formatAusdDetail(card.capAusd, lang)}</span>
       </div>
       <div className="mt-2 flex items-baseline justify-between text-sm">
-        <span className="text-slate-500">{locale.dukung.totalReceived}</span>
-        <span className="font-semibold text-slate-800">
+        <span className="text-muted">{locale.dukung.totalReceived}</span>
+        <span className="font-semibold text-golddk">
           {formatAusdDetail(card.receivedAusd, lang)}
         </span>
       </div>
-      <div className="mt-2 h-2 w-full rounded bg-slate-200">
+      <div className="mt-2 h-2 w-full rounded-full bg-[#E9E2CC]">
         <div
-          className="h-2 rounded bg-teal-600"
+          className="ripen h-2 rounded-full"
           style={{ width: `${Math.min(100, progressPct)}%` }}
         />
       </div>
-      <p className="mt-2 text-xs text-slate-600">{locale.dealCard.failedHarvest}</p>
+      <p className="mt-2 text-xs text-muted">{locale.dealCard.failedHarvest}</p>
       <EndLine isa={isa} locale={locale} />
       {terminal ? (
         <>
-          <p className="mt-2 text-xs text-slate-500">
+          <p className="mt-2 text-xs text-muted">
             {panenCount} {locale.moments.seasonPanen} · {card.durationDays}{" "}
             {locale.moments.seasonDuration}
           </p>
           {isa.status === 4 ? (
-            <p className="mt-1 text-xs text-slate-500">
+            <p className="mt-1 text-xs text-muted">
               {formatAusdDetail(card.receivedAusd, lang)} {locale.dukung.recapBack}{" "}
               {formatAusdDetail(card.capAusd, lang)} · {locale.dukung.recapForgiven}
             </p>
           ) : (
-            <p className="mt-1 text-sm font-bold text-teal-700">{locale.dukung.lunasTitle}</p>
+            <p className="mt-1 text-sm font-bold text-golddk">{locale.dukung.lunasTitle}</p>
           )}
           {props.onDukung ? (
             <>
-              <p className="mt-2 text-sm text-slate-600">{locale.dukung.lagi}</p>
+              <p className="mt-2 text-sm text-muted">{locale.dukung.lagi}</p>
               <button
                 type="button"
                 onClick={() => props.onDukung?.(isa.seeker)}
-                className="mt-1 rounded-xl bg-teal-600 px-4 py-2 text-sm font-semibold text-white shadow"
+                className="mt-1 rounded-xl border border-gold100 bg-white px-4 py-2 text-sm font-bold text-golddk shadow"
               >
                 {locale.profile.dukungCta}
               </button>
@@ -244,11 +244,11 @@ export function BackedList(props: {
     if (failed) {
       return (
         <main className="mx-auto flex min-h-dvh max-w-md flex-col items-center justify-center gap-4 px-6 text-center">
-          <p className="text-slate-600">{locale.common.errorGeneric}</p>
+          <p className="text-muted">{locale.common.errorGeneric}</p>
           <button
             type="button"
             onClick={load}
-            className="rounded-xl bg-teal-600 px-6 py-3 font-semibold text-white shadow"
+            className="rounded-xl border border-line2 bg-white px-6 py-3 font-semibold text-ink shadow"
           >
             {locale.common.retry}
           </button>
@@ -257,7 +257,7 @@ export function BackedList(props: {
     }
     return (
       <main className="mx-auto flex min-h-dvh max-w-md items-center justify-center px-6">
-        <p className="text-slate-500">{locale.edge.loading}</p>
+        <p className="text-muted">{locale.edge.loading}</p>
       </main>
     );
   }
@@ -267,7 +267,9 @@ export function BackedList(props: {
     // end — the form takes the address or the pasted receive-code link.
     return (
       <main className="mx-auto flex min-h-dvh max-w-md flex-col gap-4 px-6 py-10">
-        <h1 className="text-2xl font-bold text-teal-700">{locale.dukung.listTitle}</h1>
+        <h1 className="text-2xl font-extrabold tracking-tight text-ink">
+          {locale.dukung.listTitle}
+        </h1>
         <DukungEntry locale={locale} onDukung={props.onDukung} />
       </main>
     );
@@ -276,10 +278,10 @@ export function BackedList(props: {
   const totalReceived = cards.reduce((sum, c) => sum + c.receivedAusd, 0n);
   return (
     <main className="mx-auto flex min-h-dvh max-w-md flex-col gap-4 px-6 py-10">
-      <h1 className="text-2xl font-bold text-teal-700">{locale.dukung.listTitle}</h1>
-      <div className="flex items-baseline justify-between rounded-2xl bg-teal-50 p-4">
-        <span className="text-sm text-slate-600">{locale.dukung.totalReceived}</span>
-        <span className="text-xl font-bold text-teal-700">
+      <h1 className="text-2xl font-extrabold tracking-tight text-ink">{locale.dukung.listTitle}</h1>
+      <div className="flex items-baseline justify-between rounded-2xl bg-goldsoft p-4">
+        <span className="text-sm text-muted">{locale.dukung.totalReceived}</span>
+        <span className="text-xl font-extrabold tracking-tight text-golddk">
           {formatAusdDetail(totalReceived, lang)}
         </span>
       </div>

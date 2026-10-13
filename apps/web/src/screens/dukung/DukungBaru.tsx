@@ -31,6 +31,7 @@ import {
 import { formatAusdDetail, type MoneyLocale } from "../../lib/money.js";
 import type { Locale } from "../../locales/id.js";
 import { pctLabel } from "../beranda/Ajukan.js";
+import { Mark } from "../shell/Mark.js";
 
 type Step = "who" | "amount" | "agree" | "signing" | "activating" | "done";
 
@@ -172,12 +173,13 @@ export function DukungBaru(props: {
   if (step === "done") {
     return (
       <main className="mx-auto flex min-h-dvh max-w-md flex-col items-center justify-center gap-4 px-6 text-center">
-        <p className="text-2xl font-bold text-teal-700">{locale.dukung.doneTitle}</p>
-        <p className="text-slate-600">{locale.dukung.doneBody}</p>
+        <Mark variant="gold" className="h-14 w-12" />
+        <p className="text-2xl font-extrabold tracking-tight text-ink">{locale.dukung.doneTitle}</p>
+        <p className="text-muted">{locale.dukung.doneBody}</p>
         <button
           type="button"
           onClick={props.onDone}
-          className="rounded-xl bg-teal-600 px-6 py-3 font-semibold text-white shadow"
+          className="rounded-xl bg-leaf px-6 py-3 font-semibold text-white shadow"
         >
           {locale.common.continue}
         </button>
@@ -188,29 +190,31 @@ export function DukungBaru(props: {
   if (step === "who") {
     return (
       <main className="mx-auto flex min-h-dvh max-w-md flex-col gap-4 px-6 py-10">
-        <h1 className="text-2xl font-bold text-teal-700">{locale.dukung.step1Title}</h1>
-        <label className="flex flex-col gap-1 text-sm text-slate-600" htmlFor="dukung-who">
+        <h1 className="text-2xl font-extrabold tracking-tight text-ink">
+          {locale.dukung.step1Title}
+        </h1>
+        <label className="flex flex-col gap-1 text-sm text-muted" htmlFor="dukung-who">
           {locale.kirim.recipientLabel}
           <input
             id="dukung-who"
             value={seekerRaw}
             onChange={(e) => setSeekerRaw(e.target.value)}
-            className="w-full rounded-xl border border-slate-300 px-3 py-2 text-base text-slate-800"
+            className="w-full rounded-xl border border-line2 bg-white px-3 py-2 text-base text-ink focus:border-leaf focus:outline-none"
           />
-          <span className="text-xs text-slate-500">{locale.kirim.recipientCode}</span>
+          <span className="text-xs text-muted">{locale.kirim.recipientCode}</span>
           {whoError ? (
-            <span className="text-xs text-red-600">{locale.dukung.notDraftable}</span>
+            <span className="text-xs font-medium text-clay">{locale.dukung.notDraftable}</span>
           ) : null}
         </label>
         <button
           type="button"
           disabled={parseBackerInput(seekerRaw) === null}
           onClick={() => void openSeeker()}
-          className="rounded-xl bg-teal-600 px-6 py-4 text-lg font-semibold text-white shadow disabled:bg-slate-300"
+          className="rounded-xl bg-leaf px-6 py-4 text-lg font-semibold text-white shadow disabled:bg-[#C6D2C3]"
         >
           {locale.common.continue}
         </button>
-        <button type="button" onClick={props.onCancel} className="text-sm text-slate-500">
+        <button type="button" onClick={props.onCancel} className="text-sm text-muted">
           {locale.edge.back}
         </button>
       </main>
@@ -220,42 +224,44 @@ export function DukungBaru(props: {
   if (step === "amount") {
     return (
       <main className="mx-auto flex min-h-dvh max-w-md flex-col gap-4 px-6 py-10">
-        <h1 className="text-2xl font-bold text-teal-700">{locale.dukung.step2Title}</h1>
-        <p className="text-sm text-slate-500">{derivedLabel(seeker, purpose)}</p>
-        <section className="rounded-2xl border border-slate-200 p-4">
+        <h1 className="text-2xl font-extrabold tracking-tight text-ink">
+          {locale.dukung.step2Title}
+        </h1>
+        <p className="text-sm text-muted">{derivedLabel(seeker, purpose)}</p>
+        <section className="rounded-2xl border border-line bg-white p-4">
           <div className="flex items-baseline justify-between">
-            <span className="text-sm text-slate-500">{locale.dukung.amountLabel}</span>
-            <span className="text-2xl font-bold text-slate-900">
+            <span className="text-sm text-muted">{locale.dukung.amountLabel}</span>
+            <span className="text-2xl font-extrabold tracking-tight text-ink">
               {principal !== null ? formatAusdDetail(principal, lang) : ""}
             </span>
           </div>
           {purpose.trim() !== "" ? (
-            <p className="mt-2 text-sm text-slate-600">
+            <p className="mt-2 text-sm text-muted">
               {locale.dealCard.purposeLabel}: {purpose}
             </p>
           ) : null}
         </section>
         {check !== null && check.state === "over-limit" ? (
-          <p className="text-sm text-red-600">
+          <p className="text-sm font-medium text-clay">
             {locale.dukung.overLimitPrefix}: {formatAusdDetail(check.offerAusd, lang)}
           </p>
         ) : null}
         {check !== null && check.state === "not-draftable" ? (
-          <p className="text-sm text-red-600">{locale.dukung.notDraftable}</p>
+          <p className="text-sm font-medium text-clay">{locale.dukung.notDraftable}</p>
         ) : null}
         {check !== null && check.state === "error" ? (
           <>
-            <p className="text-sm text-red-600">{locale.dukung.checkError}</p>
+            <p className="text-sm font-medium text-clay">{locale.dukung.checkError}</p>
             <button
               type="button"
               onClick={() => void liveCheck()}
-              className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700"
+              className="rounded-xl border border-line2 bg-white px-4 py-2 text-sm font-semibold text-ink"
             >
               {locale.common.retry}
             </button>
           </>
         ) : null}
-        {check === null ? <p className="text-sm text-slate-500">{locale.dukung.checking}</p> : null}
+        {check === null ? <p className="text-sm text-muted">{locale.dukung.checking}</p> : null}
         <button
           type="button"
           disabled={check?.state !== "ok"}
@@ -266,11 +272,11 @@ export function DukungBaru(props: {
               if (result?.state === "ok") setStep("agree");
             })();
           }}
-          className="rounded-xl bg-teal-600 px-6 py-4 text-lg font-semibold text-white shadow disabled:bg-slate-300"
+          className="rounded-xl bg-leaf px-6 py-4 text-lg font-semibold text-white shadow disabled:bg-[#C6D2C3]"
         >
           {locale.common.continue}
         </button>
-        <button type="button" onClick={props.onCancel} className="text-sm text-slate-500">
+        <button type="button" onClick={props.onCancel} className="text-sm text-muted">
           {locale.edge.back}
         </button>
       </main>
@@ -280,32 +286,35 @@ export function DukungBaru(props: {
   // step === "agree" | "signing" | "activating"
   return (
     <main className="mx-auto flex min-h-dvh max-w-md flex-col gap-4 px-6 py-10">
-      <h1 className="text-2xl font-bold text-teal-700">{locale.dukung.step3Title}</h1>
-      <section className="rounded-2xl border border-slate-200 p-4 text-sm text-slate-600">
+      <h1 className="text-2xl font-extrabold tracking-tight text-ink">
+        {locale.dukung.step3Title}
+      </h1>
+      <section className="rounded-2xl border border-line bg-white p-4 text-sm text-muted">
         <div className="flex items-baseline justify-between">
           <span>{locale.dealCard.shareLabel}</span>
-          <span className="font-semibold text-slate-800">{pctLabel(shareBps, lang)}</span>
+          <span className="font-semibold text-ink">{pctLabel(shareBps, lang)}</span>
         </div>
         <div className="mt-1 flex items-baseline justify-between">
           <span>{locale.dealCard.capLabel}</span>
-          <span className="font-semibold text-slate-800">
+          <span className="font-semibold text-ink">
             {capAusd !== null ? formatAusdDetail(capAusd, lang) : ""}
           </span>
         </div>
         <div className="mt-1 flex items-baseline justify-between">
           <span>{locale.dukung.amountLabel}</span>
-          <span className="font-semibold text-slate-800">
+          <span className="font-semibold text-ink">
             {principal !== null ? formatAusdDetail(principal, lang) : ""}
           </span>
         </div>
         <p className="mt-2">
           {locale.dealCard.endLabel} {locale.dealCard.endByCap}
         </p>
-        <p className="mt-1 text-slate-800">{locale.dealCard.failedHarvest}</p>
+        <p className="mt-3 flex items-center gap-2 rounded-xl bg-leafsoft px-3 py-2.5 text-xs font-bold text-leafdk">
+          <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-leaf" />
+          {locale.dealCard.failedHarvest}
+        </p>
         {actFailed ? (
-          <p className="mt-2 text-sm font-semibold text-red-600">
-            {locale.dukung.activationFailed}
-          </p>
+          <p className="mt-2 text-sm font-semibold text-clay">{locale.dukung.activationFailed}</p>
         ) : null}
         {purpose.trim() !== "" ? (
           <p className="mt-2">
@@ -313,21 +322,21 @@ export function DukungBaru(props: {
           </p>
         ) : null}
       </section>
-      <label className="flex flex-col gap-1 text-sm text-slate-600" htmlFor="dukung-nickname">
+      <label className="flex flex-col gap-1 text-sm text-muted" htmlFor="dukung-nickname">
         {locale.dukung.nicknameLabel}
         <input
           id="dukung-nickname"
           value={nickname}
           maxLength={40}
           onChange={(e) => setNickname(e.target.value)}
-          className="w-full rounded-xl border border-slate-300 px-3 py-2 text-base text-slate-800"
+          className="w-full rounded-xl border border-line2 bg-white px-3 py-2 text-base text-ink focus:border-leaf focus:outline-none"
         />
       </label>
       <button
         type="button"
         disabled={latched}
         onClick={() => void confirm()}
-        className="rounded-xl bg-teal-600 px-6 py-4 text-lg font-semibold text-white shadow disabled:bg-slate-300"
+        className="rounded-xl bg-leaf px-6 py-4 text-lg font-semibold text-white shadow disabled:bg-[#C6D2C3]"
       >
         {step === "signing"
           ? locale.dukung.signCta
@@ -335,7 +344,7 @@ export function DukungBaru(props: {
             ? locale.dukung.activating
             : locale.dukung.confirmCta}
       </button>
-      <button type="button" onClick={props.onCancel} className="text-sm text-slate-500">
+      <button type="button" onClick={props.onCancel} className="text-sm text-muted">
         {locale.edge.back}
       </button>
     </main>
